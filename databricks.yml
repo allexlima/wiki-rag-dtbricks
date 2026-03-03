@@ -1,0 +1,27 @@
+bundle:
+  name: wiki-rag-dtbricks
+  databricks_cli_version: ">=0.236.0"
+
+variables:
+  lakebase_instance_name:
+    description: "Lakebase PostgreSQL instance name"
+    default: wiki-rag-lakebase
+  endpoint_name:
+    description: "Model serving endpoint name"
+    default: wiki-rag-endpoint
+  app_name:
+    description: "Databricks App name"
+    default: wiki-rag-app
+  model_name:
+    description: "Unity Catalog model name"
+    default: main.wiki_rag.wiki_rag_agent
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+  prod:
+    mode: production

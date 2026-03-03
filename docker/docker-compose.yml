@@ -1,0 +1,15 @@
+services:
+  mediawiki:
+    image: mediawiki:1.42
+    container_name: wiki-rag-mediawiki
+    ports:
+      - "8080:80"
+    volumes:
+      - ./LocalSettings.php:/var/www/html/LocalSettings.php:ro
+      - wiki_images:/var/www/html/images
+    environment:
+      - MW_DB_TYPE=postgres
+    restart: unless-stopped
+
+volumes:
+  wiki_images:

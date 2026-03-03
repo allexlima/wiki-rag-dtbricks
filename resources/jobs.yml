@@ -1,0 +1,27 @@
+resources:
+  jobs:
+    wiki_rag_pipeline:
+      name: "wiki-rag-pipeline-${bundle.target}"
+      description: "MediaWiki ingestion → clean → chunk → embed pipeline"
+
+      job_clusters:
+        - job_cluster_key: pipeline_cluster
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: i3.xlarge
+            num_workers: 0
+            spark_env_vars:
+              DATABRICKS_HOST: "{{workspace.host}}"
+
+      tasks:
+        - task_key: setup_lakebase
+          job_cluster_key: pipeline_cluster
+          notebook_task:
+            notebook_path: ../notebooks/00_setup_lakebase.py
+
+        - task_key: ingest_and_embed
+          depends_on:
+            - task_key: setup_lakebase
+          job_cluster_key: pipeline_cluster
+          notebook_task:
+            notebook_path: ../notebooks/01_ingest_mediawiki.py

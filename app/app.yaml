@@ -1,0 +1,10 @@
+command:
+  - streamlit
+  - run
+  - app.py
+
+env:
+  - name: SERVING_ENDPOINT_NAME
+    value: wiki-rag-endpoint
+  - name: STREAMLIT_GATHER_USAGE_STATS
+    value: "false"

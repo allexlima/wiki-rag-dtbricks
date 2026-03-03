@@ -1,0 +1,42 @@
+<?php
+# MediaWiki LocalSettings.php
+# Generated from LocalSettings.php.template via envsubst — do not edit directly.
+
+# ---------- Site info ----------
+$wgSitename = "Wiki RAG Demo";
+$wgMetaNamespace = "Wiki_RAG";
+$wgScriptPath = "";
+$wgServer = "http://localhost:8080";
+
+# ---------- Database — Lakebase PostgreSQL ----------
+$wgDBtype = "postgres";
+$wgDBserver = "${LAKEBASE_HOST}:${LAKEBASE_PORT}";
+$wgDBname = "${LAKEBASE_DB}";
+$wgDBuser = "${LAKEBASE_USER}";
+$wgDBpassword = "${LAKEBASE_PASSWORD}";
+$wgDBmwschema = "mediawiki";
+$wgDBssl = true;
+
+# ---------- Security ----------
+$wgSecretKey = "${MW_SECRET_KEY}";
+$wgUpgradeKey = "${MW_UPGRADE_KEY}";
+
+# ---------- Caching ----------
+$wgMainCacheType = CACHE_NONE;
+$wgMemCachedServers = [];
+
+# ---------- File uploads ----------
+$wgEnableUploads = true;
+$wgUseImageMagick = false;
+
+# ---------- Skin ----------
+wfLoadSkin('Vector');
+$wgDefaultSkin = "vector";
+
+# ---------- Extensions ----------
+wfLoadExtension('ParserFunctions');
+
+# ---------- Permissions (open wiki for demo) ----------
+$wgGroupPermissions['*']['edit'] = true;
+$wgGroupPermissions['*']['createpage'] = true;
+$wgGroupPermissions['*']['createaccount'] = true;

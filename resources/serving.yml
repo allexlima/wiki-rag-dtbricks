@@ -1,0 +1,16 @@
+resources:
+  model_serving_endpoints:
+    wiki_rag_endpoint:
+      name: ${var.endpoint_name}
+      config:
+        served_entities:
+          - entity_name: ${var.model_name}
+            scale_to_zero_enabled: true
+            workload_size: Small
+            environment_vars:
+              LAKEBASE_INSTANCE: "{{secrets/wiki-rag/lakebase_instance_name}}"
+              LAKEBASE_DB: "{{secrets/wiki-rag/lakebase_db}}"
+              LAKEBASE_USER: "{{secrets/wiki-rag/lakebase_user}}"
+      permissions:
+        - level: CAN_QUERY
+          group_name: users
