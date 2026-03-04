@@ -1,9 +1,13 @@
 # Databricks notebook source
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # 02 — RAG Agent Testing
 # MAGIC
-# MAGIC Interactive notebook to test the LangGraph RAG agent.
-# MAGIC Retrieves from pgvector, grades documents, optionally rewrites the query, and generates an answer.
+# MAGIC Interactive notebook to test the LangGraph RAG agent against Lakebase.
+# MAGIC
+# MAGIC **Pipeline:** embed query → pgvector retrieval → grade docs → (rewrite?) → generate answer.
 
 # COMMAND ----------
 
@@ -12,36 +16,24 @@
 
 # COMMAND ----------
 
-import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+# MAGIC %md
+# MAGIC ## Setup
 
 # COMMAND ----------
 
-import uuid
-import psycopg2
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+
 from pgvector.psycopg2 import register_vector
-from databricks.sdk import WorkspaceClient
 
-w = WorkspaceClient()
-INSTANCE = dbutils.secrets.get("wiki-rag", "lakebase_instance_name")
-DB_USER = dbutils.secrets.get("wiki-rag", "lakebase_user")
-DB_NAME = dbutils.secrets.get("wiki-rag", "lakebase_db")
+from src.config import get_lakebase_conn
+from src.rag.agent import run_agent
+from src.rag.retriever import retrieve
 
-def get_conn():
-    instance = w.database.get_database_instance(name=INSTANCE)
-    cred = w.database.generate_database_credential(
-        request_id=str(uuid.uuid4()),
-        instance_names=[INSTANCE],
-    )
-    conn = psycopg2.connect(
-        host=instance.read_write_dns,
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=cred.token,
-        sslmode="require",
-    )
-    register_vector(conn)
-    return conn
+conn = get_lakebase_conn()
+register_vector(conn)
 
 # COMMAND ----------
 
@@ -50,17 +42,11 @@ def get_conn():
 
 # COMMAND ----------
 
-from src.rag.retriever import retrieve
-
-conn = get_conn()
 docs = retrieve(conn, "What is the main topic of the wiki?", top_k=3)
 
 for doc in docs:
     print(f"[{doc.page_title}] (similarity: {doc.similarity:.4f})")
-    print(f"  {doc.chunk_text[:200]}...")
-    print()
-
-conn.close()
+    print(f"  {doc.chunk_text[:200]}...\n")
 
 # COMMAND ----------
 
@@ -69,15 +55,10 @@ conn.close()
 
 # COMMAND ----------
 
-from src.rag.agent import run_agent
-
-conn = get_conn()
 result = run_agent(conn, "What is the main topic of the wiki?")
-conn.close()
 
-print("Answer:")
-print(result["answer"])
-print("\nSources:")
+print(f"Answer:\n{result['answer']}\n")
+print("Sources:")
 for src in result["sources"]:
     print(f"  - {src['title']} (similarity: {src['similarity']})")
 
@@ -86,18 +67,21 @@ for src in result["sources"]:
 # MAGIC %md
 # MAGIC ## Try your own questions
 # MAGIC
-# MAGIC Modify the question below and run again.
+# MAGIC Change `QUESTION` below and re-run the cell.
 
 # COMMAND ----------
 
 QUESTION = "Tell me about the latest changes in the wiki"
 
-conn = get_conn()
 result = run_agent(conn, QUESTION)
-conn.close()
 
 print(f"Q: {QUESTION}\n")
 print(f"A: {result['answer']}\n")
 print("Sources:")
 for src in result["sources"]:
     print(f"  - {src['title']} ({src['similarity']})")
+
+# COMMAND ----------
+
+conn.close()
+print("✓ Done")

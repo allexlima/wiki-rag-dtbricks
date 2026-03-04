@@ -1,9 +1,15 @@
 # Databricks notebook source
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # 03 — Register Model + Deploy Serving Endpoint
 # MAGIC
 # MAGIC Logs the WikiRAG PyFunc model to MLflow, registers it in Unity Catalog,
-# MAGIC and creates/updates a model serving endpoint.
+# MAGIC and creates or updates a Model Serving endpoint.
+# MAGIC
+# MAGIC Uses the **"Models from Code"** pattern — the model source is
+# MAGIC `src/serving/pyfunc_model.py`, not a serialized pickle.
 
 # COMMAND ----------
 
@@ -12,33 +18,34 @@
 
 # COMMAND ----------
 
-import mlflow
-import mlflow.pyfunc
-from mlflow.models.signature import ModelSignature
-from mlflow.types.schema import ColSpec, Schema
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Configuration
 
 # COMMAND ----------
 
+import mlflow
+from mlflow.models.signature import ModelSignature
+from mlflow.types.schema import ColSpec, Schema
+
 CATALOG = "main"
 SCHEMA = "wiki_rag"
 MODEL_NAME = f"{CATALOG}.{SCHEMA}.wiki_rag_agent"
+ENDPOINT_NAME = "wiki-rag-endpoint"
 
 mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Log model with "Models from Code" pattern
+# MAGIC ## Log model
 
 # COMMAND ----------
 
 input_schema = Schema([ColSpec("string", "question")])
-output_schema = Schema([ColSpec("string", "answer"), ColSpec("string", "sources")])
+output_schema = Schema([
+    ColSpec("string", "answer"),
+    ColSpec("string", "sources"),
+])
 signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 
 with mlflow.start_run(run_name="wiki-rag-agent") as run:
@@ -58,7 +65,7 @@ with mlflow.start_run(run_name="wiki-rag-agent") as run:
     )
     run_id = run.info.run_id
 
-print(f"Model logged: run_id={run_id}")
+print(f"✓ Model logged (run_id={run_id})")
 
 # COMMAND ----------
 
@@ -71,7 +78,7 @@ registered = mlflow.register_model(
     model_uri=f"runs:/{run_id}/wiki_rag_agent",
     name=MODEL_NAME,
 )
-print(f"Registered: {MODEL_NAME} version {registered.version}")
+print(f"✓ Registered {MODEL_NAME} v{registered.version}")
 
 # COMMAND ----------
 
@@ -81,13 +88,13 @@ print(f"Registered: {MODEL_NAME} version {registered.version}")
 # COMMAND ----------
 
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.errors import NotFound
 from databricks.sdk.service.serving import (
     EndpointCoreConfigInput,
     ServedEntityInput,
 )
 
 w = WorkspaceClient()
-ENDPOINT_NAME = "wiki-rag-endpoint"
 
 served_entity = ServedEntityInput(
     entity_name=MODEL_NAME,
@@ -103,43 +110,56 @@ served_entity = ServedEntityInput(
     },
 )
 
-# Create or update endpoint
 try:
-    existing = w.serving_endpoints.get(ENDPOINT_NAME)
-    print(f"Updating existing endpoint: {ENDPOINT_NAME}")
+    w.serving_endpoints.get(ENDPOINT_NAME)
+    print(f"⏳ Updating endpoint '{ENDPOINT_NAME}' ...")
     w.serving_endpoints.update_config(
         name=ENDPOINT_NAME,
         served_entities=[served_entity],
     )
-except Exception:
-    print(f"Creating new endpoint: {ENDPOINT_NAME}")
+except NotFound:
+    print(f"⏳ Creating endpoint '{ENDPOINT_NAME}' ...")
     w.serving_endpoints.create(
         name=ENDPOINT_NAME,
-        config=EndpointCoreConfigInput(served_entities=[served_entity]),
+        config=EndpointCoreConfigInput(
+            served_entities=[served_entity],
+        ),
     )
 
-print(f"Endpoint '{ENDPOINT_NAME}' deployed with model version {registered.version}")
+print(f"✓ Endpoint '{ENDPOINT_NAME}' deployed (v{registered.version})")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test the endpoint
+# MAGIC ## Wait for endpoint readiness
 
 # COMMAND ----------
 
 import time
 
-# Wait for endpoint to be ready
-print("Waiting for endpoint to be ready...")
-while True:
-    ep = w.serving_endpoints.get(ENDPOINT_NAME)
-    state = ep.state.ready
-    if state == "READY":
-        break
-    print(f"  State: {state} — waiting 30s...")
-    time.sleep(30)
+MAX_WAIT_SECONDS = 900  # 15 min
+POLL_INTERVAL = 30
+elapsed = 0
 
-print("Endpoint is ready! Testing...")
+print(f"Waiting for '{ENDPOINT_NAME}' to become ready ...")
+while elapsed < MAX_WAIT_SECONDS:
+    ep = w.serving_endpoints.get(ENDPOINT_NAME)
+    if ep.state.ready == "READY":
+        break
+    print(f"  state={ep.state.ready} — polling in {POLL_INTERVAL}s ...")
+    time.sleep(POLL_INTERVAL)
+    elapsed += POLL_INTERVAL
+else:
+    raise TimeoutError(
+        f"Endpoint not ready after {MAX_WAIT_SECONDS}s"
+    )
+
+print("✓ Endpoint is ready")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Test the endpoint
 
 # COMMAND ----------
 
@@ -152,4 +172,5 @@ response = w.serving_endpoints.query(
         data=[["What is the main topic of the wiki?"]],
     ),
 )
+
 print(response.predictions)
