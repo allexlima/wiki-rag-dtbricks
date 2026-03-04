@@ -23,28 +23,47 @@ class WikiRAGModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context: mlflow.pyfunc.PythonModelContext):
         """Initialize connections and clients once at endpoint startup."""
         self.w = WorkspaceClient()
-        self.instance_name = os.environ["LAKEBASE_INSTANCE"]
+        self.instance_name = os.environ.get("LAKEBASE_INSTANCE", "")
         self.db_name = os.environ.get("LAKEBASE_DB", "wikidb")
         self.db_user = os.environ["LAKEBASE_USER"]
+        self.db_host = os.environ.get("LAKEBASE_HOST", "")
+        self.db_port = os.environ.get("LAKEBASE_PORT", "5432")
+        self.db_password = os.environ.get("LAKEBASE_PASSWORD", "")
         self.client = DatabricksOpenAI()
-        self.embedding_model = os.environ.get("EMBEDDING_MODEL", "databricks-gte-large-en")
-        self.llm_model = os.environ.get("LLM_MODEL", "databricks-meta-llama-3-3-70b-instruct")
+        self.embedding_model = os.environ.get(
+            "EMBEDDING_MODEL", "databricks-gte-large-en",
+        )
+        self.llm_model = os.environ.get(
+            "LLM_MODEL", "databricks-meta-llama-3-3-70b-instruct",
+        )
 
     def _get_conn(self) -> psycopg2.extensions.connection:
-        """Get a fresh Lakebase connection with rotated OAuth token."""
-        instance = self.w.database.get_database_instance(name=self.instance_name)
-        cred = self.w.database.generate_database_credential(
-            request_id=str(uuid.uuid4()),
-            instance_names=[self.instance_name],
-        )
-        conn = psycopg2.connect(
-            host=instance.read_write_dns,
-            dbname=self.db_name,
-            user=self.db_user,
-            password=cred.token,
-            sslmode="require",
-            connect_timeout=30,
-        )
+        """Get a Lakebase connection. Prefers password auth; falls back to OAuth."""
+        if self.db_password and self.db_host:
+            conn = psycopg2.connect(
+                host=self.db_host,
+                port=self.db_port,
+                dbname=self.db_name,
+                user=self.db_user,
+                password=self.db_password,
+                sslmode="require",
+                connect_timeout=30,
+            )
+        else:
+            instance = self.w.database.get_database_instance(name=self.instance_name)
+            cred = self.w.database.generate_database_credential(
+                request_id=str(uuid.uuid4()),
+                instance_names=[self.instance_name],
+            )
+            conn = psycopg2.connect(
+                host=self.db_host or instance.read_write_dns,
+                port=self.db_port,
+                dbname=self.db_name,
+                user=self.db_user,
+                password=cred.token,
+                sslmode="require",
+                connect_timeout=30,
+            )
         register_vector(conn)
         return conn
 

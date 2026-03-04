@@ -103,8 +103,11 @@ served_entity = ServedEntityInput(
     scale_to_zero_enabled=True,
     environment_vars={
         "LAKEBASE_INSTANCE": "{{secrets/wiki-rag/lakebase_instance_name}}",
+        "LAKEBASE_HOST": "{{secrets/wiki-rag/lakebase_host}}",
+        "LAKEBASE_PORT": "{{secrets/wiki-rag/lakebase_port}}",
         "LAKEBASE_DB": "{{secrets/wiki-rag/lakebase_db}}",
-        "LAKEBASE_USER": "{{secrets/wiki-rag/lakebase_user}}",
+        "LAKEBASE_USER": "{{secrets/wiki-rag/mw_role}}",
+        "LAKEBASE_PASSWORD": "{{secrets/wiki-rag/mw_password}}",
         "EMBEDDING_MODEL": "databricks-gte-large-en",
         "LLM_MODEL": "databricks-meta-llama-3-3-70b-instruct",
     },
