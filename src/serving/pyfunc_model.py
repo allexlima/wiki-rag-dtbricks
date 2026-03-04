@@ -24,7 +24,7 @@ class WikiRAGModel(mlflow.pyfunc.PythonModel):
         """Initialize connections and clients once at endpoint startup."""
         self.w = WorkspaceClient()
         self.instance_name = os.environ["LAKEBASE_INSTANCE"]
-        self.db_name = os.environ.get("LAKEBASE_DB", "databricks_postgres")
+        self.db_name = os.environ.get("LAKEBASE_DB", "wikidb")
         self.db_user = os.environ["LAKEBASE_USER"]
         self.client = DatabricksOpenAI()
         self.embedding_model = os.environ.get("EMBEDDING_MODEL", "databricks-gte-large-en")
