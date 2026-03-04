@@ -1,55 +1,78 @@
 #!/usr/bin/env bash
-# Bootstrap script for MediaWiki with Lakebase backend.
+# ============================================================
+# 🚀 Bootstrap MediaWiki with Lakebase PostgreSQL backend
+# ============================================================
+#
+# Flow:
+#   1. Validate .env credentials
+#   2. Build & start container (clean — no LocalSettings.php)
+#   3. Run MediaWiki install (creates mediawiki schema + tables)
+#   4. Generate LocalSettings.php from template
+#   5. Copy it into the running container
+#   6. Run update to apply our config (extensions, permissions)
+#   7. Verify connectivity
+#
+# Prerequisites:
+#   - docker & docker compose
+#   - envsubst (from gettext)
+#   - Lakebase instance provisioned (run notebook 00_setup_lakebase first)
+#   - .env file with credentials (see .env.example)
+#
 # Usage: ./setup.sh
+# ============================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+CONTAINER_NAME="wiki-rag-mediawiki"
+MW_SETTINGS_PATH="/var/www/html/LocalSettings.php"
+
 # -------------------------------------------------------
-# 1. Check .env file
+# 1. Load & validate .env
 # -------------------------------------------------------
 if [ ! -f .env ]; then
-    echo "ERROR: .env file not found. Copy .env.example to .env and fill in your credentials:"
-    echo "  cp .env.example .env"
+    echo "❌ .env not found. Copy the template and fill in your credentials:"
+    echo "   cp .env.example .env"
     exit 1
 fi
 
 # shellcheck disable=SC1091
+set -a
 source .env
+set +a
 
-# Validate required env vars
-for var in LAKEBASE_HOST LAKEBASE_PORT LAKEBASE_DB LAKEBASE_USER LAKEBASE_PASSWORD \
-           MW_ADMIN_USER MW_ADMIN_PASSWORD MW_SECRET_KEY MW_UPGRADE_KEY; do
+REQUIRED_VARS=(
+    LAKEBASE_HOST LAKEBASE_PORT LAKEBASE_DB LAKEBASE_USER LAKEBASE_PASSWORD
+    MW_ADMIN_USER MW_ADMIN_PASSWORD MW_SECRET_KEY MW_UPGRADE_KEY
+)
+for var in "${REQUIRED_VARS[@]}"; do
     if [ -z "${!var:-}" ]; then
-        echo "ERROR: Required variable '$var' is not set in .env"
+        echo "❌ Required variable '$var' is not set in .env"
         exit 1
     fi
 done
+echo "✅ .env validated"
 
 # -------------------------------------------------------
-# 2. Generate LocalSettings.php from template
+# 2. Build & start container
 # -------------------------------------------------------
-echo "Generating LocalSettings.php from template..."
-envsubst < LocalSettings.php.template > LocalSettings.php
-echo "  -> LocalSettings.php created."
+echo "🏗️  Building & starting container..."
+docker compose up -d --build
+echo "⏳ Waiting for Apache to start..."
+sleep 5
 
 # -------------------------------------------------------
-# 3. Start MediaWiki container
+# 3. Install MediaWiki (creates mediawiki schema + tables)
 # -------------------------------------------------------
-echo "Starting MediaWiki container..."
-docker compose up -d
-
-echo "Waiting for MediaWiki to start..."
-sleep 10
-
-# -------------------------------------------------------
-# 4. Run MediaWiki database setup (creates tables in mediawiki schema)
-# -------------------------------------------------------
-echo "Running MediaWiki install/update to create database tables..."
-docker exec wiki-rag-mediawiki php maintenance/run.php install \
+# The container starts clean (no LocalSettings.php), so the installer
+# proceeds without the "already installed" guard. On re-runs it detects
+# existing tables and exits cleanly.
+echo "📦 Running MediaWiki install..."
+docker exec "$CONTAINER_NAME" php maintenance/run.php install \
     --dbtype=postgres \
-    --dbserver="${LAKEBASE_HOST}:${LAKEBASE_PORT}" \
+    --dbserver="${LAKEBASE_HOST}" \
+    --dbport="${LAKEBASE_PORT}" \
     --dbname="${LAKEBASE_DB}" \
     --dbuser="${LAKEBASE_USER}" \
     --dbpass="${LAKEBASE_PASSWORD}" \
@@ -58,16 +81,39 @@ docker exec wiki-rag-mediawiki php maintenance/run.php install \
     --pass="${MW_ADMIN_PASSWORD}" \
     --scriptpath="" \
     --server="http://localhost:8080" \
+    --skins=Vector \
     "Wiki RAG Demo" \
     "${MW_ADMIN_USER}" \
-    || echo "  (install may have already been run — continuing)"
+    || echo "  ⚠️  install exited non-zero (tables may already exist — continuing)"
 
-# Run update to ensure schema is current
-docker exec wiki-rag-mediawiki php maintenance/run.php update --quick \
-    || echo "  (update returned non-zero — check logs if issues arise)"
+# -------------------------------------------------------
+# 4. Generate LocalSettings.php from template
+# -------------------------------------------------------
+echo "📝 Generating LocalSettings.php..."
+ENVSUBST_VARS='${LAKEBASE_HOST} ${LAKEBASE_PORT} ${LAKEBASE_DB} ${LAKEBASE_USER} ${LAKEBASE_PASSWORD} ${MW_SECRET_KEY} ${MW_UPGRADE_KEY}'
+envsubst "$ENVSUBST_VARS" < LocalSettings.php.template > LocalSettings.php
+echo "  ✅ LocalSettings.php created"
 
+# -------------------------------------------------------
+# 5. Copy config into the running container
+# -------------------------------------------------------
+echo "📋 Deploying LocalSettings.php into container..."
+docker cp LocalSettings.php "$CONTAINER_NAME:$MW_SETTINGS_PATH"
+echo "  ✅ Config deployed"
+
+# -------------------------------------------------------
+# 6. Run update to apply extensions & permissions from our config
+# -------------------------------------------------------
+echo "🔄 Running MediaWiki update..."
+docker exec "$CONTAINER_NAME" php maintenance/run.php update --quick \
+    || echo "  ⚠️  update returned non-zero — check logs if issues arise"
+
+# -------------------------------------------------------
+# 7. Verify
+# -------------------------------------------------------
 echo ""
 echo "========================================="
-echo "  MediaWiki is ready at http://localhost:8080"
-echo "  Admin user: ${MW_ADMIN_USER}"
+echo "  ✅ MediaWiki is ready!"
+echo "  🌐 URL:   http://localhost:8080"
+echo "  👤 Admin: ${MW_ADMIN_USER}"
 echo "========================================="

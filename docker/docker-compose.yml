@@ -1,12 +1,16 @@
 services:
   mediawiki:
-    image: mediawiki:1.42
+    build: .
+    image: wiki-rag-mediawiki:1.42
     container_name: wiki-rag-mediawiki
     ports:
       - "8080:80"
     volumes:
-      - ./LocalSettings.php:/var/www/html/LocalSettings.php:ro
       - wiki_images:/var/www/html/images
+      # NOTE: LocalSettings.php is NOT bind-mounted here.
+      # MediaWiki's installer refuses to create tables if it detects an
+      # existing LocalSettings.php. Instead, setup.sh copies the file
+      # into the container AFTER install completes (via docker cp).
     environment:
       - MW_DB_TYPE=postgres
     restart: unless-stopped

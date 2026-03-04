@@ -1,32 +1,41 @@
 <?php
 # MediaWiki LocalSettings.php
-# Generated from LocalSettings.php.template via envsubst — do not edit directly.
+# Generated from LocalSettings.php.template by setup.sh — do not edit directly.
 
-# ---------- Site info ----------
+# ---------- Site ----------
 $wgSitename = "Wiki RAG Demo";
 $wgMetaNamespace = "Wiki_RAG";
 $wgScriptPath = "";
 $wgServer = "http://localhost:8080";
 
 # ---------- Database — Lakebase PostgreSQL ----------
-$wgDBtype = "postgres";
-$wgDBserver = "${LAKEBASE_HOST}:${LAKEBASE_PORT}";
-$wgDBname = "${LAKEBASE_DB}";
-$wgDBuser = "${LAKEBASE_USER}";
+$wgDBtype     = "postgres";
+$wgDBserver   = "${LAKEBASE_HOST}";
+$wgDBport     = ${LAKEBASE_PORT};
+$wgDBname     = "${LAKEBASE_DB}";
+$wgDBuser     = "${LAKEBASE_USER}";
 $wgDBpassword = "${LAKEBASE_PASSWORD}";
 $wgDBmwschema = "mediawiki";
-$wgDBssl = true;
+$wgDBssl      = true;
 
 # ---------- Security ----------
-$wgSecretKey = "${MW_SECRET_KEY}";
+$wgSecretKey  = "${MW_SECRET_KEY}";
 $wgUpgradeKey = "${MW_UPGRADE_KEY}";
 
 # ---------- Caching ----------
-$wgMainCacheType = CACHE_NONE;
-$wgMemCachedServers = [];
+# APCu: in-process memory cache — dramatically reduces DB round-trips
+# to Lakebase (cloud-hosted PG with network latency on every query).
+$wgMainCacheType    = CACHE_ACCEL;
+$wgMessageCacheType = CACHE_ACCEL;
+$wgParserCacheType  = CACHE_ACCEL;
+$wgSessionCacheType = CACHE_ACCEL;
 
-# ---------- File uploads ----------
-$wgEnableUploads = true;
+# Store localization data in files instead of hitting the DB per request.
+$wgCacheDirectory = "$IP/cache";
+$wgLocalisationCacheConf['store'] = 'file';
+
+# ---------- Uploads ----------
+$wgEnableUploads  = true;
 $wgUseImageMagick = false;
 
 # ---------- Skin ----------
@@ -37,12 +46,14 @@ $wgDefaultSkin = "vector";
 wfLoadExtension('ParserFunctions');
 
 # ---------- Permissions ----------
-# Anonymous users can read but not modify content.
-# This prevents data poisoning of the RAG pipeline via unauthorized edits.
-$wgGroupPermissions['*']['edit'] = false;
-$wgGroupPermissions['*']['createpage'] = false;
+# Anonymous: read-only. Prevents data poisoning of the RAG pipeline.
+$wgGroupPermissions['*']['edit']          = false;
+$wgGroupPermissions['*']['createpage']    = false;
 $wgGroupPermissions['*']['createaccount'] = false;
 
-# Only logged-in users can edit and create pages.
-$wgGroupPermissions['user']['edit'] = true;
+# Logged-in users: full editing.
+$wgGroupPermissions['user']['edit']       = true;
 $wgGroupPermissions['user']['createpage'] = true;
+
+# ---------- Debug (disable after initial setup) ----------
+$wgShowExceptionDetails = true;
