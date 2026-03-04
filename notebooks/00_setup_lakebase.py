@@ -10,8 +10,9 @@
 # MAGIC **Steps:**
 # MAGIC 1. Provisions a Lakebase instance (PG 17, 1 CU)
 # MAGIC 2. Creates the `wikidb` database
-# MAGIC 3. Stores connection credentials in a Databricks secret scope
-# MAGIC 4. Enables `pgvector` and creates the `wiki_rag` schema, tables, and indexes
+# MAGIC 3. Enables native PG login and creates a `mediawiki` role (static password for MediaWiki)
+# MAGIC 4. Stores connection credentials in a Databricks secret scope
+# MAGIC 5. Enables `pgvector` and creates the `wiki_rag` schema, tables, and indexes
 # MAGIC 
 # MAGIC > Idempotent — all operations use `IF NOT EXISTS` / `ON CONFLICT DO NOTHING`.
 # MAGIC >
@@ -30,11 +31,20 @@
 # COMMAND ----------
 
 dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Instance Name")
+dbutils.widgets.text("mw_password", "", "MediaWiki PG Role Password")
 
 INSTANCE_NAME = dbutils.widgets.get("instance_name")
+MW_PASSWORD = dbutils.widgets.get("mw_password")
 DB_NAME = "wikidb"
+MW_ROLE = "mediawiki"
 SCOPE = "wiki-rag"
 SCHEMA = "wiki_rag"
+
+if not MW_PASSWORD:
+    raise ValueError(
+        "Set the 'mw_password' widget — this will be the static password "
+        "for the 'mediawiki' PG role used by the MediaWiki container."
+    )
 
 # COMMAND ----------
 
@@ -106,6 +116,72 @@ bootstrap_conn.close()
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Enable native PG login and create MediaWiki role
+# MAGIC
+# MAGIC OAuth tokens expire after ~1 hour — unsuitable for a long-running MediaWiki container.
+# MAGIC Native PG login lets us create a standard PostgreSQL role with a static password.
+
+# COMMAND ----------
+
+# Enable native PG login on the instance (idempotent — no-op if already enabled)
+if not instance.enable_pg_native_login:
+    print("⏳ Enabling native PG login ...")
+    instance = w.database.update_database_instance(
+        name=INSTANCE_NAME,
+        database_instance=DatabaseInstance(enable_pg_native_login=True),
+        update_mask="enable_pg_native_login",
+    )
+    print("✓ Native PG login enabled")
+else:
+    print("✓ Native PG login already enabled")
+
+# COMMAND ----------
+
+# Create a dedicated role for MediaWiki with a static password.
+# Needs a fresh OAuth connection to wikidb for the GRANT statements.
+cred = w.database.generate_database_credential(
+    request_id=str(uuid.uuid4()),
+    instance_names=[INSTANCE_NAME],
+)
+role_conn = psycopg2.connect(
+    host=instance.read_write_dns,
+    dbname=DB_NAME,
+    user=current_user,
+    password=cred.token,
+    sslmode="require",
+)
+role_conn.autocommit = True
+
+with role_conn.cursor() as cur:
+    cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (MW_ROLE,))
+    if cur.fetchone():
+        # Update password in case it changed
+        cur.execute(
+            sql.SQL("ALTER ROLE {} WITH LOGIN PASSWORD %s").format(sql.Identifier(MW_ROLE)),
+            (MW_PASSWORD,),
+        )
+        print(f"✓ Role '{MW_ROLE}' already exists — password updated")
+    else:
+        cur.execute(
+            sql.SQL("CREATE ROLE {} WITH LOGIN PASSWORD %s").format(sql.Identifier(MW_ROLE)),
+            (MW_PASSWORD,),
+        )
+        print(f"✓ Role '{MW_ROLE}' created")
+
+    # Grant permissions: MediaWiki needs full ownership of its schema
+    cur.execute(sql.SQL("GRANT ALL ON DATABASE {} TO {}").format(
+        sql.Identifier(DB_NAME), sql.Identifier(MW_ROLE),
+    ))
+    cur.execute(sql.SQL("GRANT ALL ON SCHEMA {} TO {}").format(
+        sql.Identifier("public"), sql.Identifier(MW_ROLE),
+    ))
+    print(f"✓ Grants applied to '{MW_ROLE}' on '{DB_NAME}'")
+
+role_conn.close()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Store credentials in secret scope
 
 # COMMAND ----------
@@ -121,6 +197,8 @@ secrets = {
     "lakebase_user": current_user,
     "lakebase_db": DB_NAME,
     "lakebase_host": instance.read_write_dns,
+    "mw_role": MW_ROLE,
+    "mw_password": MW_PASSWORD,
 }
 for key, value in secrets.items():
     w.secrets.put_secret(scope=SCOPE, key=key, string_value=value)

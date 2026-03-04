@@ -72,28 +72,23 @@ Run the setup notebook on your Databricks workspace:
 notebooks/00_setup_lakebase.py
 ```
 
-This provisions a Lakebase Provisioned instance, creates the `wikidb` database, stores credentials in the `wiki-rag` secret scope, and runs all DDL (pgvector extension, `wiki_rag` schema, tables, indexes).
+This notebook:
+1. Provisions a Lakebase Provisioned instance
+2. Creates the `wikidb` database
+3. Enables **native PG login** and creates a `mediawiki` role with a static password (no token expiration)
+4. Stores all credentials in the `wiki-rag` secret scope
+5. Runs all DDL (pgvector extension, `wiki_rag` schema, tables, indexes)
 
-After it completes, verify you can retrieve the credentials:
+> **Important:** Set the `mw_password` widget before running — this becomes the static password for the `mediawiki` PostgreSQL role used by the Docker container.
+
+After it completes, verify the credentials:
 
 ```bash
 databricks secrets get-secret wiki-rag lakebase_host
-databricks secrets get-secret wiki-rag lakebase_user
+databricks secrets get-secret wiki-rag mw_role
 ```
 
-### Step 2 — Generate a Lakebase OAuth token
-
-MediaWiki needs a password to connect. Generate a short-lived token:
-
-```bash
-databricks database generate-database-credential \
-  --instance-names wiki-rag-lakebase \
-  --output json | jq -r '.token'
-```
-
-> **Note:** This token expires after ~1 hour. For long-running MediaWiki usage, you'll need to regenerate it periodically.
-
-### Step 3 — Configure and start MediaWiki
+### Step 2 — Configure and start MediaWiki
 
 ```bash
 cd docker
@@ -108,11 +103,13 @@ Edit `docker/.env` with your Lakebase credentials:
 LAKEBASE_HOST=<output of: databricks secrets get-secret wiki-rag lakebase_host>
 LAKEBASE_PORT=5432
 LAKEBASE_DB=wikidb
-LAKEBASE_USER=<your Databricks email>
-LAKEBASE_PASSWORD=<token from Step 2>
+LAKEBASE_USER=mediawiki
+LAKEBASE_PASSWORD=<the password you set in the mw_password widget>
 MW_SECRET_KEY=<openssl rand -hex 32>
 MW_UPGRADE_KEY=<openssl rand -hex 16>
 ```
+
+> The `mediawiki` role uses native PG login with a static password — no token rotation needed.
 
 Then run the bootstrap script:
 
@@ -129,7 +126,7 @@ This will:
 
 You can now access MediaWiki at **http://localhost:8080** (admin: `Admin` / `admin123`). Add some wiki pages — these will be ingested in the next step.
 
-### Step 4 — Ingest, chunk, and embed
+### Step 3 — Ingest, chunk, and embed
 
 Run on your Databricks workspace:
 
@@ -141,7 +138,7 @@ This reads MediaWiki's native `mediawiki.page` / `mediawiki.revision` / `mediawi
 
 It's **incremental** — only processes pages with `rev_id` greater than the stored watermark. Safe to re-run after adding new wiki content.
 
-### Step 5 — Test the RAG agent
+### Step 4 — Test the RAG agent
 
 Run interactively on your Databricks workspace:
 
@@ -151,7 +148,7 @@ notebooks/02_rag_agent.py
 
 Test the retriever in isolation, then the full LangGraph agent (retrieve → grade → rewrite → generate). Modify the `QUESTION` variable to try your own queries.
 
-### Step 6 — Deploy the serving endpoint
+### Step 5 — Deploy the serving endpoint
 
 Run on your Databricks workspace:
 
@@ -163,17 +160,37 @@ This logs the `WikiRAGModel` PyFunc to MLflow, registers it in Unity Catalog (`m
 
 The endpoint environment variables are wired to the `wiki-rag` secret scope automatically.
 
-### Step 7 — Deploy the Streamlit chat UI
+### Step 6 — Deploy the Streamlit chat UI and ingestion workflow
+
+Deploy everything with the DAB bundle:
+
+```bash
+databricks bundle deploy
+```
+
+This deploys:
+- **Ingestion workflow** (`wiki-rag-ingestion`) — scheduled hourly (paused by default), runs `01_ingest_mediawiki.py` on serverless compute to pick up new wiki edits incrementally
+- **Streamlit app** reference for the chat UI
+
+To deploy the Streamlit app separately:
 
 ```bash
 databricks apps create wiki-rag-app --source-code-path app/
 ```
 
-Or deploy with the DAB bundle:
+### Step 7 — Enable the ingestion schedule
+
+The ingestion workflow is deployed **paused** so you can verify everything works first. Unpause it when ready:
 
 ```bash
-databricks bundle deploy
+# Find the job ID
+databricks jobs list --name wiki-rag-ingestion
+
+# Unpause the schedule
+databricks jobs update <JOB_ID> --json '{"schedule": {"pause_status": "UNPAUSED"}}'
 ```
+
+Or unpause from the Databricks **Workflows** UI. The job runs every hour, processes only new pages (incremental via watermark), and exits gracefully when there's nothing new.
 
 ## Database Schema
 
@@ -197,7 +214,20 @@ wiki_rag.sync_state (key, value, updated_at)
 
 ## Connecting to Lakebase from a SQL client
 
-You can inspect the data using pgAdmin, DBeaver, or VS Code SQLTools:
+You can inspect the data using pgAdmin, DBeaver, or VS Code SQLTools.
+
+**With the `mediawiki` role (static password):**
+
+| Field | Value |
+|-------|-------|
+| Host | `databricks secrets get-secret wiki-rag lakebase_host` |
+| Port | `5432` |
+| Database | `wikidb` |
+| Username | `mediawiki` |
+| Password | The password you set in the `mw_password` widget |
+| SSL Mode | `require` |
+
+**With your Databricks identity (OAuth token, expires ~1h):**
 
 | Field | Value |
 |-------|-------|
@@ -207,8 +237,6 @@ You can inspect the data using pgAdmin, DBeaver, or VS Code SQLTools:
 | Username | Your Databricks email |
 | Password | `databricks database generate-database-credential --instance-names wiki-rag-lakebase` |
 | SSL Mode | `require` |
-
-> The password is a short-lived OAuth token (~1 hour). Regenerate as needed.
 
 ## Secret Scope Reference
 
@@ -220,3 +248,5 @@ All credentials are stored in the `wiki-rag` Databricks secret scope:
 | `lakebase_user` | Databricks username (email) |
 | `lakebase_db` | Database name (`wikidb`) |
 | `lakebase_host` | Lakebase endpoint DNS |
+| `mw_role` | MediaWiki PG role name (`mediawiki`) |
+| `mw_password` | Static password for the `mediawiki` PG role |
