@@ -1,12 +1,17 @@
-resources:
-  apps:
-    wiki_rag_app:da
-      name: ${var.app_name}
-      source_code_path: ../app
-      description: "Wiki RAG Chat UI"
-
-      resources:
-        - name: wiki-rag-serving
-          serving_endpoint:
-            name: ${var.endpoint_name}
-            permission: CAN_QUERY
+# Databricks App is deployed after the serving endpoint is live.
+# Run: databricks apps create wiki-rag-app --source-code-path app/
+#
+# Keeping this as a reference for future production deployment:
+#
+# resources:
+#   apps:
+#     wiki_rag_app:
+#       name: ${var.app_name}
+#       source_code_path: ../app
+#       description: "Wiki RAG Chat UI"
+#
+#       resources:
+#         - name: wiki-rag-serving
+#           serving_endpoint:
+#             name: ${var.endpoint_name}
+#             permission: CAN_QUERY
