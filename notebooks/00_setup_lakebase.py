@@ -74,7 +74,7 @@ except NotFound:
         database_instance=DatabaseInstance(
             name=INSTANCE_NAME,
             capacity="CU_1",
-            pg_version="17",
+            pg_version="16",  # Azure Lakebase Provisioned supports PG 16 (PG 17 is AWS-only)
         )
     ).result()
     print(f"✓ Instance '{INSTANCE_NAME}' created")

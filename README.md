@@ -62,6 +62,12 @@ wiki-rag-dtbricks/
 - Docker and Docker Compose (for MediaWiki)
 - Python 3.11+
 
+> **Azure Brazil South:** All required services are available. You **must enable
+> [cross-geography routing](https://learn.microsoft.com/en-us/azure/databricks/resources/databricks-geos#cross-geo-processing)**
+> in your workspace settings — this is required for Foundation Model API calls
+> (`databricks-gte-large-en` and `databricks-meta-llama-3-3-70b-instruct`).
+> Lakebase Provisioned is in **Public Preview** on Azure and supports PG 16.
+
 ## Setup
 
 ### Step 1 — Provision Lakebase and create the schema
