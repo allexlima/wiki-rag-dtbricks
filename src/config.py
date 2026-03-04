@@ -14,6 +14,7 @@ import psycopg2
 from databricks.sdk import WorkspaceClient
 
 SCOPE = "wiki-rag"
+CONNECT_TIMEOUT_SECONDS = 30
 
 
 def _get_dbutils():
@@ -61,9 +62,10 @@ def _get_secrets() -> dict[str, str]:
     config["db_name"] = secret("lakebase_db") or config["db_name"]
 
     # endpoint_host may not exist yet if this runs before 00_setup_lakebase stores it.
+    # dbutils raises py4j.protocol.Py4JJavaError when a secret key doesn't exist.
     try:
         config["endpoint_host"] = config["endpoint_host"] or secret("lakebase_host")
-    except Exception:
+    except Exception:  # noqa: BLE001 — Py4J wraps Java exceptions; can't narrow further
         pass
 
     return config
@@ -91,4 +93,5 @@ def get_lakebase_conn(
         user=config["db_user"],
         password=cred.token,
         sslmode="require",
+        connect_timeout=CONNECT_TIMEOUT_SECONDS,
     )

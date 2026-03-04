@@ -2,9 +2,12 @@
 WikiRAG Streamlit Chat UI — Databricks App.
 """
 import json
+import logging
 import os
 
 import streamlit as st
+
+log = logging.getLogger(__name__)
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import DataframeSplitInput
 
@@ -65,8 +68,9 @@ if prompt := st.chat_input("Ask a question about the wiki..."):
                 # Handle sources as string (JSON) from serving
                 if isinstance(sources, str):
                     sources = json.loads(sources)
-            except Exception as e:
-                answer = f"Error: {e}"
+            except Exception:
+                log.exception("RAG query failed")
+                answer = "Sorry, something went wrong. Please try again later."
                 sources = []
 
         st.markdown(answer)

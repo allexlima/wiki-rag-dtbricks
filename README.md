@@ -105,11 +105,15 @@ LAKEBASE_PORT=5432
 LAKEBASE_DB=wikidb
 LAKEBASE_USER=mediawiki
 LAKEBASE_PASSWORD=<the password you set in the mw_password widget>
+MW_ADMIN_USER=Admin
+MW_ADMIN_PASSWORD=<choose a strong admin password>
 MW_SECRET_KEY=<openssl rand -hex 32>
 MW_UPGRADE_KEY=<openssl rand -hex 16>
 ```
 
 > The `mediawiki` role uses native PG login with a static password — no token rotation needed.
+>
+> **Security:** Do not use weak passwords for `MW_ADMIN_PASSWORD` or `LAKEBASE_PASSWORD`, even in demo environments.
 
 Then run the bootstrap script:
 
@@ -124,7 +128,7 @@ This will:
 3. Run `php maintenance/run.php install` to create MediaWiki's native tables in the `mediawiki` schema on Lakebase
 4. Run `php maintenance/run.php update` to ensure the schema is current
 
-You can now access MediaWiki at **http://localhost:8080** (admin: `Admin` / `admin123`). Add some wiki pages — these will be ingested in the next step.
+You can now access MediaWiki at **http://localhost:8080** (admin credentials: as configured in `MW_ADMIN_USER` / `MW_ADMIN_PASSWORD`). Only authenticated users can edit pages — log in first, then add some wiki content to be ingested in the next step.
 
 ### Step 3 — Ingest, chunk, and embed
 

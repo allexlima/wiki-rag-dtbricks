@@ -36,7 +36,13 @@ $wgDefaultSkin = "vector";
 # ---------- Extensions ----------
 wfLoadExtension('ParserFunctions');
 
-# ---------- Permissions (open wiki for demo) ----------
-$wgGroupPermissions['*']['edit'] = true;
-$wgGroupPermissions['*']['createpage'] = true;
-$wgGroupPermissions['*']['createaccount'] = true;
+# ---------- Permissions ----------
+# Anonymous users can read but not modify content.
+# This prevents data poisoning of the RAG pipeline via unauthorized edits.
+$wgGroupPermissions['*']['edit'] = false;
+$wgGroupPermissions['*']['createpage'] = false;
+$wgGroupPermissions['*']['createaccount'] = false;
+
+# Only logged-in users can edit and create pages.
+$wgGroupPermissions['user']['edit'] = true;
+$wgGroupPermissions['user']['createpage'] = true;

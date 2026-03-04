@@ -43,6 +43,7 @@ class WikiRAGModel(mlflow.pyfunc.PythonModel):
             user=self.db_user,
             password=cred.token,
             sslmode="require",
+            connect_timeout=30,
         )
         register_vector(conn)
         return conn

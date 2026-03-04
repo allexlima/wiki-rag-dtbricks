@@ -18,6 +18,15 @@ fi
 # shellcheck disable=SC1091
 source .env
 
+# Validate required env vars
+for var in LAKEBASE_HOST LAKEBASE_PORT LAKEBASE_DB LAKEBASE_USER LAKEBASE_PASSWORD \
+           MW_ADMIN_USER MW_ADMIN_PASSWORD MW_SECRET_KEY MW_UPGRADE_KEY; do
+    if [ -z "${!var:-}" ]; then
+        echo "ERROR: Required variable '$var' is not set in .env"
+        exit 1
+    fi
+done
+
 # -------------------------------------------------------
 # 2. Generate LocalSettings.php from template
 # -------------------------------------------------------
@@ -46,18 +55,19 @@ docker exec wiki-rag-mediawiki php maintenance/run.php install \
     --dbpass="${LAKEBASE_PASSWORD}" \
     --installdbuser="${LAKEBASE_USER}" \
     --installdbpass="${LAKEBASE_PASSWORD}" \
-    --pass=admin123 \
+    --pass="${MW_ADMIN_PASSWORD}" \
     --scriptpath="" \
     --server="http://localhost:8080" \
     "Wiki RAG Demo" \
-    "Admin" \
-    2>/dev/null || true
+    "${MW_ADMIN_USER}" \
+    || echo "  (install may have already been run — continuing)"
 
 # Run update to ensure schema is current
-docker exec wiki-rag-mediawiki php maintenance/run.php update --quick 2>/dev/null || true
+docker exec wiki-rag-mediawiki php maintenance/run.php update --quick \
+    || echo "  (update returned non-zero — check logs if issues arise)"
 
 echo ""
 echo "========================================="
 echo "  MediaWiki is ready at http://localhost:8080"
-echo "  Admin user: Admin / admin123"
+echo "  Admin user: ${MW_ADMIN_USER}"
 echo "========================================="

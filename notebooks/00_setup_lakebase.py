@@ -203,9 +203,12 @@ secrets = {
 for key, value in secrets.items():
     w.secrets.put_secret(scope=SCOPE, key=key, string_value=value)
 
+SAFE_TO_DISPLAY = {"lakebase_instance_name", "lakebase_user", "lakebase_db", "mw_role"}
+
 print("✓ Secrets stored:")
-for key, value in secrets.items():
-    print(f"  {key} = {value}")
+for key in secrets:
+    display = secrets[key] if key in SAFE_TO_DISPLAY else "********"
+    print(f"  {key} = {display}")
 
 # COMMAND ----------
 
