@@ -19,23 +19,17 @@ End-to-end Retrieval-Augmented Generation (RAG) system that turns a self-hosted 
 
 **Data flow:**
 
-```
-MediaWiki (Docker)
-    │ writes to
-    ▼
-Lakebase PostgreSQL ── mediawiki schema (native MW tables)
-    │ read by
-    ▼
-Ingestion Pipeline ──► clean wikitext ──► chunk ──► embed (Foundation Model API)
-    │ writes to
-    ▼
-Lakebase PostgreSQL ── wiki_rag schema (pgvector)
-    │ queried by
-    ▼
-LangGraph RAG Agent ──► grade docs ──► rewrite query? ──► generate answer
-    │ served by
-    ▼
-MLflow Model Serving ◄── Streamlit Chat UI
+```mermaid
+flowchart TD
+    MW["🌐 MediaWiki (Docker)"] -->|writes to| LB_MW["🐘 Lakebase — mediawiki schema"]
+    LB_MW -->|read by| INGEST["⚙️ Ingestion Pipeline"]
+    INGEST -->|clean → chunk → embed| FMAPI["🤖 Foundation Model API"]
+    FMAPI -->|vectors| LB_RAG["🐘 Lakebase — wiki_rag schema (pgvector)"]
+    INGEST -->|writes to| LB_RAG
+    LB_RAG -->|cosine search| AGENT["🧠 LangGraph RAG Agent"]
+    AGENT -->|retrieve → grade → rewrite? → generate| LLM["🤖 Llama 3.3 70B"]
+    LLM -->|answer| SERVING["📡 MLflow Model Serving"]
+    SERVING -->|REST API| UI["💬 Streamlit Chat UI"]
 ```
 
 ## 📁 Project Structure
@@ -115,7 +109,7 @@ databricks secrets get-secret wiki-rag mw_role
 
 ---
 
-### Step 2 — Start MediaWiki
+### Step 2 - Start MediaWiki
 
 ```bash
 cd docker
