@@ -31,13 +31,18 @@ sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 import mlflow
 from mlflow.models.resources import DatabricksServingEndpoint
 
-CATALOG = "main"
-SCHEMA = "wiki_rag"
-MODEL_NAME = f"{CATALOG}.{SCHEMA}.wiki_rag_agent"
-ENDPOINT_NAME = "wiki-rag-endpoint"
+# Parameters — auto-populated by DAB job base_parameters, or set manually via widgets
+dbutils.widgets.text("model_name", "main.wiki_rag.wiki_rag_agent", "UC Model Name")
+dbutils.widgets.text("endpoint_name", "wiki-rag-endpoint", "Serving Endpoint Name")
+dbutils.widgets.text("embedding_model", "databricks-gte-large-en", "Embedding Model")
+dbutils.widgets.text("llm_model", "databricks-meta-llama-3-3-70b-instruct", "LLM Model")
+dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
 
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
-EMBEDDING_ENDPOINT = "databricks-gte-large-en"
+MODEL_NAME = dbutils.widgets.get("model_name")
+ENDPOINT_NAME = dbutils.widgets.get("endpoint_name")
+EMBEDDING_ENDPOINT = dbutils.widgets.get("embedding_model")
+LLM_ENDPOINT = dbutils.widgets.get("llm_model")
+SECRET_SCOPE = dbutils.widgets.get("secret_scope")
 
 mlflow.set_registry_uri("databricks-uc")
 
@@ -113,13 +118,13 @@ REQUIRED_SECRETS = [
     "mw_password",
 ]
 
-print("Validating secrets in scope 'wiki-rag':")
+print(f"Validating secrets in scope '{SECRET_SCOPE}':")
 for key in REQUIRED_SECRETS:
     try:
-        val = w.secrets.get_secret("wiki-rag", key)
+        val = w.secrets.get_secret(SECRET_SCOPE, key)
         print(f"  ✓ {key}")
     except Exception as e:
-        raise ValueError(f"Missing required secret 'wiki-rag/{key}': {e}") from e
+        raise ValueError(f"Missing required secret '{SECRET_SCOPE}/{key}': {e}") from e
 
 print("✓ All secrets validated")
 
@@ -142,12 +147,12 @@ served_entity = ServedEntityInput(
     workload_size="Small",
     scale_to_zero_enabled=True,
     environment_vars={
-        "LAKEBASE_INSTANCE": "{{secrets/wiki-rag/lakebase_instance_name}}",
-        "LAKEBASE_HOST": "{{secrets/wiki-rag/lakebase_host}}",
-        "LAKEBASE_PORT": "{{secrets/wiki-rag/lakebase_port}}",
-        "LAKEBASE_DB": "{{secrets/wiki-rag/lakebase_db}}",
-        "LAKEBASE_USER": "{{secrets/wiki-rag/mw_role}}",
-        "LAKEBASE_PASSWORD": "{{secrets/wiki-rag/mw_password}}",
+        "LAKEBASE_INSTANCE": f"{{{{secrets/{SECRET_SCOPE}/lakebase_instance_name}}}}",
+        "LAKEBASE_HOST": f"{{{{secrets/{SECRET_SCOPE}/lakebase_host}}}}",
+        "LAKEBASE_PORT": f"{{{{secrets/{SECRET_SCOPE}/lakebase_port}}}}",
+        "LAKEBASE_DB": f"{{{{secrets/{SECRET_SCOPE}/lakebase_db}}}}",
+        "LAKEBASE_USER": f"{{{{secrets/{SECRET_SCOPE}/mw_role}}}}",
+        "LAKEBASE_PASSWORD": f"{{{{secrets/{SECRET_SCOPE}/mw_password}}}}",
         "EMBEDDING_MODEL": EMBEDDING_ENDPOINT,
         "LLM_MODEL": LLM_ENDPOINT,
     },

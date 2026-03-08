@@ -34,23 +34,29 @@
 # COMMAND ----------
 
 dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Instance Name")
-dbutils.widgets.text("mw_password", "", "MediaWiki PG Role Password")
+dbutils.widgets.text("db_name", "wikidb", "Database Name")
+dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope Name")
 
 # COMMAND ----------
 
 INSTANCE_NAME = dbutils.widgets.get("instance_name")
-MW_PASSWORD = dbutils.widgets.get("mw_password")
-DB_NAME = "wikidb"
+DB_NAME = dbutils.widgets.get("db_name")
 DB_PORT = "5432"
 MW_ROLE = "mediawiki"
-SCOPE = "wiki-rag"
+SCOPE = dbutils.widgets.get("secret_scope")
 SCHEMA = "wiki_rag"
 
-if not MW_PASSWORD or len(MW_PASSWORD) < 8:
+# Password is read from the secret scope (stored by scripts/setup_secrets.py)
+try:
+    MW_PASSWORD = dbutils.secrets.get(SCOPE, "mw_password")
+except Exception:
     raise ValueError(
-        "Set 'mw_password' widget (>= 8 chars) — "
-        "static password for the 'mediawiki' PG role."
+        f"Secret 'mw_password' not found in scope '{SCOPE}'. "
+        "Run 'make setup-secrets' or 'python scripts/setup_secrets.py' first."
     )
+
+if not MW_PASSWORD or len(MW_PASSWORD) < 8:
+    raise ValueError("Secret 'mw_password' must be at least 8 characters.")
 
 # SCHEMA is interpolated into DDL f-strings below — must be a safe identifier
 if not SCHEMA.isidentifier():
