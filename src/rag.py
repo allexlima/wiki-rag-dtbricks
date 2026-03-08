@@ -33,6 +33,8 @@ from src.pipeline import WikiPipeline
 
 log = logging.getLogger(__name__)
 
+mlflow.langchain.autolog()
+
 # ---------------------------------------------------------------------------
 # Configuration (overridable via env vars in serving context)
 # ---------------------------------------------------------------------------
@@ -435,10 +437,9 @@ class WikiRAGAgent(ResponsesAgent):
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
         """Run the full RAG pipeline and return a structured response.
 
-        Extracts the user's question from the last message, loads
-        conversation history if a ``conversation_id`` is provided,
-        executes the LangGraph pipeline, persists the exchange,
-        and returns the answer with source citations.
+        Delegates to :meth:`predict_stream` and collects all output items,
+        following the Agent Bricks pattern where ``predict_stream`` is the
+        primary implementation.
 
         Args:
             request: An MLflow ``ResponsesAgentRequest`` with at least
@@ -448,61 +449,21 @@ class WikiRAGAgent(ResponsesAgent):
             A ``ResponsesAgentResponse`` containing the answer text
             and appended source citations.
         """
-        if not request.input:
-            return ResponsesAgentResponse(
-                output=[self.create_text_output_item(text="Please provide a question.", id="msg_err")]
-            )
-
-        messages = [{"role": m.role, "content": m.content} for m in request.input]
-        question = messages[-1].get("content", "").strip()
-
-        if not question:
-            return ResponsesAgentResponse(
-                output=[self.create_text_output_item(text="Please provide a non-empty question.", id="msg_err")]
-            )
-
-        conv_id = None
-        user_id = "anonymous"
-        if request.context:
-            conv_id = getattr(request.context, "conversation_id", None)
-            user_id = getattr(request.context, "user_id", None) or "anonymous"
-        if not conv_id:
-            conv_id = str(uuid.uuid4())
-
-        log.info("Processing: %s (conv=%s)", question[:80], conv_id[:8])
-
-        history = self._load_history(conv_id)
-
-        graph = self._build_graph()
-        result = graph.invoke({
-            "question": question,
-            "documents": [],
-            "generation": "",
-            "rewrite_count": 0,
-            "conversation_history": history,
-        })
-
-        answer = result.get("generation", "I could not generate an answer.")
-        sources = [
-            {"title": d["title"], "similarity": round(d["similarity"], 4)}
-            for d in result.get("documents", [])
+        outputs = [
+            event.item
+            for event in self.predict_stream(request)
+            if event.type == "response.output_item.done"
         ]
-
-        self._save_exchange(conv_id, user_id, question, answer, sources)
-
-        response_text = answer
-        if sources:
-            source_list = ", ".join(s["title"] for s in sources)
-            response_text += f"\n\n**Sources:** {source_list}"
-
-        return ResponsesAgentResponse(
-            output=[self.create_text_output_item(text=response_text, id="msg_1")]
-        )
+        return ResponsesAgentResponse(output=outputs)
 
     def predict_stream(
         self, request: ResponsesAgentRequest,
     ) -> Generator[ResponsesAgentStreamEvent, None, None]:
-        """Streaming predict — delegates to non-streaming for simplicity.
+        """Stream the RAG pipeline using LangGraph node-level streaming.
+
+        Runs the graph with ``stream_mode="updates"`` so each node
+        (retrieve, grade, rewrite, generate) streams its output as it
+        completes. The final answer is yielded as a stream event.
 
         Args:
             request: An MLflow ``ResponsesAgentRequest``.
@@ -510,9 +471,95 @@ class WikiRAGAgent(ResponsesAgent):
         Yields:
             ``ResponsesAgentStreamEvent`` objects for each output item.
         """
-        result = self.predict(request)
-        for item in result.output:
-            yield ResponsesAgentStreamEvent(type="response.output_item.done", item=item)
+        if not request.input:
+            yield ResponsesAgentStreamEvent(
+                type="response.output_item.done",
+                item=self.create_text_output_item(
+                    text="Please provide a question.",
+                    id="msg_err",
+                ),
+            )
+            return
+
+        messages = [
+            {"role": m.role, "content": m.content}
+            for m in request.input
+        ]
+        question = messages[-1].get("content", "").strip()
+
+        if not question:
+            yield ResponsesAgentStreamEvent(
+                type="response.output_item.done",
+                item=self.create_text_output_item(
+                    text="Please provide a non-empty question.",
+                    id="msg_err",
+                ),
+            )
+            return
+
+        conv_id = None
+        user_id = "anonymous"
+        if request.context:
+            conv_id = getattr(
+                request.context, "conversation_id", None,
+            )
+            user_id = (
+                getattr(request.context, "user_id", None)
+                or "anonymous"
+            )
+        if not conv_id:
+            conv_id = str(uuid.uuid4())
+
+        log.info(
+            "Processing: %s (conv=%s)",
+            question[:80], conv_id[:8],
+        )
+
+        history = self._load_history(conv_id)
+
+        graph = self._build_graph()
+        final_result: dict = {}
+        for event in graph.stream(
+            {
+                "question": question,
+                "documents": [],
+                "generation": "",
+                "rewrite_count": 0,
+                "conversation_history": history,
+            },
+            stream_mode="updates",
+        ):
+            for node_output in event.values():
+                final_result.update(node_output)
+
+        answer = final_result.get(
+            "generation", "I could not generate an answer.",
+        )
+        sources = [
+            {
+                "title": d["title"],
+                "similarity": round(d["similarity"], 4),
+            }
+            for d in final_result.get("documents", [])
+        ]
+
+        self._save_exchange(
+            conv_id, user_id, question, answer, sources,
+        )
+
+        response_text = answer
+        if sources:
+            source_list = ", ".join(
+                s["title"] for s in sources
+            )
+            response_text += f"\n\n**Sources:** {source_list}"
+
+        yield ResponsesAgentStreamEvent(
+            type="response.output_item.done",
+            item=self.create_text_output_item(
+                text=response_text, id="msg_1",
+            ),
+        )
 
 
 # ---------------------------------------------------------------------------

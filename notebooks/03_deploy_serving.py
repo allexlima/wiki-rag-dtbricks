@@ -29,7 +29,7 @@ import sys
 sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 
 import mlflow
-from mlflow.models.resources import DatabricksServingEndpoint
+from mlflow.models.resources import DatabricksLakebase, DatabricksServingEndpoint
 
 # Parameters — auto-populated by DAB job base_parameters, or set manually via widgets
 dbutils.widgets.text("model_name", "main.wiki_rag.wiki_rag_agent", "UC Model Name")
@@ -37,12 +37,14 @@ dbutils.widgets.text("endpoint_name", "wiki-rag-endpoint", "Serving Endpoint Nam
 dbutils.widgets.text("embedding_model", "databricks-gte-large-en", "Embedding Model")
 dbutils.widgets.text("llm_model", "databricks-meta-llama-3-3-70b-instruct", "LLM Model")
 dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
+dbutils.widgets.text("lakebase_instance_name", "wiki-rag-lakebase", "Lakebase Instance")
 
 MODEL_NAME = dbutils.widgets.get("model_name")
 ENDPOINT_NAME = dbutils.widgets.get("endpoint_name")
 EMBEDDING_ENDPOINT = dbutils.widgets.get("embedding_model")
 LLM_ENDPOINT = dbutils.widgets.get("llm_model")
 SECRET_SCOPE = dbutils.widgets.get("secret_scope")
+LAKEBASE_INSTANCE = dbutils.widgets.get("lakebase_instance_name")
 
 mlflow.set_registry_uri("databricks-uc")
 
@@ -56,6 +58,7 @@ mlflow.set_registry_uri("databricks-uc")
 resources = [
     DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
     DatabricksServingEndpoint(endpoint_name=EMBEDDING_ENDPOINT),
+    DatabricksLakebase(database_instance_name=LAKEBASE_INSTANCE),
 ]
 
 input_example = {

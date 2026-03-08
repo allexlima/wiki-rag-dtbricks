@@ -33,6 +33,7 @@ resources:
               embedding_model: ${var.embedding_model}
               llm_model: ${var.llm_model}
               secret_scope: ${var.secret_scope}
+              lakebase_instance_name: ${var.lakebase_instance_name}
             source: WORKSPACE
       max_concurrent_runs: 1
 

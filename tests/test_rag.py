@@ -165,21 +165,38 @@ def test_predict_empty_question():
 # ---------------------------------------------------------------------------
 
 
+def _make_stream_events(documents, generation):
+    """Build a mock graph.stream() return value (node-level updates)."""
+    return iter([
+        {"retrieve": {"documents": documents}},
+        {"grade_documents": {"documents": documents}},
+        {"generate": {"generation": generation}},
+    ])
+
+
 def test_predict_stream_yields_events():
-    """predict_stream wraps predict output items as stream events."""
+    """predict_stream uses graph.stream and yields output events."""
     agent = WikiRAGAgent()
 
-    # Use agent's actual create_text_output_item to get a real OutputItem
-    real_item = agent.create_text_output_item(text="streamed answer", id="msg_1")
-    mock_response = MagicMock()
-    mock_response.output = [real_item]
+    mock_graph = MagicMock()
+    mock_graph.stream.return_value = _make_stream_events(
+        documents=[{"title": "P", "similarity": 0.9,
+                     "source": "text", "text": "..."}],
+        generation="streamed answer",
+    )
 
-    with patch.object(agent, "predict", return_value=mock_response):
-        request = ResponsesAgentRequest(input=[{"role": "user", "content": "hi"}])
+    with patch.object(agent, "_build_graph", return_value=mock_graph), \
+         patch.object(agent, "_load_history", return_value=""), \
+         patch.object(agent, "_save_exchange"), \
+         patch.object(agent, "_get_conn", return_value=MagicMock()):
+        request = ResponsesAgentRequest(
+            input=[{"role": "user", "content": "hi"}],
+        )
         events = list(agent.predict_stream(request))
 
     assert len(events) == 1
     assert events[0].type == "response.output_item.done"
+    mock_graph.stream.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -215,16 +232,15 @@ def test_save_exchange_handles_error(mock_db_conn, mock_db_cursor):
 
 
 def test_predict_full_pipeline():
-    """predict() orchestrates graph, memory, and returns response."""
+    """predict() orchestrates graph.stream, memory, and returns response."""
     agent = WikiRAGAgent()
 
     mock_graph = MagicMock()
-    mock_graph.invoke.return_value = {
-        "question": "test",
-        "documents": [{"title": "Page A", "similarity": 0.9, "source": "text", "text": "..."}],
-        "generation": "The answer is here.",
-        "rewrite_count": 0,
-    }
+    mock_graph.stream.return_value = _make_stream_events(
+        documents=[{"title": "Page A", "similarity": 0.9,
+                     "source": "text", "text": "..."}],
+        generation="The answer is here.",
+    )
 
     with patch.object(agent, "_build_graph", return_value=mock_graph), \
          patch.object(agent, "_load_history", return_value=""), \
@@ -238,7 +254,7 @@ def test_predict_full_pipeline():
 
         text = _extract_text(response)
         assert "answer is here" in text.lower()
-        mock_graph.invoke.assert_called_once()
+        mock_graph.stream.assert_called_once()
         mock_save.assert_called_once()
 
 
@@ -249,16 +265,11 @@ def test_predict_full_pipeline():
 
 def test_run_agent_convenience():
     """run_agent() returns a dict with 'answer' and 'conversation_id'."""
-    agent = WikiRAGAgent()
-
-    # Build a real response via the agent itself
     mock_graph = MagicMock()
-    mock_graph.invoke.return_value = {
-        "question": "test",
-        "documents": [],
-        "generation": "The answer is 42.",
-        "rewrite_count": 0,
-    }
+    mock_graph.stream.return_value = _make_stream_events(
+        documents=[],
+        generation="The answer is 42.",
+    )
 
     with patch.object(WikiRAGAgent, "_build_graph", return_value=mock_graph), \
          patch.object(WikiRAGAgent, "_load_history", return_value=""), \
