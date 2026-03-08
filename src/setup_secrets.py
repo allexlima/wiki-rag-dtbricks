@@ -7,11 +7,13 @@ All other steps are automated via ``make deploy``.
 
 Usage:
     python src/setup_secrets.py
-    # or: make setup-secrets
+    make setup-secrets
+    make setup-secrets PROFILE=my-workspace
 """
 from __future__ import annotations
 
 import getpass
+import os
 import sys
 
 from databricks.sdk import WorkspaceClient
@@ -22,7 +24,11 @@ SCOPE = "wiki-rag"
 
 def main() -> None:
     """Prompt for the Lakebase password and store it in the Databricks secret scope."""
-    print("=== Wiki RAG — Secret Scope Setup ===\n")
+    profile = os.environ.get("DATABRICKS_CONFIG_PROFILE")
+    print("=== Wiki RAG — Secret Scope Setup ===")
+    if profile:
+        print(f"  Profile: {profile}")
+    print()
 
     password = getpass.getpass("Enter password for the 'mediawiki' Lakebase PG role: ")
     if len(password) < 8:
@@ -34,7 +40,7 @@ def main() -> None:
         print("ERROR: Passwords do not match.")
         sys.exit(1)
 
-    w = WorkspaceClient()
+    w = WorkspaceClient(profile=profile)
 
     # Create scope (idempotent)
     try:

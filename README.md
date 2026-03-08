@@ -24,6 +24,13 @@ Supports **multimodal content** (text + images), **multi-turn conversations** wi
 
 ### 1. Setup (one-time, ~10 min)
 
+If you have multiple Databricks profiles in `~/.databrickscfg`, export them once — all `make` commands will use them automatically:
+
+```bash
+export PROFILE=my-workspace   # Databricks CLI profile (omit if using DEFAULT)
+export TARGET=dev             # DAB target: dev (default) or prod
+```
+
 ```bash
 make setup-secrets      # Prompts for Lakebase password (the ONE interactive step)
 make setup-lakebase     # Provisions Lakebase, creates DB + role + schema + DDL
@@ -174,15 +181,17 @@ Runtime environment variables (read by `src/pipeline.py`):
 | `VISION_MODEL`  | `databricks-claude-sonnet-4-6` | Vision LLM for image captioning       |
 | `MEDIAWIKI_URL` | `http://localhost:8080`        | MediaWiki base URL for image fetching |
 
-Makefile overrides:
+Makefile overrides (`export` once or pass per command):
+
+| Variable  | Default     | Description                                                          |
+| --------- | ----------- | -------------------------------------------------------------------- |
+| `TARGET`  | `dev`       | DAB target (`dev` or `prod`)                                         |
+| `PROFILE` | *(default)* | Databricks CLI profile from `~/.databrickscfg`                       |
 
 ```bash
-make deploy TARGET=prod                          # Deploy to the prod DAB target
-make deploy PROFILE=my-workspace                 # Use a specific Databricks CLI profile
-make deploy TARGET=prod PROFILE=prod-workspace   # Combine both
+export PROFILE=my-workspace && make deploy       # Export once, all commands use it
+make deploy TARGET=prod PROFILE=prod-workspace   # Or pass per command
 ```
-
-The `PROFILE` flag is passed as `--profile` to all `databricks` CLI commands and as `DATABRICKS_CONFIG_PROFILE` to Python SDK scripts (`setup_secrets.py`) and shell scripts (`docker/setup.sh`).
 
 ---
 
