@@ -56,15 +56,18 @@ dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
 
 # COMMAND ----------
 
-import uuid
 from contextlib import closing
 
 import psycopg2
-from psycopg2 import sql
-
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import NotFound, ResourceAlreadyExists, ResourceDoesNotExist
-from databricks.sdk.service.postgres import Project, ProjectSpec
+from databricks.sdk.service.postgres import (
+    Duration,
+    Project,
+    ProjectDefaultEndpointSettings,
+    ProjectSpec,
+)
+from psycopg2 import sql
 
 # ─── Parameters ───────────────────────────────────────────────────────
 
@@ -109,7 +112,7 @@ print(f"🔧 User: {CURRENT_USER}  Project: {PROJECT_ID}  DB: {DB_NAME}")
 # MAGIC ## 1. Create Lakebase Autoscaling project
 # MAGIC 
 # MAGIC Creates a **Lakebase Autoscaling** project with PG 16. A new project automatically
-# MAGIC creates a `production` branch with a default compute endpoint (`ep-primary`) and
+# MAGIC creates a `production` branch with a default compute endpoint (`primary`) and
 # MAGIC the `databricks_postgres` database. The compute auto-scales based on load and
 # MAGIC scales to zero when idle (cost-optimized).
 # MAGIC 
@@ -117,18 +120,33 @@ print(f"🔧 User: {CURRENT_USER}  Project: {PROJECT_ID}  DB: {DB_NAME}")
 
 # COMMAND ----------
 
+# Autoscaling + scale-to-zero settings (applied at project creation)
+AUTOSCALE_MIN_CU = 0.5   # minimum compute (cost-optimized)
+AUTOSCALE_MAX_CU = 2.0   # maximum compute (handles load spikes)
+SCALE_TO_ZERO_SECONDS = 300  # 5 min idle → suspend compute
+
 try:
     project = w.postgres.get_project(name=PROJECT_PATH)
     print(f"✅ Project '{PROJECT_ID}' exists (pg_version={project.status.pg_version})")
 except NotFound:
     print(f"⏳ Creating project '{PROJECT_ID}' (this may take a few minutes)...")
     project = w.postgres.create_project(
-        project=Project(spec=ProjectSpec(display_name=PROJECT_ID, pg_version="16")),
+        project=Project(
+            spec=ProjectSpec(
+                display_name=PROJECT_ID,
+                pg_version="16",
+                default_endpoint_settings=ProjectDefaultEndpointSettings(
+                    autoscaling_limit_min_cu=AUTOSCALE_MIN_CU,
+                    autoscaling_limit_max_cu=AUTOSCALE_MAX_CU,
+                    suspend_timeout_duration=Duration(seconds=SCALE_TO_ZERO_SECONDS),
+                ),
+            )
+        ),
         project_id=PROJECT_ID,
     ).wait()
-    print("✅ Project created")
+    print(f"✅ Project created ({AUTOSCALE_MIN_CU}-{AUTOSCALE_MAX_CU} CU, scale-to-zero={SCALE_TO_ZERO_SECONDS}s)")
 
-# Get the primary endpoint DNS and state
+# Get the primary endpoint DNS
 endpoint = w.postgres.get_endpoint(name=ENDPOINT_PATH)
 HOST = endpoint.status.hosts.host
 print(f"✅ Endpoint {endpoint.status.current_state} → {HOST}")

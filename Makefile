@@ -158,11 +158,16 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 		echo "     ⏭️  Not found (already deleted or never created)"; \
 	fi
 	@echo ""
-	@echo "  🔑 Secret scope ($(SECRET_SCOPE))..."
-	@if databricks secrets delete-scope $(SECRET_SCOPE) $(PROFILE_FLAG) 2>/dev/null; then \
-		echo "     ✅ Deleted"; \
+	@printf "  🔑 Also delete secret scope '$(SECRET_SCOPE)' (passwords, credentials)? [y/N] " && \
+	read CONFIRM && \
+	if [ "$$CONFIRM" = "y" ] || [ "$$CONFIRM" = "Y" ]; then \
+		if databricks secrets delete-scope $(SECRET_SCOPE) $(PROFILE_FLAG) 2>/dev/null; then \
+			echo "     ✅ Secret scope deleted"; \
+		else \
+			echo "     ⏭️  Secret scope not found"; \
+		fi; \
 	else \
-		echo "     ⏭️  Not found (already deleted or never created)"; \
+		echo "     ⏭️  Skipped (secrets preserved)"; \
 	fi
 	@echo ""
 	@echo "🏁 Teardown complete."
