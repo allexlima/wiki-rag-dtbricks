@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Desenho Dimensional — Corte Transversal da Turbina Gravitacional</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1a1a1a; }
+    .title { font-size: 16px; font-weight: bold; text-anchor: middle; }
+    .label { font-size: 11px; font-weight: bold; }
+    .dim { font-size: 10px; fill: #333; }
+    .dim-line { stroke: #555; stroke-width: 1; }
+    .dim-arrow { fill: #555; }
+    .outline { fill: none; stroke: #1a1a1a; stroke-width: 2; }
+    .inner { fill: none; stroke: #1a1a1a; stroke-width: 1.5; }
+    .hatch { stroke: #999; stroke-width: 0.5; }
+    .center-line { stroke: #1a1a1a; stroke-width: 0.8; stroke-dasharray: 12,4,3,4; }
+    .section-fill { fill: #e0e0e0; }
+    .rotor-fill { fill: #c0c0c0; }
+    .bearing-fill { fill: #a0a0a0; }
+  </style>
+
+  <text x="400" y="30" class="title">Corte Transversal — Turbina Gravitacional NE-GRV-6600</text>
+  <line x1="120" y1="38" x2="680" y2="38" stroke="#1a1a1a" stroke-width="1"/>
+
+  <!-- Center line (vertical axis) -->
+  <line x1="400" y1="55" x2="400" y2="560" class="center-line"/>
+  <text x="408" y="568" class="dim" font-style="italic">Eixo Central</text>
+
+  <!-- Outer casing (stator housing) -->
+  <rect class="section-fill outline" x="230" y="80" width="340" height="440" rx="8"/>
+
+  <!-- Stator coils region (left side cross-section) -->
+  <rect x="238" y="140" width="50" height="300" fill="#d8d8d8" stroke="#1a1a1a" stroke-width="1.5"/>
+  <!-- Stator coil indicators -->
+  <circle cx="263" cy="170" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="200" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="230" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="260" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="290" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="320" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="350" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="380" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="263" cy="410" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+
+  <!-- Stator coils (right side) -->
+  <rect x="512" y="140" width="50" height="300" fill="#d8d8d8" stroke="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="537" cy="170" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="200" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="230" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="260" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="290" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="320" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="350" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="380" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="537" cy="410" r="8" fill="#bbb" stroke="#1a1a1a" stroke-width="1"/>
+
+  <!-- Rotor -->
+  <rect class="rotor-fill" x="295" y="170" width="210" height="240" rx="4" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Rotor pás (simplified as lines) -->
+  <line x1="300" y1="200" x2="500" y2="210" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="230" x2="500" y2="240" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="260" x2="500" y2="270" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="290" x2="500" y2="300" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="320" x2="500" y2="330" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="350" x2="500" y2="360" stroke="#888" stroke-width="1"/>
+  <line x1="300" y1="380" x2="500" y2="390" stroke="#888" stroke-width="1"/>
+
+  <!-- Eixo Central (shaft) -->
+  <rect x="380" y="90" width="40" height="420" fill="#999" stroke="#1a1a1a" stroke-width="2" rx="2"/>
+
+  <!-- Mancal Superior (upper bearing) -->
+  <rect class="bearing-fill" x="340" y="100" width="120" height="40" rx="4" stroke="#1a1a1a" stroke-width="2"/>
+  <line x1="350" y1="110" x2="450" y2="110" stroke="#777" stroke-width="1"/>
+  <line x1="350" y1="120" x2="450" y2="120" stroke="#777" stroke-width="1"/>
+  <line x1="350" y1="130" x2="450" y2="130" stroke="#777" stroke-width="1"/>
+
+  <!-- Mancal Inferior (lower bearing) -->
+  <rect class="bearing-fill" x="340" y="460" width="120" height="40" rx="4" stroke="#1a1a1a" stroke-width="2"/>
+  <line x1="350" y1="470" x2="450" y2="470" stroke="#777" stroke-width="1"/>
+  <line x1="350" y1="480" x2="450" y2="480" stroke="#777" stroke-width="1"/>
+  <line x1="350" y1="490" x2="450" y2="490" stroke="#777" stroke-width="1"/>
+
+  <!-- Tampa Superior -->
+  <rect x="230" y="80" width="340" height="20" fill="#ccc" stroke="#1a1a1a" stroke-width="2" rx="4"/>
+
+  <!-- Base da Turbina -->
+  <rect x="230" y="500" width="340" height="20" fill="#ccc" stroke="#1a1a1a" stroke-width="2" rx="4"/>
+
+  <!-- LABELS with leader lines -->
+  <!-- Tampa Superior -->
+  <line x1="300" y1="85" x2="140" y2="65" stroke="#1a1a1a" stroke-width="1"/>
+  <text x="50" y="69" class="label">Tampa Superior</text>
+  <text x="50" y="82" class="dim">NE-GRV-6690A</text>
+
+  <!-- Mancal Superior -->
+  <line x1="340" y1="120" x2="140" y2="120" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="340" cy="120" r="3" fill="#1a1a1a"/>
+  <text x="50" y="118" class="label">Mancal Superior</text>
+  <text x="50" y="131" class="dim">NE-GRV-6670A</text>
+
+  <!-- Estator label -->
+  <line x1="562" y1="290" x2="650" y2="240" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="562" cy="290" r="3" fill="#1a1a1a"/>
+  <text x="655" y="238" class="label">Estator</text>
+  <text x="655" y="251" class="dim">NE-GRV-6650</text>
+  <text x="655" y="264" class="dim">36 bobinas</text>
+
+  <!-- Rotor label -->
+  <line x1="505" y1="300" x2="650" y2="320" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="505" cy="300" r="3" fill="#1a1a1a"/>
+  <text x="655" y="318" class="label">Rotor de Grávitons</text>
+  <text x="655" y="331" class="dim">NE-GRV-6660</text>
+  <text x="655" y="344" class="dim">Ø 1.840 mm</text>
+
+  <!-- Eixo Central label -->
+  <line x1="420" y1="250" x2="650" y2="390" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="420" cy="250" r="3" fill="#1a1a1a"/>
+  <text x="655" y="388" class="label">Eixo Central</text>
+  <text x="655" y="401" class="dim">NE-GRV-6665</text>
+  <text x="655" y="414" class="dim">Ø 320 mm</text>
+
+  <!-- Mancal Inferior -->
+  <line x1="340" y1="480" x2="140" y2="480" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="340" cy="480" r="3" fill="#1a1a1a"/>
+  <text x="50" y="478" class="label">Mancal Inferior</text>
+  <text x="50" y="491" class="dim">NE-GRV-6670B</text>
+
+  <!-- Base -->
+  <line x1="300" y1="515" x2="140" y2="540" stroke="#1a1a1a" stroke-width="1"/>
+  <text x="50" y="538" class="label">Base da Turbina</text>
+
+  <!-- Dimension: Rotor diameter -->
+  <line class="dim-line" x1="295" y1="425" x2="295" y2="450"/>
+  <line class="dim-line" x1="505" y1="425" x2="505" y2="450"/>
+  <line class="dim-line" x1="295" y1="445" x2="505" y2="445"/>
+  <polygon class="dim-arrow" points="295,442 305,445 295,448"/>
+  <polygon class="dim-arrow" points="505,442 495,445 505,448"/>
+  <text x="400" y="442" class="dim" text-anchor="middle">Ø 1.840 mm</text>
+
+  <!-- Dimension: Stator gap -->
+  <line class="dim-line" x1="288" y1="155" x2="295" y2="155"/>
+  <line class="dim-line" x1="288" y1="170" x2="295" y2="170"/>
+  <line class="dim-line" x1="280" y1="155" x2="280" y2="170"/>
+  <text x="268" y="167" class="dim" text-anchor="end" font-size="9">3,0 mm</text>
+
+  <!-- Dimension: Shaft diameter -->
+  <line class="dim-line" x1="380" y1="530" x2="380" y2="548"/>
+  <line class="dim-line" x1="420" y1="530" x2="420" y2="548"/>
+  <line class="dim-line" x1="380" y1="543" x2="420" y2="543"/>
+  <text x="400" y="558" class="dim" text-anchor="middle">Ø 320 mm</text>
+
+  <!-- Scale note -->
+  <text x="400" y="590" class="dim" text-anchor="middle" font-style="italic">Escala aproximada — consulte desenho técnico NE-DWG-6600-001 para cotas completas</text>
+</svg>

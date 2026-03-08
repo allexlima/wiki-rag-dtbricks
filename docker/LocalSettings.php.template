@@ -37,6 +37,8 @@ $wgLocalisationCacheConf['store'] = 'file';
 # ---------- Uploads ----------
 $wgEnableUploads  = true;
 $wgUseImageMagick = false;
+$wgFileExtensions[] = 'svg';
+$wgAllowTitlesInSVG = true;
 
 # ---------- Skin ----------
 wfLoadSkin('Vector');

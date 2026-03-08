@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Diagrama de Blocos — Sistema de Freios Magnéticos</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1a1a1a; }
+    .block { fill: #ffffff; stroke: #1a1a1a; stroke-width: 2; }
+    .arrow-line { fill: none; stroke: #1a1a1a; stroke-width: 2; marker-end: url(#arrowhead); }
+    .title-text { font-size: 18px; font-weight: bold; text-anchor: middle; }
+    .block-text { font-size: 13px; text-anchor: middle; }
+    .block-text-sm { font-size: 11px; text-anchor: middle; fill: #555555; }
+    .label-text { font-size: 11px; text-anchor: middle; fill: #444444; font-style: italic; }
+    .feedback-line { fill: none; stroke: #1a1a1a; stroke-width: 1.5; stroke-dasharray: 6,4; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1a1a1a" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="#fafafa" />
+
+  <!-- Title -->
+  <text x="400" y="40" class="title-text">Sistema de Freios Magnéticos — Diagrama de Blocos</text>
+  <line x1="150" y1="52" x2="650" y2="52" stroke="#1a1a1a" stroke-width="1" />
+
+  <!-- Block 1: Comando do Piloto -->
+  <rect x="60" y="100" width="180" height="80" rx="8" class="block" />
+  <text x="150" y="135" class="block-text">Comando do Piloto</text>
+  <text x="150" y="155" class="block-text-sm">(Pedal / Joystick / Auto)</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="240" y1="140" x2="300" y2="140" class="arrow-line" />
+  <text x="270" y="130" class="label-text">Sinal</text>
+
+  <!-- Block 2: Controlador de Frenagem -->
+  <rect x="310" y="100" width="180" height="80" rx="8" class="block" />
+  <text x="400" y="130" class="block-text">Controlador de</text>
+  <text x="400" y="148" class="block-text">Frenagem</text>
+  <text x="400" y="168" class="block-text-sm">NE-BRK-CTL-4400</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="490" y1="140" x2="550" y2="140" class="arrow-line" />
+  <text x="520" y="130" class="label-text">PWM</text>
+
+  <!-- Block 3: Bobinas Eletromagnéticas -->
+  <rect x="560" y="100" width="180" height="80" rx="8" class="block" />
+  <text x="650" y="130" class="block-text">Bobinas</text>
+  <text x="650" y="148" class="block-text">Eletromagnéticas</text>
+  <text x="650" y="168" class="block-text-sm">NE-BRK-COL-3300</text>
+
+  <!-- Arrow 3→4 (vertical down) -->
+  <line x1="650" y1="180" x2="650" y2="250" class="arrow-line" />
+  <text x="670" y="220" class="label-text" text-anchor="start">Campo B</text>
+
+  <!-- Block 4: Disco de Frenagem -->
+  <rect x="560" y="260" width="180" height="80" rx="8" class="block" />
+  <text x="650" y="290" class="block-text">Disco de Frenagem</text>
+  <text x="650" y="310" class="block-text-sm">NE-BRK-DSC-1100</text>
+  <text x="650" y="328" class="block-text-sm">Correntes Parasitas</text>
+
+  <!-- Arrow 4→5 (left) -->
+  <line x1="560" y1="300" x2="490" y2="300" class="arrow-line" />
+  <text x="525" y="290" class="label-text">Calor</text>
+
+  <!-- Block 5: Módulo Regenerativo -->
+  <rect x="310" y="260" width="180" height="80" rx="8" class="block" />
+  <text x="400" y="290" class="block-text">Módulo Regenerativo</text>
+  <text x="400" y="310" class="block-text-sm">NE-BRK-REG-2200</text>
+  <text x="400" y="328" class="block-text-sm">Conversão Termoelétrica</text>
+
+  <!-- Arrow 5→6 (left) -->
+  <line x1="310" y1="300" x2="240" y2="300" class="arrow-line" />
+  <text x="275" y="290" class="label-text">48 VDC</text>
+
+  <!-- Block 6: Banco de Capacitores -->
+  <rect x="60" y="260" width="180" height="80" rx="8" class="block" />
+  <text x="150" y="290" class="block-text">Banco de Capacitores</text>
+  <text x="150" y="310" class="block-text-sm">Energia Regenerativa</text>
+  <text x="150" y="328" class="block-text-sm">Armazenada</text>
+
+  <!-- Sensor block -->
+  <rect x="560" y="410" width="180" height="70" rx="8" class="block" />
+  <text x="650" y="440" class="block-text">Sensor de Velocidade</text>
+  <text x="650" y="458" class="block-text-sm">NE-BRK-SNS-5500</text>
+
+  <!-- Arrow Disco→Sensor -->
+  <line x1="650" y1="340" x2="650" y2="400" class="arrow-line" />
+  <text x="670" y="375" class="label-text" text-anchor="start">RPM</text>
+
+  <!-- Feedback arrow: Sensor → Controlador -->
+  <path d="M 560 445 L 400 445 L 400 190" class="feedback-line" />
+  <text x="480" y="438" class="label-text">Feedback de velocidade</text>
+
+  <!-- Feedback arrow: Capacitor → Controlador (power supply) -->
+  <path d="M 150 260 L 150 220 L 150 200 L 310 200" class="feedback-line" />
+  <text x="230" y="194" class="label-text">Alimentação</text>
+
+  <!-- Legend box -->
+  <rect x="50" y="510" width="700" height="70" rx="6" fill="#f0f0f0" stroke="#cccccc" stroke-width="1" />
+  <text x="70" y="535" class="block-text-sm" text-anchor="start" fill="#1a1a1a">Legenda:</text>
+  <line x1="130" y1="531" x2="180" y2="531" stroke="#1a1a1a" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="190" y="535" class="block-text-sm" text-anchor="start">Fluxo de sinal / energia</text>
+  <line x1="370" y1="531" x2="420" y2="531" stroke="#1a1a1a" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrowhead)" />
+  <text x="430" y="535" class="block-text-sm" text-anchor="start">Feedback / realimentação</text>
+  <text x="70" y="560" class="block-text-sm" text-anchor="start" fill="#555555">Documento MR-BRK-008 | Veículo Espacial Série Nova ERA</text>
+</svg>

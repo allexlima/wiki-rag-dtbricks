@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #333; }
+      .title { font-size: 18px; font-weight: bold; }
+      .decision { font-size: 11px; }
+      .action { font-size: 11px; }
+      .yesno { font-size: 10px; font-weight: bold; fill: #333; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f0f4f8" rx="8"/>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Fluxograma de Diagnostico — Instabilidade de Hover</text>
+
+  <!-- START -->
+  <ellipse cx="400" cy="65" rx="80" ry="22" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="400" y="70" text-anchor="middle" class="action">Veiculo Oscilando?</text>
+
+  <!-- Arrow down from start -->
+  <line x1="400" y1="87" x2="400" y2="110" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="412" y="103" class="yesno">SIM</text>
+
+  <!-- Decision 1: Codigo de falha ativo? -->
+  <polygon points="400,110 500,145 400,180 300,145" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="400" y="143" text-anchor="middle" class="decision">Codigo de falha</text>
+  <text x="400" y="155" text-anchor="middle" class="decision">SAG-Pxxxx ativo?</text>
+
+  <!-- YES branch right -->
+  <line x1="500" y1="145" x2="580" y2="145" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="535" y="139" class="yesno">SIM</text>
+
+  <!-- Action: Consultar tabela de codigos -->
+  <rect x="585" y="125" width="160" height="40" rx="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="665" y="143" text-anchor="middle" class="action">Consultar tabela</text>
+  <text x="665" y="155" text-anchor="middle" class="action">de codigos (Sec 3.3)</text>
+
+  <!-- NO branch down -->
+  <line x1="400" y1="180" x2="400" y2="210" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="412" y="200" class="yesno">NAO</text>
+
+  <!-- Decision 2: Oscilacao em qual modulo? -->
+  <polygon points="400,210 520,250 400,290 280,250" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="400" y="247" text-anchor="middle" class="decision">Amplitude > 5mm</text>
+  <text x="400" y="259" text-anchor="middle" class="decision">em algum modulo?</text>
+
+  <!-- YES branch - left -->
+  <line x1="280" y1="250" x2="180" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="235" y="244" class="yesno">SIM</text>
+
+  <!-- Decision 3: Teste de resposta ao degrau -->
+  <polygon points="100,250 180,280 100,310 20,280" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="100" y="277" text-anchor="middle" class="decision">Sobressinal</text>
+  <text x="100" y="289" text-anchor="middle" class="decision">> 30%?</text>
+
+  <!-- YES from Decision 3 - down left -->
+  <line x1="100" y1="310" x2="100" y2="345" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="112" y="332" class="yesno">SIM</text>
+
+  <!-- Action: Vazamento amortecedor -->
+  <rect x="20" y="345" width="160" height="50" rx="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="100" y="365" text-anchor="middle" class="action" font-weight="bold">Vazamento no</text>
+  <text x="100" y="380" text-anchor="middle" class="action">Amortecedor / Fluido FMR</text>
+
+  <!-- Sub-action -->
+  <rect x="20" y="405" width="160" height="35" rx="4" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="100" y="420" text-anchor="middle" class="action">Verificar nivel e</text>
+  <text x="100" y="432" text-anchor="middle" class="action">qualidade fluido (Sec 4.5)</text>
+  <line x1="100" y1="395" x2="100" y2="405" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- NO from Decision 3 - right -->
+  <line x1="180" y1="280" x2="250" y2="280" stroke="#333" stroke-width="1.5"/>
+  <text x="210" y="274" class="yesno">NAO</text>
+
+  <!-- Decision 4: Tempo de acomodacao -->
+  <polygon points="330,280 410,310 330,340 250,310" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="330" y="307" text-anchor="middle" class="decision">Acomodacao</text>
+  <text x="330" y="319" text-anchor="middle" class="decision">> 50ms?</text>
+
+  <!-- YES from Decision 4 - down -->
+  <line x1="330" y1="340" x2="330" y2="375" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="342" y="362" class="yesno">SIM</text>
+
+  <!-- Action: Desgaste da bobina -->
+  <rect x="245" y="375" width="170" height="50" rx="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="330" y="395" text-anchor="middle" class="action" font-weight="bold">Falha no Sensor /</text>
+  <text x="330" y="410" text-anchor="middle" class="action">Desgaste da Bobina</text>
+
+  <rect x="245" y="435" width="170" height="35" rx="4" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="330" y="450" text-anchor="middle" class="action">Testar sensor (Sec 3.5)</text>
+  <text x="330" y="462" text-anchor="middle" class="action">Testar bobina (Sec 3.4)</text>
+  <line x1="330" y1="425" x2="330" y2="435" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- NO from Decision 4 - right -->
+  <line x1="410" y1="310" x2="500" y2="310" stroke="#333" stroke-width="1.5"/>
+  <text x="450" y="304" class="yesno">NAO</text>
+
+  <!-- Action: Ressonancia / desequilibrio -->
+  <rect x="500" y="285" width="170" height="50" rx="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="585" y="305" text-anchor="middle" class="action" font-weight="bold">Desequilibrio de</text>
+  <text x="585" y="320" text-anchor="middle" class="action">Repulsores / Ressonancia</text>
+
+  <rect x="500" y="345" width="170" height="35" rx="4" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="585" y="360" text-anchor="middle" class="action">Verificar frequencia de</text>
+  <text x="585" y="372" text-anchor="middle" class="action">operacao (Sec 3.6)</text>
+  <line x1="585" y1="335" x2="585" y2="345" stroke="#333" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- NO branch from Decision 2 - right -->
+  <line x1="520" y1="250" x2="580" y2="250" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="545" y="244" class="yesno">NAO</text>
+
+  <!-- Action: Problema externo -->
+  <rect x="585" y="230" width="170" height="40" rx="4" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="670" y="248" text-anchor="middle" class="action">Verificar superficie /</text>
+  <text x="670" y="260" text-anchor="middle" class="action">permeabilidade grav.</text>
+
+  <!-- End nodes -->
+  <ellipse cx="400" cy="530" rx="120" ry="22" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="400" y="535" text-anchor="middle" class="action">Registrar em NE-FORM-SAG-001</text>
+
+  <!-- Arrows from all actions to end -->
+  <line x1="100" y1="440" x2="100" y2="520" stroke="#333" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="100" y1="520" x2="280" y2="530" stroke="#333" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <line x1="330" y1="470" x2="330" y2="510" stroke="#333" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="330" y1="510" x2="370" y2="520" stroke="#333" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <line x1="585" y1="380" x2="585" y2="520" stroke="#333" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="585" y1="520" x2="520" y2="530" stroke="#333" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <!-- Footer -->
+  <text x="400" y="580" text-anchor="middle" class="action" style="font-size:10px; fill:#555;">NE-DIAG-FLOW-SAG-001 — Rev 7.2 — Veiculo Espacial Serie Nova ERA</text>
+</svg>

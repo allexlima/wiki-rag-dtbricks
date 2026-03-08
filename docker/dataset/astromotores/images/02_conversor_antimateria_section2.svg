@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <marker id="dim-arrow-left" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+      <polygon points="8 0, 0 3, 8 6" fill="#333" />
+    </marker>
+    <marker id="dim-arrow-right" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#333" />
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #333; }
+      .title { font-size: 16px; font-weight: bold; }
+      .label { font-size: 12px; }
+      .dim { font-size: 11px; fill: #333; }
+      .dim-line { stroke: #333; stroke-width: 1; }
+      .part-line { stroke: #333; stroke-width: 2; fill: none; }
+      .fill-light { fill: #f0f4f8; }
+      .fill-medium { fill: #d8e2ec; }
+      .hatch { fill: url(#hatchPattern); }
+    </style>
+    <pattern id="hatchPattern" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#999" stroke-width="0.8" />
+    </pattern>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" class="title">Corte Transversal — Camara de Aniquilacao NE-ATM-3305</text>
+  <text x="400" y="55" text-anchor="middle" class="label">Escala aproximada — cotas em milimetros</text>
+
+  <!-- Center axis -->
+  <line x1="400" y1="80" x2="400" y2="540" stroke="#333" stroke-width="0.5" stroke-dasharray="12,4,2,4" />
+  <text x="405" y="90" class="dim">Eixo Central</text>
+
+  <!-- Outer wall (Parede Externa - Aco Inox 316L) -->
+  <ellipse cx="400" cy="310" rx="280" ry="220" class="part-line" fill="#d8e2ec" />
+
+  <!-- Vacuum gap -->
+  <ellipse cx="400" cy="310" rx="245" ry="190" class="part-line" fill="#eef2f7" />
+
+  <!-- Magnetic coils (8 positions) -->
+  <rect x="138" y="200" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="180" y="120" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="310" y="95" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="460" y="95" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="590" y="120" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="632" y="200" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="138" y="380" width="30" height="40" rx="4" class="part-line fill-light" />
+  <rect x="632" y="380" width="30" height="40" rx="4" class="part-line fill-light" />
+
+  <!-- Inner wall (Parede Interna - Titanio-X) -->
+  <ellipse cx="400" cy="310" rx="170" ry="135" class="part-line" fill="#f0f4f8" />
+
+  <!-- WC-14 coating -->
+  <ellipse cx="400" cy="310" rx="150" ry="118" class="part-line" fill="#e8e8e8" stroke-dasharray="3,2" />
+
+  <!-- Aniquilacao zone (center) -->
+  <ellipse cx="400" cy="310" rx="140" ry="110" fill="#fafafa" stroke="#333" stroke-width="1" stroke-dasharray="6,3" />
+  <text x="400" y="305" text-anchor="middle" class="label">Zona Ativa de</text>
+  <text x="400" y="322" text-anchor="middle" class="label">Aniquilacao</text>
+  <text x="400" y="342" text-anchor="middle" class="dim">diam 680 mm</text>
+
+  <!-- Leader lines and labels -->
+
+  <!-- Parede Externa -->
+  <line x1="680" y1="310" x2="730" y2="230" class="dim-line" />
+  <text x="700" y="220" class="label">Parede Externa</text>
+  <text x="700" y="235" class="dim">(Aco Inox 316L-Espacial)</text>
+  <text x="700" y="250" class="dim">Espessura: 25 mm</text>
+
+  <!-- Vacuo Intermediario -->
+  <line x1="645" y1="310" x2="720" y2="340" class="dim-line" />
+  <text x="700" y="355" class="label">Vacuo Intermediario</text>
+  <text x="700" y="370" class="dim">&lt; 1 x 10^-9 Pa</text>
+
+  <!-- Bobina Magnetica -->
+  <line x1="662" y1="220" x2="720" y2="170" class="dim-line" />
+  <text x="690" y="162" class="label">Bobina Magnetica</text>
+  <text x="690" y="177" class="dim">(Nb3Sn, 4,2 K)</text>
+  <text x="690" y="192" class="dim">8 unidades toroidais</text>
+
+  <!-- Parede Interna -->
+  <line x1="230" y1="310" x2="80" y2="230" class="dim-line" />
+  <text x="30" y="220" class="label">Parede Interna</text>
+  <text x="30" y="235" class="dim">(Titanio-X Grau 7A)</text>
+  <text x="30" y="250" class="dim">Espessura: 18 mm</text>
+
+  <!-- Revestimento WC-14 -->
+  <line x1="250" y1="310" x2="80" y2="340" class="dim-line" />
+  <text x="20" y="340" class="label">Revestimento WC-14</text>
+  <text x="20" y="355" class="dim">(Carbeto de Tungstenio)</text>
+  <text x="20" y="370" class="dim">Espessura: 3,2 mm</text>
+
+  <!-- Dimension: Diametro externo 1420 mm -->
+  <line x1="120" y1="535" x2="120" y2="530" class="dim-line" />
+  <line x1="680" y1="535" x2="680" y2="530" class="dim-line" />
+  <line x1="120" y1="535" x2="390" y2="535" class="dim-line" marker-start="url(#dim-arrow-left)" />
+  <line x1="410" y1="535" x2="680" y2="535" class="dim-line" marker-end="url(#dim-arrow-right)" />
+  <text x="400" y="540" text-anchor="middle" class="dim">diam ext. 1420 mm</text>
+
+  <!-- Dimension: Diametro interno 680 mm -->
+  <line x1="250" y1="475" x2="250" y2="470" class="dim-line" />
+  <line x1="550" y1="475" x2="550" y2="470" class="dim-line" />
+  <line x1="250" y1="475" x2="390" y2="475" class="dim-line" marker-start="url(#dim-arrow-left)" />
+  <line x1="410" y1="475" x2="550" y2="475" class="dim-line" marker-end="url(#dim-arrow-right)" />
+  <text x="400" y="480" text-anchor="middle" class="dim">diam int. 680 mm</text>
+
+  <!-- Dimension: Comprimento axial note -->
+  <text x="400" y="570" text-anchor="middle" class="dim">Comprimento axial (perpendicular ao corte): 2.100 mm</text>
+
+  <!-- Part number -->
+  <text x="400" y="590" text-anchor="middle" class="dim">Peca: NE-ATM-3305 | Massa: 847 kg</text>
+</svg>

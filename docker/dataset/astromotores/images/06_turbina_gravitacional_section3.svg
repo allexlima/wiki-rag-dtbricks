@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Fluxograma de Diagnóstico — Vibração Excessiva</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1a1a1a; font-size: 11px; }
+    .title { font-size: 16px; font-weight: bold; text-anchor: middle; }
+    .decision { fill: #f0f0f0; stroke: #1a1a1a; stroke-width: 2; }
+    .process { fill: #fff; stroke: #1a1a1a; stroke-width: 2; rx: 4; ry: 4; }
+    .terminal { fill: #d0d0d0; stroke: #1a1a1a; stroke-width: 2; }
+    .label { text-anchor: middle; font-size: 11px; }
+    .label-sm { text-anchor: middle; font-size: 10px; }
+    .yn { font-size: 10px; font-weight: bold; fill: #333; }
+    line.flow, polyline.flow { stroke: #1a1a1a; stroke-width: 1.5; fill: none; }
+    polygon.ah { fill: #1a1a1a; }
+  </style>
+
+  <text x="400" y="30" class="title">Fluxograma de Diagnóstico — Vibração Excessiva na Turbina</text>
+  <line x1="150" y1="38" x2="650" y2="38" stroke="#1a1a1a" stroke-width="1"/>
+
+  <!-- START: Vibração Excessiva Detectada -->
+  <ellipse class="terminal" cx="400" cy="70" rx="110" ry="22"/>
+  <text x="400" y="74" class="label" font-weight="bold">Vibração Excessiva Detectada</text>
+
+  <!-- Arrow down -->
+  <line class="flow" x1="400" y1="92" x2="400" y2="118"/>
+  <polygon class="ah" points="396,118 400,128 404,118"/>
+
+  <!-- Decision 1: Amplitude 1×RPM elevada? -->
+  <polygon class="decision" points="400,130 520,175 400,220 280,175"/>
+  <text x="400" y="170" class="label">Amplitude 1×RPM</text>
+  <text x="400" y="183" class="label">elevada?</text>
+
+  <!-- YES → Rotor desbalanceado -->
+  <line class="flow" x1="520" y1="175" x2="620" y2="175"/>
+  <polygon class="ah" points="620,171 635,175 620,179"/>
+  <text x="560" y="168" class="yn">SIM</text>
+  <rect class="process" x="635" y="155" width="145" height="42" rx="4"/>
+  <text x="707" y="173" class="label">Rotor Desbalanceado</text>
+  <text x="707" y="186" class="label-sm">→ Balancear (Seção 5.2)</text>
+
+  <!-- NO → down -->
+  <line class="flow" x1="400" y1="220" x2="400" y2="248"/>
+  <polygon class="ah" points="396,248 400,258 404,248"/>
+  <text x="412" y="240" class="yn">NÃO</text>
+
+  <!-- Decision 2: Amplitude 2×RPM elevada? -->
+  <polygon class="decision" points="400,260 520,305 400,350 280,305"/>
+  <text x="400" y="300" class="label">Amplitude 2×RPM</text>
+  <text x="400" y="313" class="label">elevada?</text>
+
+  <!-- YES → Desalinhamento -->
+  <line class="flow" x1="520" y1="305" x2="620" y2="305"/>
+  <polygon class="ah" points="620,301 635,305 620,309"/>
+  <text x="560" y="298" class="yn">SIM</text>
+  <rect class="process" x="635" y="285" width="145" height="42" rx="4"/>
+  <text x="707" y="303" class="label">Desalinhamento</text>
+  <text x="707" y="316" class="label-sm">→ Alinhar eixo (NE-FER-0085)</text>
+
+  <!-- NO → down -->
+  <line class="flow" x1="400" y1="350" x2="400" y2="378"/>
+  <polygon class="ah" points="396,378 400,388 404,378"/>
+  <text x="412" y="370" class="yn">NÃO</text>
+
+  <!-- Decision 3: Sub-harmônicos presentes? -->
+  <polygon class="decision" points="400,390 520,435 400,480 280,435"/>
+  <text x="400" y="430" class="label">Sub-harmônicos</text>
+  <text x="400" y="443" class="label">presentes?</text>
+
+  <!-- YES → Mancal desgastado -->
+  <line class="flow" x1="520" y1="435" x2="620" y2="435"/>
+  <polygon class="ah" points="620,431 635,435 620,439"/>
+  <text x="560" y="428" class="yn">SIM</text>
+  <rect class="process" x="635" y="415" width="145" height="42" rx="4"/>
+  <text x="707" y="433" class="label">Mancal Desgastado</text>
+  <text x="707" y="446" class="label-sm">→ Substituir (Seção 4.3)</text>
+
+  <!-- NO → down -->
+  <line class="flow" x1="400" y1="480" x2="400" y2="498"/>
+  <polygon class="ah" points="396,498 400,508 404,498"/>
+  <text x="412" y="496" class="yn">NÃO</text>
+
+  <!-- Decision 4: Uniformidade campo <95%? -->
+  <polygon class="decision" points="400,510 520,545 400,580 280,545"/>
+  <text x="400" y="541" class="label">Uniformidade</text>
+  <text x="400" y="554" class="label">campo &lt;95%?</text>
+
+  <!-- YES → Bobina degradada -->
+  <line class="flow" x1="520" y1="545" x2="620" y2="545"/>
+  <polygon class="ah" points="620,541 635,545 620,549"/>
+  <text x="560" y="538" class="yn">SIM</text>
+  <rect class="process" x="635" y="525" width="145" height="42" rx="4"/>
+  <text x="707" y="543" class="label">Bobina Degradada</text>
+  <text x="707" y="556" class="label-sm">→ Rebobinar (Seção 4.4)</text>
+
+  <!-- NO → Investigar MSH -->
+  <line class="flow" x1="280" y1="545" x2="165" y2="545"/>
+  <polygon class="ah" points="165,541 150,545 165,549"/>
+  <text x="230" y="538" class="yn">NÃO</text>
+  <rect class="process" x="20" y="525" width="130" height="42" rx="4"/>
+  <text x="85" y="543" class="label">Investigar MSH</text>
+  <text x="85" y="556" class="label-sm">e cristal (NE-GRV-6630)</text>
+
+  <!-- Side boxes: post-repair verification -->
+  <!-- Arrow from each right-side box down to "Verificar" -->
+  <line class="flow" x1="707" y1="197" x2="707" y2="207"/>
+  <line class="flow" x1="707" y1="207" x2="770" y2="207"/>
+  <line class="flow" x1="770" y1="207" x2="770" y2="580"/>
+  <line class="flow" x1="707" y1="327" x2="770" y2="327"/>
+  <line class="flow" x1="707" y1="457" x2="770" y2="457"/>
+  <line class="flow" x1="707" y1="567" x2="770" y2="567"/>
+
+  <!-- Small note at bottom right -->
+  <text x="780" y="595" font-size="9" fill="#777" text-anchor="end" font-style="italic">Após reparo: repetir análise de vibração</text>
+</svg>

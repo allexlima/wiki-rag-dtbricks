@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Fluxograma de Diagnóstico — Falha na Ignição</title>
+  <style>
+    text { font-family: 'Courier New', monospace; fill: #1a1a1a; }
+    .title { font-size: 16px; font-weight: bold; text-anchor: middle; }
+    .subtitle { font-size: 10px; text-anchor: middle; fill: #555; }
+    .node-text { font-size: 10px; text-anchor: middle; font-weight: bold; }
+    .node-sub { font-size: 8px; text-anchor: middle; fill: #444; }
+    .decision { fill: #fff; stroke: #1a1a1a; stroke-width: 2; }
+    .process { fill: #fff; stroke: #1a1a1a; stroke-width: 2; rx: 4; ry: 4; }
+    .terminal { fill: #e8e8e8; stroke: #1a1a1a; stroke-width: 2; }
+    .yes-label { font-size: 9px; fill: #1a1a1a; font-weight: bold; }
+    .no-label { font-size: 9px; fill: #1a1a1a; font-weight: bold; }
+    .arrow { stroke: #1a1a1a; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="5" y="5" width="790" height="590" rx="8" ry="8" fill="#fafafa" stroke="#ccc" stroke-width="1"/>
+
+  <!-- Title -->
+  <text class="title" x="400" y="35">DIAGNÓSTICO DE FALHA NA IGNIÇÃO (PLS-E001)</text>
+  <text class="subtitle" x="400" y="52">Fluxograma de Investigação — Terminal TDNE</text>
+
+  <!-- START: Terminal -->
+  <rect class="terminal" x="310" y="68" width="180" height="36" rx="18" ry="18"/>
+  <text class="node-text" x="400" y="90">FALHA NA IGNIÇÃO?</text>
+
+  <!-- Arrow down -->
+  <line class="arrow" x1="400" y1="104" x2="400" y2="128"/>
+
+  <!-- Decision 1: Tensão do barramento OK? -->
+  <polygon class="decision" points="400,130 490,165 400,200 310,165"/>
+  <text class="node-text" x="400" y="162">Tensão barram.</text>
+  <text class="node-sub" x="400" y="174">800V DC ±5%?</text>
+
+  <!-- NO branch → right: Verificar conversor -->
+  <line class="arrow" x1="490" y1="165" x2="570" y2="165"/>
+  <text class="no-label" x="520" y="158">NÃO</text>
+  <rect class="process" x="572" y="145" width="180" height="40" rx="4" ry="4"/>
+  <text class="node-text" x="662" y="163">Verificar conversor</text>
+  <text class="node-sub" x="662" y="175">DC-DC NE-PWR-4010</text>
+
+  <!-- YES branch → down -->
+  <line class="arrow" x1="400" y1="200" x2="400" y2="228"/>
+  <text class="yes-label" x="412" y="218">SIM</text>
+
+  <!-- Decision 2: Capacitores carregam em <8s? -->
+  <polygon class="decision" points="400,230 490,265 400,300 310,265"/>
+  <text class="node-text" x="400" y="262">Carga capacit.</text>
+  <text class="node-sub" x="400" y="274">&lt; 8 segundos?</text>
+
+  <!-- NO branch → right -->
+  <line class="arrow" x1="490" y1="265" x2="570" y2="265"/>
+  <text class="no-label" x="520" y="258">NÃO</text>
+  <rect class="process" x="572" y="245" width="180" height="40" rx="4" ry="4"/>
+  <text class="node-text" x="662" y="263">Subst. banco de</text>
+  <text class="node-sub" x="662" y="275">capacitores NE-PLS-5542</text>
+
+  <!-- YES branch → down -->
+  <line class="arrow" x1="400" y1="300" x2="400" y2="328"/>
+  <text class="yes-label" x="412" y="318">SIM</text>
+
+  <!-- Decision 3: Pressão na câmara ≥15 bar? -->
+  <polygon class="decision" points="400,330 490,365 400,400 310,365"/>
+  <text class="node-text" x="400" y="360">Pressão câmara</text>
+  <text class="node-sub" x="400" y="372">≥ 15 bar?</text>
+
+  <!-- NO branch → left: Verificar injetores/válvulas -->
+  <line class="arrow" x1="310" y1="365" x2="218" y2="365"/>
+  <text class="no-label" x="272" y="358">NÃO</text>
+  <rect class="process" x="38" y="345" width="178" height="40" rx="4" ry="4"/>
+  <text class="node-text" x="127" y="363">Verificar injetores</text>
+  <text class="node-sub" x="127" y="375">e válvulas — Seção 3.3</text>
+
+  <!-- YES branch → down -->
+  <line class="arrow" x1="400" y1="400" x2="400" y2="418"/>
+  <text class="yes-label" x="412" y="413">SIM</text>
+
+  <!-- Decision 4: Gap do eletrodo OK? -->
+  <polygon class="decision" points="400,420 490,455 400,490 310,455"/>
+  <text class="node-text" x="400" y="450">Gap eletrodo</text>
+  <text class="node-sub" x="400" y="462">4,0 mm ±0,2?</text>
+
+  <!-- NO branch → right -->
+  <line class="arrow" x1="490" y1="455" x2="570" y2="455"/>
+  <text class="no-label" x="520" y="448">NÃO</text>
+  <rect class="process" x="572" y="435" width="180" height="40" rx="4" ry="4"/>
+  <text class="node-text" x="662" y="453">Subst. módulo de</text>
+  <text class="node-sub" x="662" y="465">ignição NE-PLS-5540</text>
+
+  <!-- YES branch → down -->
+  <line class="arrow" x1="400" y1="490" x2="400" y2="508"/>
+  <text class="yes-label" x="412" y="503">SIM</text>
+
+  <!-- Decision 5: Sensor UV responde? -->
+  <polygon class="decision" points="400,510 490,540 400,570 310,540"/>
+  <text class="node-text" x="400" y="537">Sensor UV</text>
+  <text class="node-sub" x="400" y="549">responde &lt;5ms?</text>
+
+  <!-- NO branch → right -->
+  <line class="arrow" x1="490" y1="540" x2="570" y2="540"/>
+  <text class="no-label" x="520" y="533">NÃO</text>
+  <rect class="process" x="572" y="523" width="180" height="34" rx="4" ry="4"/>
+  <text class="node-text" x="662" y="543">Subst. sensor NE-SNS-3020</text>
+
+  <!-- YES branch → left: Escalar para Nível IV -->
+  <line class="arrow" x1="310" y1="540" x2="218" y2="540"/>
+  <text class="yes-label" x="275" y="533">SIM</text>
+  <rect class="terminal" x="38" y="522" width="178" height="36" rx="18" ry="18"/>
+  <text class="node-text" x="127" y="544">Escalar p/ Nível IV</text>
+
+  <!-- Repair outcomes: arrows going to final resolution -->
+  <!-- Right-side repair boxes get resolution arrows -->
+  <line x1="662" y1="185" x2="662" y2="195" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text style="font-size:8px; fill:#666; text-anchor:middle;" x="662" y="205">→ Retestar ignição</text>
+
+  <line x1="662" y1="285" x2="662" y2="295" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text style="font-size:8px; fill:#666; text-anchor:middle;" x="662" y="305">→ Retestar ignição</text>
+
+  <line x1="127" y1="385" x2="127" y2="395" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text style="font-size:8px; fill:#666; text-anchor:middle;" x="127" y="405">→ Retestar pressão + ignição</text>
+
+  <line x1="662" y1="475" x2="662" y2="485" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text style="font-size:8px; fill:#666; text-anchor:middle;" x="662" y="495">→ Retestar ignição</text>
+
+  <line x1="662" y1="557" x2="662" y2="567" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text style="font-size:8px; fill:#666; text-anchor:middle;" x="662" y="577">→ Retestar detecção UV</text>
+</svg>

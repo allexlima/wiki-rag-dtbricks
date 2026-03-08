@@ -44,8 +44,21 @@ Supports **multimodal content** (text + images), **multi-turn conversations** wi
 ```bash
 make setup-secrets      # Prompts for Lakebase password (the ONE interactive step)
 make setup-lakebase     # Provisions Lakebase, creates DB + role + schema + DDL
-make docker-up          # Auto-generates .env from secrets, starts MediaWiki
+make setup-wiki         # Auto-generates .env from secrets, starts MediaWiki
 ```
+
+> [!TIP]
+> **Demo / testing only:** If you don't have your own wiki content yet, you can load a sample dataset into MediaWiki:
+> ```bash
+> make demo-load   # Interactive dataset selector → loads pages + images into MediaWiki
+> ```
+> This presents an arrow-key menu listing all datasets under `docker/dataset/`. The project ships with **astromotores** — a 15-page PT-BR space car repair manual with 75 SVG technical diagrams. You can also add your own: create a folder in `docker/dataset/` with `*.md` files and an `images/` subdirectory, and it will appear automatically.
+>
+> To wipe all wiki content and re-ingest a different dataset:
+> ```bash
+> make demo-cleanup      # Deletes all pages + uploaded files
+> make demo-load       # Pick a new dataset
+> ```
 
 ### 2. Deploy (~20 min)
 
@@ -146,10 +159,18 @@ wiki-rag-dtbricks/
 │   └── requirements.txt          # App-only dependencies
 │
 ├── docker/
+│   ├── Makefile                  # Docker targets: make up/down/ingest/clean
 │   ├── docker-compose.yml        # MediaWiki container definition
-│   ├── setup.sh                  # Bootstrap (auto-generates .env from Databricks secrets)
 │   ├── LocalSettings.php.template
-│   └── .env.example              # Credential template
+│   ├── .env.example              # Credential template
+│   ├── scripts/
+│   │   ├── setup.sh              # Bootstrap (auto-generates .env from Databricks secrets)
+│   │   ├── ingest.sh             # Shared dataset → MediaWiki ingestion
+│   │   ├── select_dataset.sh     # Interactive arrow-key dataset picker
+│   │   └── clean.sh              # Wipe all wiki pages + uploaded files
+│   └── dataset/
+│       ├── astromotores/         # 15 PT-BR space car repair manual pages + 75 SVG diagrams
+│       └── customer/             # Your own dataset (gitignored)
 │
 ├── tests/                        # 55 tests, 82% coverage
 │   ├── conftest.py               # Shared fixtures

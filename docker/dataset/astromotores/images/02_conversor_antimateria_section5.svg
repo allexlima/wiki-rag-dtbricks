@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #333; }
+      .title { font-size: 16px; font-weight: bold; }
+      .label { font-size: 12px; }
+      .sublabel { font-size: 10px; fill: #666; }
+      .axis-label { font-size: 11px; }
+      .tick { stroke: #333; stroke-width: 1; }
+      .grid { stroke: #ddd; stroke-width: 0.5; }
+      .bar1 { fill: #b8cce4; stroke: #333; stroke-width: 1.5; }
+      .bar2 { fill: #c4d9a0; stroke: #333; stroke-width: 1.5; }
+      .bar3 { fill: #e8c8a0; stroke: #333; stroke-width: 1.5; }
+      .bar4 { fill: #d4a0a0; stroke: #333; stroke-width: 1.5; }
+      .milestone { fill: #333; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Cronograma de Manutencao Preventiva</text>
+  <text x="400" y="50" text-anchor="middle" class="sublabel">Conversor de Antimateria NE-ATM-3300 — Intervalos em horas de operacao</text>
+
+  <!-- Y-axis labels (task names) -->
+  <text x="195" y="118" text-anchor="end" class="label">Verificacao Contencao</text>
+  <text x="195" y="118" text-anchor="end" class="sublabel" dy="14">(200 h)</text>
+
+  <text x="195" y="188" text-anchor="end" class="label">Recarga Antiprotons</text>
+  <text x="195" y="188" text-anchor="end" class="sublabel" dy="14">(500 h)</text>
+
+  <text x="195" y="258" text-anchor="end" class="label">Calibracao Sensores</text>
+  <text x="195" y="258" text-anchor="end" class="sublabel" dy="14">(500 h)</text>
+
+  <text x="195" y="328" text-anchor="end" class="label">Troca Bobinas</text>
+  <text x="195" y="328" text-anchor="end" class="sublabel" dy="14">(3.000 h)</text>
+
+  <text x="195" y="398" text-anchor="end" class="label">Inspecao Endoscopica</text>
+  <text x="195" y="398" text-anchor="end" class="sublabel" dy="14">(5.000 h)</text>
+
+  <text x="195" y="468" text-anchor="end" class="label">Revisao Completa</text>
+  <text x="195" y="468" text-anchor="end" class="sublabel" dy="14">(8.000 h)</text>
+
+  <!-- Chart area -->
+  <!-- X-axis: 0 to 10000 hours, mapped to x: 210 to 760 -->
+  <!-- Scale: 1 hour = 0.055 px, or 1000h = 55px -->
+
+  <!-- Grid lines (vertical, every 1000h) -->
+  <line x1="210" y1="80" x2="210" y2="510" class="grid" />
+  <line x1="265" y1="80" x2="265" y2="510" class="grid" />
+  <line x1="320" y1="80" x2="320" y2="510" class="grid" />
+  <line x1="375" y1="80" x2="375" y2="510" class="grid" />
+  <line x1="430" y1="80" x2="430" y2="510" class="grid" />
+  <line x1="485" y1="80" x2="485" y2="510" class="grid" />
+  <line x1="540" y1="80" x2="540" y2="510" class="grid" />
+  <line x1="595" y1="80" x2="595" y2="510" class="grid" />
+  <line x1="650" y1="80" x2="650" y2="510" class="grid" />
+  <line x1="705" y1="80" x2="705" y2="510" class="grid" />
+  <line x1="760" y1="80" x2="760" y2="510" class="grid" />
+
+  <!-- X-axis line -->
+  <line x1="210" y1="510" x2="760" y2="510" stroke="#333" stroke-width="1.5" />
+
+  <!-- X-axis ticks and labels -->
+  <line x1="210" y1="510" x2="210" y2="515" class="tick" />
+  <text x="210" y="530" text-anchor="middle" class="axis-label">0</text>
+
+  <line x1="265" y1="510" x2="265" y2="515" class="tick" />
+  <text x="265" y="530" text-anchor="middle" class="axis-label">1000</text>
+
+  <line x1="320" y1="510" x2="320" y2="515" class="tick" />
+  <text x="320" y="530" text-anchor="middle" class="axis-label">2000</text>
+
+  <line x1="375" y1="510" x2="375" y2="515" class="tick" />
+  <text x="375" y="530" text-anchor="middle" class="axis-label">3000</text>
+
+  <line x1="430" y1="510" x2="430" y2="515" class="tick" />
+  <text x="430" y="530" text-anchor="middle" class="axis-label">4000</text>
+
+  <line x1="485" y1="510" x2="485" y2="515" class="tick" />
+  <text x="485" y="530" text-anchor="middle" class="axis-label">5000</text>
+
+  <line x1="540" y1="510" x2="540" y2="515" class="tick" />
+  <text x="540" y="530" text-anchor="middle" class="axis-label">6000</text>
+
+  <line x1="595" y1="510" x2="595" y2="515" class="tick" />
+  <text x="595" y="530" text-anchor="middle" class="axis-label">7000</text>
+
+  <line x1="650" y1="510" x2="650" y2="515" class="tick" />
+  <text x="650" y="530" text-anchor="middle" class="axis-label">8000</text>
+
+  <line x1="705" y1="510" x2="705" y2="515" class="tick" />
+  <text x="705" y="530" text-anchor="middle" class="axis-label">9000</text>
+
+  <line x1="760" y1="510" x2="760" y2="515" class="tick" />
+  <text x="760" y="530" text-anchor="middle" class="axis-label">10000</text>
+
+  <text x="485" y="555" text-anchor="middle" class="label">Horas de Operacao</text>
+
+  <!-- Y-axis line -->
+  <line x1="210" y1="80" x2="210" y2="510" stroke="#333" stroke-width="1.5" />
+
+  <!-- Horizontal grid lines -->
+  <line x1="210" y1="140" x2="760" y2="140" class="grid" />
+  <line x1="210" y1="210" x2="760" y2="210" class="grid" />
+  <line x1="210" y1="280" x2="760" y2="280" class="grid" />
+  <line x1="210" y1="350" x2="760" y2="350" class="grid" />
+  <line x1="210" y1="420" x2="760" y2="420" class="grid" />
+  <line x1="210" y1="490" x2="760" y2="490" class="grid" />
+
+  <!-- Bar 1: Verificacao Contencao — every 200h, show repeating markers -->
+  <!-- Repeating bar segments at 200h intervals up to 10000h -->
+  <!-- Show as repeating small bars -->
+  <rect x="221" y="100" width="6" height="30" class="bar1" />
+  <rect x="232" y="100" width="6" height="30" class="bar1" />
+  <rect x="243" y="100" width="6" height="30" class="bar1" />
+  <rect x="254" y="100" width="6" height="30" class="bar1" />
+  <rect x="265" y="100" width="6" height="30" class="bar1" />
+  <rect x="276" y="100" width="6" height="30" class="bar1" />
+  <rect x="287" y="100" width="6" height="30" class="bar1" />
+  <rect x="298" y="100" width="6" height="30" class="bar1" />
+  <rect x="309" y="100" width="6" height="30" class="bar1" />
+  <rect x="320" y="100" width="6" height="30" class="bar1" />
+  <rect x="331" y="100" width="6" height="30" class="bar1" />
+  <rect x="342" y="100" width="6" height="30" class="bar1" />
+  <rect x="353" y="100" width="6" height="30" class="bar1" />
+  <rect x="364" y="100" width="6" height="30" class="bar1" />
+  <rect x="375" y="100" width="6" height="30" class="bar1" />
+  <rect x="386" y="100" width="6" height="30" class="bar1" />
+  <rect x="397" y="100" width="6" height="30" class="bar1" />
+  <rect x="408" y="100" width="6" height="30" class="bar1" />
+  <rect x="419" y="100" width="6" height="30" class="bar1" />
+  <rect x="430" y="100" width="6" height="30" class="bar1" />
+  <text x="455" y="120" class="sublabel">... a cada 200 h</text>
+
+  <!-- Bar 2: Recarga Antiprotons — every 500h -->
+  <rect x="237" y="170" width="8" height="30" class="bar2" />
+  <rect x="265" y="170" width="8" height="30" class="bar2" />
+  <rect x="292" y="170" width="8" height="30" class="bar2" />
+  <rect x="320" y="170" width="8" height="30" class="bar2" />
+  <rect x="347" y="170" width="8" height="30" class="bar2" />
+  <rect x="375" y="170" width="8" height="30" class="bar2" />
+  <rect x="402" y="170" width="8" height="30" class="bar2" />
+  <rect x="430" y="170" width="8" height="30" class="bar2" />
+  <rect x="457" y="170" width="8" height="30" class="bar2" />
+  <rect x="485" y="170" width="8" height="30" class="bar2" />
+  <text x="510" y="190" class="sublabel">... a cada 500 h</text>
+
+  <!-- Bar 3: Calibracao Sensores — every 500h (same interval, different task) -->
+  <rect x="237" y="240" width="8" height="30" class="bar1" />
+  <rect x="265" y="240" width="8" height="30" class="bar1" />
+  <rect x="292" y="240" width="8" height="30" class="bar1" />
+  <rect x="320" y="240" width="8" height="30" class="bar1" />
+  <rect x="347" y="240" width="8" height="30" class="bar1" />
+  <rect x="375" y="240" width="8" height="30" class="bar1" />
+  <rect x="402" y="240" width="8" height="30" class="bar1" />
+  <rect x="430" y="240" width="8" height="30" class="bar1" />
+  <text x="455" y="260" class="sublabel">... a cada 500 h</text>
+
+  <!-- Bar 4: Troca Bobinas — every 3000h -->
+  <rect x="375" y="310" width="12" height="30" class="bar3" />
+  <rect x="540" y="310" width="12" height="30" class="bar3" />
+  <rect x="705" y="310" width="12" height="30" class="bar3" />
+  <text x="730" y="330" class="sublabel">a cada 3.000 h</text>
+
+  <!-- Bar 5: Inspecao Endoscopica — every 5000h -->
+  <rect x="485" y="380" width="12" height="30" class="bar3" />
+  <rect x="760" y="380" width="12" height="30" class="bar3" />
+  <text x="515" y="400" class="sublabel">a cada 5.000 h</text>
+
+  <!-- Bar 6: Revisao Completa — every 8000h -->
+  <rect x="650" y="450" width="16" height="30" class="bar4" />
+  <text x="680" y="470" class="sublabel">a cada 8.000 h</text>
+
+  <!-- Legend -->
+  <rect x="210" y="565" width="540" height="30" fill="none" stroke="#333" stroke-width="1" rx="4" />
+  <rect x="220" y="573" width="14" height="14" class="bar1" />
+  <text x="240" y="584" class="sublabel">Rotina (200-500 h)</text>
+  <rect x="340" y="573" width="14" height="14" class="bar2" />
+  <text x="360" y="584" class="sublabel">Reabastecimento</text>
+  <rect x="460" y="573" width="14" height="14" class="bar3" />
+  <text x="480" y="584" class="sublabel">Substituicao (3000-5000 h)</text>
+  <rect x="620" y="573" width="14" height="14" class="bar4" />
+  <text x="640" y="584" class="sublabel">Revisao Completa (8000 h)</text>
+</svg>

@@ -1,7 +1,7 @@
 # Project-specific
 docker/.env
 docker/LocalSettings.php
-docker/dataset/
+docker/dataset/customer/
 __builtins__.pyi
 mlflow.db
 .coverage

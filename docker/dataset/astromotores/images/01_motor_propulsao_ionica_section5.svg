@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <style>
+      text { font-family: 'Segoe UI', Arial, sans-serif; fill: #333; }
+      .title { font-size: 16px; font-weight: bold; }
+      .row-label { font-size: 11px; font-weight: bold; }
+      .interval { font-size: 10px; }
+      .axis-label { font-size: 10px; fill: #666; }
+      .grid-line { stroke: #e0e0e0; stroke-width: 0.5; }
+      .bar { stroke: #333; stroke-width: 1; rx: 3; ry: 3; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Intervalos de Manutenção Preventiva — Motor Iônico NE-ION-7742</text>
+  <text x="400" y="48" text-anchor="middle" font-size="11" fill="#666">Escala: 0 - 20.000 horas de operação</text>
+
+  <!-- Chart area -->
+  <!-- Y-axis labels area: x=0..200, Chart: x=200..760 -->
+  <!-- X-axis: 200 = 0h, 760 = 20000h => 1h = 0.028px, 1000h = 28px -->
+
+  <!-- Grid lines (vertical, every 2500h) -->
+  <line x1="200" y1="70" x2="200" y2="540" stroke="#333" stroke-width="1"/>
+  <line x1="270" y1="70" x2="270" y2="540" class="grid-line"/>
+  <text x="270" y="558" text-anchor="middle" class="axis-label">2.500h</text>
+  <line x1="340" y1="70" x2="340" y2="540" class="grid-line"/>
+  <text x="340" y="558" text-anchor="middle" class="axis-label">5.000h</text>
+  <line x1="410" y1="70" x2="410" y2="540" class="grid-line"/>
+  <text x="410" y="558" text-anchor="middle" class="axis-label">7.500h</text>
+  <line x1="480" y1="70" x2="480" y2="540" class="grid-line"/>
+  <text x="480" y="558" text-anchor="middle" class="axis-label">10.000h</text>
+  <line x1="550" y1="70" x2="550" y2="540" class="grid-line"/>
+  <text x="550" y="558" text-anchor="middle" class="axis-label">12.500h</text>
+  <line x1="620" y1="70" x2="620" y2="540" class="grid-line"/>
+  <text x="620" y="558" text-anchor="middle" class="axis-label">15.000h</text>
+  <line x1="690" y1="70" x2="690" y2="540" class="grid-line"/>
+  <text x="690" y="558" text-anchor="middle" class="axis-label">17.500h</text>
+  <line x1="760" y1="70" x2="760" y2="540" class="grid-line"/>
+  <text x="760" y="558" text-anchor="middle" class="axis-label">20.000h</text>
+  <text x="200" y="558" text-anchor="middle" class="axis-label">0h</text>
+
+  <!-- Horizontal axis -->
+  <line x1="200" y1="540" x2="760" y2="540" stroke="#333" stroke-width="1"/>
+
+  <!-- Row 1: Inspeção Visual — every 500h (repeating bars) -->
+  <text x="10" y="95" class="row-label">Inspeção Visual</text>
+  <text x="10" y="108" class="interval">(a cada 500h)</text>
+  <!-- Show repeating small bars every 500h = 14px -->
+  <rect x="214" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="228" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="242" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="256" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="270" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="284" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="298" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="312" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="326" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="340" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="354" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="368" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="382" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="396" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="410" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="424" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="438" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="452" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="466" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <rect x="480" y="82" width="4" height="24" class="bar" fill="#90caf9"/>
+  <text x="200" y="118" font-size="9" fill="#1565c0">MP-ION-001/002 | Nível II | 1,5h</text>
+
+  <!-- Separator -->
+  <line x1="200" y1="125" x2="760" y2="125" stroke="#eee" stroke-width="1"/>
+
+  <!-- Row 2: Troca/Recarga de Xénon — every 1000h -->
+  <text x="10" y="148" class="row-label">Troca/Recarga</text>
+  <text x="10" y="161" class="row-label">de Xénon</text>
+  <text x="10" y="174" class="interval">(a cada 1.000h)</text>
+  <rect x="228" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="256" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="284" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="312" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="340" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="368" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="396" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="424" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="452" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <rect x="480" y="138" width="6" height="28" class="bar" fill="#a5d6a7"/>
+  <text x="200" y="183" font-size="9" fill="#2e7d32">MP-ION-003/004 | Nível II-III | 3,5h</text>
+
+  <line x1="200" y1="190" x2="760" y2="190" stroke="#eee" stroke-width="1"/>
+
+  <!-- Row 3: Recalibração das Grades — every 2000h -->
+  <text x="10" y="213" class="row-label">Recalibração</text>
+  <text x="10" y="226" class="row-label">das Grades</text>
+  <text x="10" y="239" class="interval">(a cada 2.000h)</text>
+  <rect x="256" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="312" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="368" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="424" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="480" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="536" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="592" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="648" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="704" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <rect x="760" y="203" width="8" height="28" class="bar" fill="#ffcc80"/>
+  <text x="200" y="248" font-size="9" fill="#e65100">MP-ION-005/006/007 | Nível III | 7,5h</text>
+
+  <line x1="200" y1="255" x2="760" y2="255" stroke="#eee" stroke-width="1"/>
+
+  <!-- Row 4: Substituição do Cátodo — every 5000h -->
+  <text x="10" y="278" class="row-label">Substituição do</text>
+  <text x="10" y="291" class="row-label">Cátodo</text>
+  <text x="10" y="304" class="interval">(a cada 5.000h)</text>
+  <rect x="340" y="268" width="10" height="28" class="bar" fill="#ef9a9a"/>
+  <rect x="480" y="268" width="10" height="28" class="bar" fill="#ef9a9a"/>
+  <rect x="620" y="268" width="10" height="28" class="bar" fill="#ef9a9a"/>
+  <rect x="760" y="268" width="10" height="28" class="bar" fill="#ef9a9a"/>
+  <text x="200" y="313" font-size="9" fill="#c62828">MP-ION-008/009 | Nível III | 3,5h</text>
+
+  <line x1="200" y1="320" x2="760" y2="320" stroke="#eee" stroke-width="1"/>
+
+  <!-- Row 5: Substituição das Grades — every 10000h -->
+  <text x="10" y="343" class="row-label">Substituição</text>
+  <text x="10" y="356" class="row-label">das Grades</text>
+  <text x="10" y="369" class="interval">(a cada 10.000h)</text>
+  <rect x="480" y="333" width="12" height="28" class="bar" fill="#ce93d8"/>
+  <rect x="760" y="333" width="12" height="28" class="bar" fill="#ce93d8"/>
+  <text x="200" y="378" font-size="9" fill="#7b1fa2">MP-ION-010/011/012 | Nível III-IV | 9,5h</text>
+
+  <line x1="200" y1="385" x2="760" y2="385" stroke="#eee" stroke-width="1"/>
+
+  <!-- Row 6: Overhaul Completo — at 20000h -->
+  <text x="10" y="408" class="row-label">Overhaul Completo</text>
+  <text x="10" y="421" class="row-label">ou Substituição</text>
+  <text x="10" y="434" class="interval">(20.000h)</text>
+  <!-- Full lifespan bar -->
+  <rect x="200" y="400" width="560" height="28" fill="#fff3e0" stroke="#e65100" stroke-width="1.5" rx="3"/>
+  <text x="480" y="418" text-anchor="middle" font-size="10" fill="#e65100" font-weight="bold">Vida útil nominal: 20.000 horas</text>
+  <!-- End marker -->
+  <rect x="756" y="398" width="16" height="32" fill="#c62828" stroke="#333" stroke-width="1.5" rx="2"/>
+  <text x="764" y="418" text-anchor="middle" font-size="8" fill="white" font-weight="bold">OH</text>
+  <text x="200" y="445" font-size="9" fill="#c62828">MP-ION-013 | Nível IV | 8,0h | Obrigatório</text>
+
+  <line x1="200" y1="455" x2="760" y2="455" stroke="#eee" stroke-width="1"/>
+
+  <!-- Vida útil dos componentes (summary) -->
+  <text x="10" y="480" class="row-label">Vida Útil dos</text>
+  <text x="10" y="493" class="row-label">Componentes:</text>
+
+  <!-- Cátodo lifespan bar -->
+  <rect x="200" y="472" width="140" height="14" fill="#ef9a9a" stroke="#333" stroke-width="0.5" rx="2"/>
+  <text x="275" y="483" text-anchor="middle" font-size="8">Cátodo (5.000h)</text>
+
+  <!-- Grades lifespan bar -->
+  <rect x="200" y="490" width="280" height="14" fill="#ce93d8" stroke="#333" stroke-width="0.5" rx="2"/>
+  <text x="340" y="501" text-anchor="middle" font-size="8">Grade Aceleradora (10.000h)</text>
+
+  <!-- Bobina RF lifespan bar -->
+  <rect x="200" y="508" width="336" height="14" fill="#90caf9" stroke="#333" stroke-width="0.5" rx="2"/>
+  <text x="368" y="519" text-anchor="middle" font-size="8">Bobina RF / Grade Tela (12.000h)</text>
+
+  <!-- Câmara h-BN lifespan bar -->
+  <rect x="200" y="526" width="420" height="14" fill="#a5d6a7" stroke="#333" stroke-width="0.5" rx="2"/>
+  <text x="410" y="537" text-anchor="middle" font-size="8">Câmara h-BN (15.000h)</text>
+
+  <!-- Footer -->
+  <text x="400" y="580" text-anchor="middle" font-size="10" fill="#666">NE-ION-7742 Rev. 4.2 | Manutenção Preventiva | Veículo Espacial Série Nova ERA</text>
+</svg>

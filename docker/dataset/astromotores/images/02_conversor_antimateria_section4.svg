@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #333; }
+      .title { font-size: 16px; font-weight: bold; }
+      .label { font-size: 12px; }
+      .sublabel { font-size: 10px; fill: #666; }
+      .part-num { font-size: 10px; fill: #555; font-style: italic; }
+      .component { stroke: #333; stroke-width: 2; }
+      .leader { stroke: #333; stroke-width: 1; stroke-dasharray: 4,3; fill: none; }
+      .center-line { stroke: #333; stroke-width: 0.5; stroke-dasharray: 12,4,2,4; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Vista Explodida — Conversor de Antimateria NE-ATM-3300</text>
+
+  <!-- Center axis line -->
+  <line x1="300" y1="55" x2="300" y2="580" class="center-line" />
+
+  <!-- Component 1: Blindagem Externa (top) -->
+  <path d="M 180,75 L 420,75 L 430,85 Q 435,95 430,105 L 420,115 L 180,115 L 170,105 Q 165,95 170,85 Z" fill="#f0f4f8" class="component" />
+  <text x="300" y="100" text-anchor="middle" class="label">Blindagem Externa</text>
+  <!-- Leader line -->
+  <line x1="430" y1="95" x2="540" y2="95" class="leader" />
+  <text x="550" y="92" class="label">Blindagem Externa</text>
+  <text x="550" y="105" class="sublabel">Aco Inox 316L-Espacial, 25 mm</text>
+  <text x="550" y="118" class="part-num">Parte do NE-ATM-3305</text>
+
+  <!-- Spacing indicator -->
+  <line x1="280" y1="115" x2="280" y2="150" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+  <line x1="320" y1="115" x2="320" y2="150" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+
+  <!-- Component 2: Bobina Magnetica Superior -->
+  <rect x="200" y="155" width="200" height="55" rx="8" ry="8" fill="#f0f4f8" class="component" />
+  <!-- Coil detail -->
+  <ellipse cx="240" cy="182" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="280" cy="182" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="320" cy="182" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="360" cy="182" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <text x="300" y="200" text-anchor="middle" class="sublabel">4 de 8 bobinas</text>
+  <!-- Leader line -->
+  <line x1="400" y1="182" x2="540" y2="182" class="leader" />
+  <text x="550" y="175" class="label">Bobina Magnetica Superior</text>
+  <text x="550" y="188" class="sublabel">Nb3Sn Supercondutor, 62 kg/un.</text>
+  <text x="550" y="201" class="part-num">NE-ATM-3303-B (x4 superior)</text>
+
+  <!-- Spacing -->
+  <line x1="280" y1="210" x2="280" y2="245" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+  <line x1="320" y1="210" x2="320" y2="245" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+
+  <!-- Component 3: Camara de Aniquilacao -->
+  <rect x="175" y="250" width="250" height="90" rx="12" ry="12" fill="#f0f4f8" class="component" stroke-width="3" />
+  <text x="300" y="285" text-anchor="middle" class="label">Camara de Aniquilacao</text>
+  <!-- Internal structure hint -->
+  <rect x="210" y="270" width="180" height="50" rx="6" ry="6" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="3,3" />
+  <text x="300" y="310" text-anchor="middle" class="sublabel">Revestimento WC-14</text>
+  <!-- Leader line -->
+  <line x1="425" y1="295" x2="540" y2="295" class="leader" />
+  <text x="550" y="280" class="label">Camara de Aniquilacao</text>
+  <text x="550" y="293" class="sublabel">Titanio-X + WC-14, 847 kg</text>
+  <text x="550" y="306" class="part-num">NE-ATM-3305</text>
+  <text x="550" y="319" class="sublabel">Torque flanges: 285 N-m</text>
+
+  <!-- Spacing -->
+  <line x1="280" y1="340" x2="280" y2="370" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+  <line x1="320" y1="340" x2="320" y2="370" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+
+  <!-- Component 4: Injetor de Antiprotons -->
+  <path d="M 230,375 L 370,375 L 380,385 L 380,420 L 370,430 L 230,430 L 220,420 L 220,385 Z" fill="#f0f4f8" class="component" />
+  <!-- Lens indicators -->
+  <line x1="260" y1="380" x2="260" y2="425" stroke="#333" stroke-width="1" />
+  <line x1="285" y1="380" x2="285" y2="425" stroke="#333" stroke-width="1" />
+  <line x1="315" y1="380" x2="315" y2="425" stroke="#333" stroke-width="1" />
+  <line x1="340" y1="380" x2="340" y2="425" stroke="#333" stroke-width="1" />
+  <text x="300" y="410" text-anchor="middle" class="sublabel">Lentes Magneticas</text>
+  <!-- Leader line -->
+  <line x1="380" y1="402" x2="540" y2="402" class="leader" />
+  <text x="550" y="392" class="label">Injetor de Antiprotons</text>
+  <text x="550" y="405" class="sublabel">4 estagios quadrupolares</text>
+  <text x="550" y="418" class="part-num">NE-ATM-3302</text>
+
+  <!-- Spacing -->
+  <line x1="280" y1="430" x2="280" y2="460" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+  <line x1="320" y1="430" x2="320" y2="460" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+
+  <!-- Component 5: Bobina Magnetica Inferior -->
+  <rect x="200" y="465" width="200" height="55" rx="8" ry="8" fill="#f0f4f8" class="component" />
+  <ellipse cx="240" cy="492" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="280" cy="492" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="320" cy="492" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="360" cy="492" rx="15" ry="18" fill="none" stroke="#333" stroke-width="1.5" />
+  <!-- Leader line -->
+  <line x1="400" y1="492" x2="540" y2="492" class="leader" />
+  <text x="550" y="485" class="label">Bobina Magnetica Inferior</text>
+  <text x="550" y="498" class="sublabel">Nb3Sn Supercondutor, 62 kg/un.</text>
+  <text x="550" y="511" class="part-num">NE-ATM-3303-B (x4 inferior)</text>
+
+  <!-- Spacing -->
+  <line x1="280" y1="520" x2="280" y2="540" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+  <line x1="320" y1="520" x2="320" y2="540" stroke="#333" stroke-width="0.5" stroke-dasharray="2,3" />
+
+  <!-- Component 6: Placa de Montagem -->
+  <rect x="160" y="545" width="280" height="30" rx="4" ry="4" fill="#d8e2ec" class="component" />
+  <text x="300" y="565" text-anchor="middle" class="label">Placa de Montagem</text>
+  <!-- Leader line -->
+  <line x1="440" y1="560" x2="540" y2="560" class="leader" />
+  <text x="550" y="555" class="label">Placa de Montagem</text>
+  <text x="550" y="568" class="sublabel">Liga Al-7075-T6 Espacial</text>
+  <text x="550" y="581" class="part-num">NE-ATM-3300-PM</text>
+
+  <!-- Assembly order arrow on far left -->
+  <text x="110" y="70" text-anchor="middle" class="sublabel">Ordem de</text>
+  <text x="110" y="83" text-anchor="middle" class="sublabel">Montagem</text>
+  <line x1="110" y1="570" x2="110" y2="95" stroke="#333" stroke-width="1.5" marker-end="url(#arr4)" />
+  <defs>
+    <marker id="arr4" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  <text x="95" y="340" text-anchor="middle" class="sublabel" transform="rotate(-90, 95, 340)">De baixo para cima</text>
+</svg>

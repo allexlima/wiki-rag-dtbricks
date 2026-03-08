@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Diagrama de Blocos — Sistema de Refrigeração Criogênica Dual-Loop</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #000; }
+    .title { font-size: 16px; font-weight: bold; text-anchor: middle; }
+    .subtitle { font-size: 11px; text-anchor: middle; fill: #444; }
+    .block-label { font-size: 13px; font-weight: bold; text-anchor: middle; fill: #000; }
+    .block-sub { font-size: 10px; text-anchor: middle; fill: #333; }
+    .loop-label { font-size: 12px; font-weight: bold; fill: #555; }
+    .arrow-label { font-size: 9px; fill: #666; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+    </marker>
+    <marker id="arrowhead-ret" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="#fff" />
+
+  <!-- Title -->
+  <text x="400" y="35" class="title">Sistema de Refrigeração Criogênica — Arquitetura Dual-Loop</text>
+  <text x="400" y="52" class="subtitle">Veículo Espacial Série Nova ERA — Módulo 11</text>
+
+  <!-- Loop regions -->
+  <rect x="30" y="130" width="360" height="340" rx="12" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="8,4" />
+  <text x="210" y="155" class="loop-label">LOOP PRIMÁRIO</text>
+
+  <rect x="410" y="130" width="360" height="340" rx="12" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="8,4" />
+  <text x="590" y="155" class="loop-label">LOOP SECUNDÁRIO</text>
+
+  <!-- Block: Motor/Reator -->
+  <rect x="80" y="185" width="160" height="70" rx="8" fill="#fff" stroke="#000" stroke-width="2" />
+  <text x="160" y="215" class="block-label">Motor / Reator</text>
+  <text x="160" y="233" class="block-sub">NE-RFC-9000</text>
+  <text x="160" y="246" class="block-sub">Fonte Térmica Principal</text>
+
+  <!-- Block: Bomba Primária -->
+  <rect x="80" y="320" width="160" height="70" rx="8" fill="#fff" stroke="#000" stroke-width="2" />
+  <text x="160" y="350" class="block-label">Bomba Criogênica</text>
+  <text x="160" y="368" class="block-sub">NE-CRY-1110</text>
+  <text x="160" y="381" class="block-sub">Primária</text>
+
+  <!-- Block: Trocador de Calor -->
+  <rect x="310" y="250" width="180" height="80" rx="8" fill="#fff" stroke="#000" stroke-width="2.5" />
+  <text x="400" y="280" class="block-label">Trocador de Calor</text>
+  <text x="400" y="298" class="block-sub">NE-CRY-2210</text>
+  <text x="400" y="311" class="block-sub">Intermediário</text>
+
+  <!-- Block: Bomba Secundária -->
+  <rect x="510" y="185" width="160" height="70" rx="8" fill="#fff" stroke="#000" stroke-width="2" />
+  <text x="590" y="215" class="block-label">Bomba Criogênica</text>
+  <text x="590" y="233" class="block-sub">NE-CRY-1120</text>
+  <text x="590" y="246" class="block-sub">Secundária</text>
+
+  <!-- Block: Radiador Espacial -->
+  <rect x="510" y="355" width="160" height="70" rx="8" fill="#fff" stroke="#000" stroke-width="2" />
+  <text x="590" y="382" class="block-label">Radiador Espacial</text>
+  <text x="590" y="400" class="block-sub">NE-CRY-3310 (×4)</text>
+  <text x="590" y="413" class="block-sub">Rejeição Térmica</text>
+
+  <!-- Arrows: Reator → Trocador (via Bomba) -->
+  <line x1="160" y1="255" x2="160" y2="320" stroke="#000" stroke-width="1.8" marker-end="url(#arrowhead)" />
+  <text x="135" y="292" class="arrow-label">Fluido</text>
+  <text x="135" y="303" class="arrow-label">quente</text>
+
+  <line x1="240" y1="355" x2="310" y2="290" stroke="#000" stroke-width="1.8" marker-end="url(#arrowhead)" />
+  <text x="260" y="310" class="arrow-label">Recalque</text>
+
+  <!-- Arrow: Trocador → Reator (return, dashed) -->
+  <path d="M 310 275 Q 270 220 240 220" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-ret)" />
+  <text x="260" y="238" class="arrow-label">Retorno frio</text>
+
+  <!-- Arrow: Trocador → Bomba Secundária -->
+  <line x1="490" y1="275" x2="510" y2="240" stroke="#000" stroke-width="1.8" marker-end="url(#arrowhead)" />
+  <text x="520" y="268" class="arrow-label">Calor</text>
+  <text x="520" y="279" class="arrow-label">transferido</text>
+
+  <!-- Arrow: Bomba Sec → Radiador -->
+  <line x1="590" y1="255" x2="590" y2="355" stroke="#000" stroke-width="1.8" marker-end="url(#arrowhead)" />
+  <text x="620" y="310" class="arrow-label">Fluido</text>
+  <text x="620" y="321" class="arrow-label">quente</text>
+
+  <!-- Arrow: Radiador → Trocador (return, dashed) -->
+  <path d="M 510 395 Q 460 395 460 330" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-ret)" />
+  <text x="465" y="370" class="arrow-label">Retorno</text>
+  <text x="465" y="381" class="arrow-label">frio</text>
+
+  <!-- Radiation symbol near Radiador -->
+  <text x="700" y="385" font-size="11" fill="#000" font-family="Arial">≈≈≈ IR →</text>
+  <text x="700" y="400" font-size="9" fill="#666" font-family="Arial">Espaço</text>
+  <text x="700" y="411" font-size="9" fill="#666" font-family="Arial">Profundo</text>
+
+  <!-- Legend -->
+  <line x1="50" y1="520" x2="100" y2="520" stroke="#000" stroke-width="1.8" marker-end="url(#arrowhead)" />
+  <text x="110" y="524" font-size="10" fill="#000" font-family="Arial">Fluxo principal</text>
+
+  <line x1="50" y1="545" x2="100" y2="545" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-ret)" />
+  <text x="110" y="549" font-size="10" fill="#555" font-family="Arial">Retorno (fluxo frio)</text>
+
+  <text x="400" y="580" font-size="9" fill="#999" text-anchor="middle" font-family="Arial">NE-CRY-DIAG-001 Rev.4.2 — Diagrama esquemático, não em escala</text>
+</svg>

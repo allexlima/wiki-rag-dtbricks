@@ -91,18 +91,24 @@ setup-lakebase: _require-secrets  ## 🗄️  Provision Lakebase instance + crea
 	@echo "✅ Lakebase setup complete"
 
 # ─────────────────────────────────────────────────────────────
-# 🐳 Docker (MediaWiki)
+# 📖 MediaWiki
 # ─────────────────────────────────────────────────────────────
 
-.PHONY: docker-up
-docker-up: _require-secrets  ## 🐳 Start MediaWiki container (auto-generates .env if missing)
-	@$(if $(PROFILE),DATABRICKS_CONFIG_PROFILE=$(PROFILE) ,)cd docker && chmod +x setup.sh && ./setup.sh
+.PHONY: setup-wiki
+setup-wiki: _require-secrets  ## 📖 Start MediaWiki container (auto-generates .env if missing)
+	@$(if $(PROFILE),export DATABRICKS_CONFIG_PROFILE=$(PROFILE) && ,)cd docker && $(MAKE) --no-print-directory up
 
-.PHONY: docker-down
-docker-down:  ## 🐳 Stop and remove MediaWiki container + volumes
-	@echo "🐳 Stopping MediaWiki..."
-	@cd docker && docker compose down -v
-	@echo "✅ MediaWiki stopped"
+.PHONY: wiki-destroy
+wiki-destroy:  ## 📖 Stop and remove MediaWiki container + volumes
+	@cd docker && $(MAKE) --no-print-directory down
+
+.PHONY: demo-load
+demo-load:  ## 📖 Ingest demo dataset into MediaWiki (interactive selector)
+	@cd docker && $(MAKE) --no-print-directory ingest
+
+.PHONY: demo-cleanup
+demo-cleanup:  ## 📖 Delete all wiki pages and uploaded files
+	@cd docker && $(MAKE) --no-print-directory clean
 
 # ─────────────────────────────────────────────────────────────
 # 🤖 Model + Endpoint
@@ -130,7 +136,7 @@ ingest: _require-secrets  ## 📊 Run ingestion pipeline (reads MW → chunks �
 # ─────────────────────────────────────────────────────────────
 
 .PHONY: deploy
-deploy: setup-lakebase docker-up deploy-agent ingest  ## 🚀 Full deployment (all steps)
+deploy: setup-lakebase setup-wiki deploy-agent ingest  ## 🚀 Full deployment (all steps)
 	@echo ""
 	@echo "🎉 Deployment complete!"
 	@echo "   📱 App:      databricks apps get $(APP_NAME)"
@@ -148,7 +154,7 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 	@echo "  📦 Bundle resources..."
 	@databricks bundle destroy $(CLI_FLAGS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
-	@echo "  🐳 Docker containers..."
+	@echo "  📖 MediaWiki containers..."
 	@cd docker && docker compose down -v 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Cronograma de Manutenção Preventiva — Gerador de Campo de Dobra</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #000; }
+    .title { font-size: 18px; font-weight: bold; text-anchor: middle; }
+    .subtitle { font-size: 11px; text-anchor: middle; fill: #444; }
+    .task-label { font-size: 11px; font-weight: bold; text-anchor: end; }
+    .task-detail { font-size: 9px; text-anchor: end; fill: #444; }
+    .axis-label { font-size: 10px; text-anchor: middle; fill: #333; }
+    .axis-title { font-size: 12px; font-weight: bold; text-anchor: middle; }
+    .interval-label { font-size: 9px; text-anchor: middle; fill: #fff; font-weight: bold; }
+    .grid { stroke: #ccc; stroke-width: 0.5; }
+    .bar { stroke: #000; stroke-width: 1.5; }
+    .bar-fill { fill: #000; }
+    .bar-fill-light { fill: #666; }
+    .bar-fill-med { fill: #333; }
+    .bar-fill-dark { fill: #111; }
+    .repeat-marker { fill: none; stroke: #000; stroke-width: 1.5; }
+  </style>
+
+  <!-- Title -->
+  <text x="400" y="30" class="title">CRONOGRAMA DE MANUTENÇÃO PREVENTIVA</text>
+  <text x="400" y="48" class="subtitle">Intervalos em horas de operação em dobra | NE-MAINT-5000</text>
+
+  <!-- Chart area -->
+  <!-- Y-axis labels (tasks) -->
+  <!-- X-axis: 0 to 8000 hours, chart from x=250 to x=770 -->
+  <!-- Each 1000h = 65px -->
+
+  <!-- Grid lines -->
+  <line class="grid" x1="250" y1="80" x2="250" y2="520" stroke="#999" stroke-width="1"/>
+  <line class="grid" x1="315" y1="80" x2="315" y2="520"/>
+  <line class="grid" x1="380" y1="80" x2="380" y2="520"/>
+  <line class="grid" x1="445" y1="80" x2="445" y2="520"/>
+  <line class="grid" x1="510" y1="80" x2="510" y2="520"/>
+  <line class="grid" x1="575" y1="80" x2="575" y2="520"/>
+  <line class="grid" x1="640" y1="80" x2="640" y2="520"/>
+  <line class="grid" x1="705" y1="80" x2="705" y2="520"/>
+  <line class="grid" x1="770" y1="80" x2="770" y2="520" stroke="#999" stroke-width="1"/>
+
+  <!-- X-axis labels -->
+  <text x="250" y="540" class="axis-label">0</text>
+  <text x="315" y="540" class="axis-label">1.000</text>
+  <text x="380" y="540" class="axis-label">2.000</text>
+  <text x="445" y="540" class="axis-label">3.000</text>
+  <text x="510" y="540" class="axis-label">4.000</text>
+  <text x="575" y="540" class="axis-label">5.000</text>
+  <text x="640" y="540" class="axis-label">6.000</text>
+  <text x="705" y="540" class="axis-label">7.000</text>
+  <text x="770" y="540" class="axis-label">8.000</text>
+  <text x="510" y="565" class="axis-title">Horas de Operação em Dobra</text>
+
+  <!-- Horizontal axis line -->
+  <line x1="250" y1="520" x2="770" y2="520" stroke="#000" stroke-width="1.5"/>
+  <line x1="250" y1="80" x2="250" y2="520" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Task 1: Verificação Cristal — every 250h -->
+  <text x="240" y="110" class="task-label">Verificação Cristal</text>
+  <text x="240" y="123" class="task-detail">NE-MAINT-5010 | 250h</text>
+  <!-- Repeating bars at 250, 500, 750, ... -->
+  <rect class="bar-fill" x="266" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="282" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="298" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="315" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="331" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="347" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="363" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="380" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="396" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="412" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="428" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="445" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="461" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="477" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="493" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="510" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="526" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="542" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="558" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="575" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="591" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="607" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="623" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="640" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="656" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="672" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="688" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="705" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="721" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="737" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="753" y="100" width="6" height="28" rx="1"/>
+  <rect class="bar-fill" x="770" y="100" width="6" height="28" rx="1"/>
+
+  <!-- Task 2: Recomposição Cristalina N1 — every 1000h -->
+  <text x="240" y="175" class="task-label">Recomposição N1</text>
+  <text x="240" y="188" class="task-detail">NE-MAINT-5030 | 1.000h</text>
+  <rect class="bar-fill-med" x="315" y="162" width="20" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="380" y="162" width="20" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="510" y="162" width="20" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="575" y="162" width="20" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="640" y="162" width="20" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="705" y="162" width="20" height="28" rx="2"/>
+  <text x="325" y="181" class="interval-label">8h</text>
+  <text x="390" y="181" class="interval-label">8h</text>
+
+  <!-- Task 3: Recomposição Cristalina N2 — every 3000h -->
+  <text x="240" y="240" class="task-label">Recomposição N2</text>
+  <text x="240" y="253" class="task-detail">NE-MAINT-5040 | 3.000h</text>
+  <rect class="bar-fill-dark" x="445" y="228" width="30" height="28" rx="2"/>
+  <rect class="bar-fill-dark" x="640" y="228" width="30" height="28" rx="2"/>
+  <text x="460" y="247" class="interval-label">24h</text>
+  <text x="655" y="247" class="interval-label">24h</text>
+
+  <!-- Task 4: Alinhamento Nacele — every 1000h -->
+  <text x="240" y="305" class="task-label">Alinhamento Nacele</text>
+  <text x="240" y="318" class="task-detail">Seção 3.3 | 1.000h</text>
+  <rect class="bar-fill-light" x="315" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="380" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="445" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="510" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="575" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="640" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="705" y="293" width="14" height="28" rx="2"/>
+  <rect class="bar-fill-light" x="770" y="293" width="14" height="28" rx="2"/>
+
+  <!-- Task 5: Ciclo de Dilítio (substituição) — 3000h check, 8000h obrigatório -->
+  <text x="240" y="370" class="task-label">Ciclo de Dilítio</text>
+  <text x="240" y="383" class="task-detail">NE-MAINT-5040/5060 | 3.000h</text>
+  <rect class="bar-fill-med" x="445" y="358" width="25" height="28" rx="2"/>
+  <rect class="bar-fill-med" x="640" y="358" width="25" height="28" rx="2"/>
+  <!-- 8000h mandatory replacement (highlighted) -->
+  <rect x="770" y="358" width="25" height="28" rx="2" fill="#000" stroke="#000" stroke-width="2"/>
+  <text x="770" y="351" class="axis-label" font-weight="bold" font-size="8">OBRIG.</text>
+
+  <!-- Task 6: Troca Refrigerante — every 5000h -->
+  <text x="240" y="435" class="task-label">Troca Refrigerante</text>
+  <text x="240" y="448" class="task-detail">NE-MAINT-5140 | 5.000h</text>
+  <rect class="bar-fill-light" x="575" y="423" width="20" height="28" rx="2"/>
+
+  <!-- Task 7: Revisão Completa — 8000h -->
+  <text x="240" y="500" class="task-label">Revisão Completa</text>
+  <text x="240" y="513" class="task-detail">NE-MAINT-GERAL | 8.000h</text>
+  <rect x="770" y="488" width="25" height="28" rx="2" fill="#000" stroke="#000" stroke-width="2"/>
+
+  <!-- Legend -->
+  <rect x="260" y="575" width="14" height="10" fill="#000" stroke="#000" stroke-width="1"/>
+  <text x="280" y="584" class="axis-label" text-anchor="start">Obrigatório</text>
+  <rect x="370" y="575" width="14" height="10" fill="#333" stroke="#000" stroke-width="1"/>
+  <text x="390" y="584" class="axis-label" text-anchor="start">Procedimento maior</text>
+  <rect x="510" y="575" width="14" height="10" fill="#666" stroke="#000" stroke-width="1"/>
+  <text x="530" y="584" class="axis-label" text-anchor="start">Procedimento padrão</text>
+  <rect x="660" y="575" width="6" height="10" fill="#000" stroke="#000" stroke-width="1"/>
+  <text x="672" y="584" class="axis-label" text-anchor="start">Verificação rápida</text>
+</svg>

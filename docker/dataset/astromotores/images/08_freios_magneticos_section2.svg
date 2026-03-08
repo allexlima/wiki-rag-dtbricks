@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Desenho Dimensional — Conjunto de Frenagem Magnética</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1a1a1a; }
+    .title-text { font-size: 18px; font-weight: bold; text-anchor: middle; }
+    .dim-text { font-size: 11px; text-anchor: middle; fill: #333333; }
+    .label-text { font-size: 12px; font-weight: bold; text-anchor: middle; fill: #1a1a1a; }
+    .label-sm { font-size: 10px; text-anchor: middle; fill: #555555; }
+    .part-line { fill: none; stroke: #1a1a1a; stroke-width: 1.5; }
+    .dim-line { fill: none; stroke: #555555; stroke-width: 0.8; }
+    .dim-ext { fill: none; stroke: #555555; stroke-width: 0.5; stroke-dasharray: 3,3; }
+    .center-line { fill: none; stroke: #888888; stroke-width: 0.5; stroke-dasharray: 10,3,2,3; }
+  </style>
+  <defs>
+    <marker id="dimArrowL" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+      <polygon points="8 0, 0 3, 8 6" fill="#555555" />
+    </marker>
+    <marker id="dimArrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#555555" />
+    </marker>
+  </defs>
+
+  <rect width="800" height="600" fill="#fafafa" />
+
+  <!-- Title -->
+  <text x="400" y="35" class="title-text">Desenho Dimensional — Conjunto de Frenagem</text>
+  <text x="400" y="55" class="label-sm">Vista em Corte Transversal (não em escala)</text>
+
+  <!-- Center line (horizontal axis) -->
+  <line x1="80" y1="320" x2="720" y2="320" class="center-line" />
+
+  <!-- === DISCO DE FRENAGEM (center) === -->
+  <!-- Outer disc shape -->
+  <rect x="250" y="230" width="300" height="180" rx="3" fill="#e8e8e8" stroke="#1a1a1a" stroke-width="2" />
+  <!-- Inner bore -->
+  <rect x="350" y="230" width="100" height="180" fill="#fafafa" stroke="#1a1a1a" stroke-width="1.5" />
+  <!-- Disc label -->
+  <text x="400" y="218" class="label-text">Disco de Frenagem</text>
+  <text x="400" y="205" class="label-sm">NE-BRK-DSC-1100</text>
+
+  <!-- === CARCAÇA EXTERNA (top) === -->
+  <rect x="200" y="90" width="400" height="55" rx="4" fill="#d0d0d0" stroke="#1a1a1a" stroke-width="2" />
+  <text x="400" y="123" class="label-text">Carcaça</text>
+
+  <!-- === CARCAÇA EXTERNA (bottom) === -->
+  <rect x="200" y="465" width="400" height="55" rx="4" fill="#d0d0d0" stroke="#1a1a1a" stroke-width="2" />
+  <text x="400" y="498" class="label-text">Carcaça</text>
+
+  <!-- === BOBINA INTERNA (left upper) === -->
+  <rect x="220" y="155" width="80" height="65" rx="2" fill="#c0c0c0" stroke="#1a1a1a" stroke-width="1.5" />
+  <text x="260" y="180" class="label-sm">Bobina</text>
+  <text x="260" y="193" class="label-sm">Interna</text>
+
+  <!-- === BOBINA EXTERNA (right upper) === -->
+  <rect x="500" y="155" width="80" height="65" rx="2" fill="#c0c0c0" stroke="#1a1a1a" stroke-width="1.5" />
+  <text x="540" y="180" class="label-sm">Bobina</text>
+  <text x="540" y="193" class="label-sm">Externa</text>
+
+  <!-- === BOBINA INTERNA (left lower) === -->
+  <rect x="220" y="390" width="80" height="65" rx="2" fill="#c0c0c0" stroke="#1a1a1a" stroke-width="1.5" />
+  <text x="260" y="420" class="label-sm">Bobina</text>
+  <text x="260" y="433" class="label-sm">Interna</text>
+
+  <!-- === BOBINA EXTERNA (right lower) === -->
+  <rect x="500" y="390" width="80" height="65" rx="2" fill="#c0c0c0" stroke="#1a1a1a" stroke-width="1.5" />
+  <text x="540" y="420" class="label-sm">Bobina</text>
+  <text x="540" y="433" class="label-sm">Externa</text>
+
+  <!-- === GAP DE AR indicators === -->
+  <!-- Upper gap -->
+  <line x1="260" y1="220" x2="260" y2="230" class="dim-line" />
+  <text x="185" y="226" class="dim-text" font-style="italic">Gap de Ar</text>
+  <text x="185" y="242" class="dim-text">1,2 mm</text>
+
+  <!-- Lower gap -->
+  <line x1="260" y1="410" x2="260" y2="390" class="dim-line" />
+  <text x="185" y="396" class="dim-text" font-style="italic">Gap de Ar</text>
+  <text x="185" y="412" class="dim-text">1,2 mm</text>
+
+  <!-- === DIMENSION: Disc outer diameter (horizontal, bottom) === -->
+  <line x1="250" y1="545" x2="250" y2="415" class="dim-ext" />
+  <line x1="550" y1="545" x2="550" y2="415" class="dim-ext" />
+  <line x1="250" y1="542" x2="380" y2="542" stroke="#555555" stroke-width="0.8" marker-start="url(#dimArrowL)" />
+  <line x1="420" y1="542" x2="550" y2="542" stroke="#555555" stroke-width="0.8" marker-end="url(#dimArrowR)" />
+  <text x="400" y="548" class="dim-text">Ø 480 mm</text>
+
+  <!-- === DIMENSION: Inner bore diameter === -->
+  <line x1="350" y1="570" x2="350" y2="415" class="dim-ext" />
+  <line x1="450" y1="570" x2="450" y2="415" class="dim-ext" />
+  <line x1="350" y1="568" x2="388" y2="568" stroke="#555555" stroke-width="0.8" marker-start="url(#dimArrowL)" />
+  <line x1="412" y1="568" x2="450" y2="568" stroke="#555555" stroke-width="0.8" marker-end="url(#dimArrowR)" />
+  <text x="400" y="574" class="dim-text">Ø 120 mm</text>
+
+  <!-- === DIMENSION: Disc thickness (right side) === -->
+  <line x1="555" y1="230" x2="680" y2="230" class="dim-ext" />
+  <line x1="555" y1="410" x2="680" y2="410" class="dim-ext" />
+  <line x1="675" y1="230" x2="675" y2="310" stroke="#555555" stroke-width="0.8" marker-start="url(#dimArrowL)" />
+  <line x1="675" y1="330" x2="675" y2="410" stroke="#555555" stroke-width="0.8" marker-end="url(#dimArrowR)" />
+  <text x="710" y="317" class="dim-text">18 mm</text>
+  <text x="710" y="330" class="dim-text">(espessura)</text>
+
+  <!-- === DIMENSION: Carcaça outer diameter === -->
+  <line x1="200" y1="80" x2="200" y2="72" class="dim-ext" />
+  <line x1="600" y1="80" x2="600" y2="72" class="dim-ext" />
+  <line x1="200" y1="74" x2="370" y2="74" stroke="#555555" stroke-width="0.8" marker-start="url(#dimArrowL)" />
+  <line x1="430" y1="74" x2="600" y2="74" stroke="#555555" stroke-width="0.8" marker-end="url(#dimArrowR)" />
+  <text x="400" y="70" class="dim-text">Ø 540 mm (Carcaça)</text>
+
+  <!-- === DIMENSION: Total height (left) === -->
+  <line x1="190" y1="90" x2="100" y2="90" class="dim-ext" />
+  <line x1="190" y1="520" x2="100" y2="520" class="dim-ext" />
+  <line x1="105" y1="90" x2="105" y2="295" stroke="#555555" stroke-width="0.8" marker-start="url(#dimArrowL)" />
+  <line x1="105" y1="315" x2="105" y2="520" stroke="#555555" stroke-width="0.8" marker-end="url(#dimArrowR)" />
+  <text x="85" y="300" class="dim-text" transform="rotate(-90, 85, 300)">85 mm (altura total)</text>
+
+  <!-- Notes -->
+  <text x="400" y="590" class="label-sm">Documento MR-BRK-008 | Todas as dimensões em milímetros | Tolerâncias conforme ERA-DIM-003</text>
+</svg>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+    <style>
+      text { font-family: 'Segoe UI', Arial, sans-serif; fill: #333; }
+      .title { font-size: 18px; font-weight: bold; }
+      .subtitle { font-size: 12px; font-style: italic; }
+      .decision { font-size: 11px; font-weight: bold; }
+      .action { font-size: 11px; }
+      .yesno { font-size: 10px; font-weight: bold; }
+      .box { fill: #f0f4f8; stroke: #333; stroke-width: 2; rx: 5; ry: 5; }
+      .diamond { fill: #f0f4f8; stroke: #333; stroke-width: 2; }
+      .terminal { fill: #f0f4f8; stroke: #333; stroke-width: 2.5; rx: 20; ry: 20; }
+      .result { fill: #e8ecf0; stroke: #333; stroke-width: 2; rx: 5; ry: 5; }
+      .arrow { stroke: #333; stroke-width: 1.5; fill: none; marker-end: url(#arr); }
+    </style>
+  </defs>
+
+  <rect width="800" height="600" fill="#ffffff" />
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Fluxograma de Diagnóstico — Alarme de O₂ Baixo</text>
+  <text x="400" y="48" text-anchor="middle" class="subtitle">Código LSS-1001 | Módulo de Suporte Vital</text>
+
+  <!-- START: Alarme de O₂ Baixo -->
+  <rect x="300" y="65" width="200" height="40" class="terminal" />
+  <text x="400" y="90" text-anchor="middle" class="decision">ALARME: O₂ BAIXO</text>
+
+  <!-- Arrow down -->
+  <line x1="400" y1="105" x2="400" y2="130" class="arrow" />
+
+  <!-- Decision 1: Leitura sensor vs manual -->
+  <polygon points="400,130 500,170 400,210 300,170" class="diamond" />
+  <text x="400" y="167" text-anchor="middle" class="decision">Sensor O₂ =</text>
+  <text x="400" y="180" text-anchor="middle" class="decision">Leitura Manual?</text>
+
+  <!-- NO branch (left) → Sensor failure -->
+  <line x1="300" y1="170" x2="140" y2="170" class="arrow" />
+  <text x="250" y="163" text-anchor="middle" class="yesno">NÃO (Δ>1%)</text>
+  <rect x="40" y="150" width="100" height="45" class="result" />
+  <text x="90" y="170" text-anchor="middle" class="action">Falha Sensor</text>
+  <text x="90" y="183" text-anchor="middle" class="action">NE-LSS-7765</text>
+
+  <!-- YES branch (down) -->
+  <line x1="400" y1="210" x2="400" y2="240" class="arrow" />
+  <text x="415" y="228" class="yesno">SIM</text>
+
+  <!-- Decision 2: Nível de água -->
+  <polygon points="400,240 500,280 400,320 300,280" class="diamond" />
+  <text x="400" y="275" text-anchor="middle" class="decision">Nível H₂O</text>
+  <text x="400" y="290" text-anchor="middle" class="decision">> 10%?</text>
+
+  <!-- NO branch (left) → Low water -->
+  <line x1="300" y1="280" x2="140" y2="280" class="arrow" />
+  <text x="245" y="273" text-anchor="middle" class="yesno">NÃO</text>
+  <rect x="40" y="258" width="100" height="45" class="result" />
+  <text x="90" y="275" text-anchor="middle" class="action">Falta H₂O</text>
+  <text x="90" y="288" text-anchor="middle" class="action">Reabastecer</text>
+
+  <!-- YES branch (down) -->
+  <line x1="400" y1="320" x2="400" y2="350" class="arrow" />
+  <text x="415" y="338" class="yesno">SIM</text>
+
+  <!-- Decision 3: Corrente PEM -->
+  <polygon points="400,350 510,390 400,430 290,390" class="diamond" />
+  <text x="400" y="385" text-anchor="middle" class="decision">Corrente PEM</text>
+  <text x="400" y="400" text-anchor="middle" class="decision">15A — 22A?</text>
+
+  <!-- NO branch (left) → PEM degraded -->
+  <line x1="290" y1="390" x2="140" y2="390" class="arrow" />
+  <text x="235" y="383" text-anchor="middle" class="yesno">NÃO (&lt;15A)</text>
+  <rect x="30" y="368" width="110" height="45" class="result" />
+  <text x="85" y="386" text-anchor="middle" class="action">Membrana PEM</text>
+  <text x="85" y="399" text-anchor="middle" class="action">Degradada</text>
+
+  <!-- YES branch (down) -->
+  <line x1="400" y1="430" x2="400" y2="460" class="arrow" />
+  <text x="415" y="448" class="yesno">SIM</text>
+
+  <!-- Decision 4: Vazamento -->
+  <polygon points="400,460 500,495 400,530 300,495" class="diamond" />
+  <text x="400" y="492" text-anchor="middle" class="decision">Vazamento</text>
+  <text x="400" y="505" text-anchor="middle" class="decision">Detectado?</text>
+
+  <!-- YES branch (left) → Leak -->
+  <line x1="300" y1="495" x2="140" y2="495" class="arrow" />
+  <text x="245" y="488" text-anchor="middle" class="yesno">SIM</text>
+  <rect x="30" y="475" width="110" height="45" class="result" />
+  <text x="85" y="493" text-anchor="middle" class="action">Vazamento no</text>
+  <text x="85" y="506" text-anchor="middle" class="action">Circuito de O₂</text>
+
+  <!-- NO branch (right) → Check relief valve -->
+  <line x1="500" y1="495" x2="620" y2="495" class="arrow" />
+  <text x="545" y="488" text-anchor="middle" class="yesno">NÃO</text>
+  <rect x="620" y="473" width="150" height="48" class="result" />
+  <text x="695" y="491" text-anchor="middle" class="action">Verificar Válvula</text>
+  <text x="695" y="504" text-anchor="middle" class="action">de Alívio NE-LSS-7740</text>
+
+  <!-- Right-side result boxes with repair actions -->
+  <line x1="90" y1="195" x2="90" y2="215" class="arrow" />
+  <rect x="30" y="215" width="120" height="30" class="box" />
+  <text x="90" y="234" text-anchor="middle" class="action">Substituir Sensor</text>
+
+  <line x1="85" y1="303" x2="85" y2="323" class="arrow" />
+  <rect x="30" y="323" width="110" height="30" class="box" />
+  <text x="85" y="342" text-anchor="middle" class="action">Monitorar 30 min</text>
+
+  <line x1="85" y1="413" x2="85" y2="433" class="arrow" />
+  <rect x="20" y="433" width="130" height="30" class="box" />
+  <text x="85" y="452" text-anchor="middle" class="action">Subst. NE-LSS-7720</text>
+
+  <line x1="85" y1="520" x2="85" y2="545" class="arrow" />
+  <rect x="25" y="545" width="120" height="30" class="box" />
+  <text x="85" y="564" text-anchor="middle" class="action">Reparar — Seção 4</text>
+
+  <!-- Tool reference -->
+  <rect x="600" y="65" width="180" height="100" fill="none" stroke="#333" stroke-width="1" rx="5" />
+  <text x="690" y="83" text-anchor="middle" class="decision">Ferramentas:</text>
+  <text x="690" y="98" text-anchor="middle" class="action">Scanner CESV (9001)</text>
+  <text x="690" y="113" text-anchor="middle" class="action">Analisador Gases (9010)</text>
+  <text x="690" y="128" text-anchor="middle" class="action">Det. Vazamentos (9025)</text>
+  <text x="690" y="143" text-anchor="middle" class="action">Multímetro (9030)</text>
+</svg>

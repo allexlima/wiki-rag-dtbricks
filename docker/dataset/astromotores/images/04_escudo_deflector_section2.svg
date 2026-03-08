@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f0f4f8" rx="8" />
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#333">Desenho Dimensional — Emissor de Campo NE-DEF-4400</text>
+  <text x="400" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#333">Corte transversal longitudinal — Escala: 2:1</text>
+
+  <!-- Outer casing (cross section) -->
+  <rect x="200" y="120" width="400" height="180" rx="10" fill="#f0f4f8" stroke="#333" stroke-width="2.5" />
+
+  <!-- Casing label -->
+  <text x="610" y="140" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Carcaça</text>
+  <text x="610" y="155" font-family="Arial, sans-serif" font-size="10" fill="#333">Ti-6Al-4V-Nb</text>
+  <line x1="600" y1="148" x2="560" y2="148" stroke="#333" stroke-width="1" />
+  <line x1="560" y1="148" x2="560" y2="120" stroke="#333" stroke-width="1" />
+
+  <!-- Dissipador (heat sink fins at left end) -->
+  <rect x="210" y="130" width="50" height="160" fill="#f0f4f8" stroke="#333" stroke-width="1.5" />
+  <line x1="215" y1="130" x2="215" y2="290" stroke="#333" stroke-width="1" />
+  <line x1="222" y1="130" x2="222" y2="290" stroke="#333" stroke-width="1" />
+  <line x1="229" y1="130" x2="229" y2="290" stroke="#333" stroke-width="1" />
+  <line x1="236" y1="130" x2="236" y2="290" stroke="#333" stroke-width="1" />
+  <line x1="243" y1="130" x2="243" y2="290" stroke="#333" stroke-width="1" />
+  <line x1="250" y1="130" x2="250" y2="290" stroke="#333" stroke-width="1" />
+
+  <!-- Dissipador label -->
+  <line x1="235" y1="295" x2="235" y2="340" stroke="#333" stroke-width="1" />
+  <text x="235" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Dissipador</text>
+  <text x="235" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">NE-DEF-4440</text>
+
+  <!-- Bobina Secundária (outer coil) -->
+  <ellipse cx="400" cy="210" rx="120" ry="65" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="6,3" />
+  <!-- Coil winding suggestion -->
+  <ellipse cx="400" cy="210" rx="115" ry="60" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="3,2" />
+
+  <!-- Bobina Secundária label -->
+  <line x1="505" y1="165" x2="560" y2="100" stroke="#333" stroke-width="1" />
+  <text x="620" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Bobina Secundária</text>
+  <text x="620" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">NE-DEF-4420</text>
+  <text x="620" y="123" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">480 espiras, fio 0,4 mm</text>
+
+  <!-- Bobina Primária (inner coil) -->
+  <ellipse cx="400" cy="210" rx="75" ry="42" fill="none" stroke="#333" stroke-width="2" />
+  <ellipse cx="400" cy="210" rx="70" ry="37" fill="none" stroke="#333" stroke-width="1" />
+
+  <!-- Bobina Primária label -->
+  <line x1="332" y1="180" x2="180" y2="90" stroke="#333" stroke-width="1" />
+  <text x="130" y="80" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Bobina Primária</text>
+  <text x="130" y="95" font-family="Arial, sans-serif" font-size="10" fill="#333">NE-DEF-4410</text>
+  <text x="130" y="108" font-family="Arial, sans-serif" font-size="10" fill="#333">240 espiras, fio 0,8 mm</text>
+
+  <!-- Núcleo Magnético (center core) -->
+  <rect x="370" y="185" width="60" height="50" rx="3" fill="#333" stroke="#333" stroke-width="1" />
+  <text x="400" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#f0f4f8">NUCLEO</text>
+
+  <!-- Núcleo label -->
+  <line x1="400" y1="240" x2="400" y2="340" stroke="#333" stroke-width="1" />
+  <text x="400" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Nucleo Magnetico</text>
+  <text x="400" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">NE-DEF-4430</text>
+  <text x="400" y="383" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">Ferrite Mn-Zn tipo 87</text>
+
+  <!-- Conector elétrico (right end) -->
+  <rect x="560" y="175" width="35" height="70" rx="3" fill="#f0f4f8" stroke="#333" stroke-width="1.5" />
+  <circle cx="570" cy="195" r="2" fill="#333" />
+  <circle cx="582" cy="195" r="2" fill="#333" />
+  <circle cx="570" cy="210" r="2" fill="#333" />
+  <circle cx="582" cy="210" r="2" fill="#333" />
+  <circle cx="570" cy="225" r="2" fill="#333" />
+  <circle cx="582" cy="225" r="2" fill="#333" />
+
+  <!-- Conector label -->
+  <line x1="577" y1="250" x2="577" y2="340" stroke="#333" stroke-width="1" />
+  <text x="577" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Conector Eletrico</text>
+  <text x="577" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">NE-CON-770 (12 pinos)</text>
+
+  <!-- Dimension: overall length 150mm -->
+  <line x1="200" y1="420" x2="200" y2="440" stroke="#333" stroke-width="1" />
+  <line x1="600" y1="420" x2="600" y2="440" stroke="#333" stroke-width="1" />
+  <line x1="200" y1="430" x2="600" y2="430" stroke="#333" stroke-width="1" />
+  <polygon points="200,427 210,430 200,433" fill="#333" />
+  <polygon points="600,427 590,430 600,433" fill="#333" />
+  <text x="400" y="448" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#333">150 mm comprimento</text>
+
+  <!-- Dimension: diameter 80mm -->
+  <line x1="165" y1="120" x2="185" y2="120" stroke="#333" stroke-width="1" />
+  <line x1="165" y1="300" x2="185" y2="300" stroke="#333" stroke-width="1" />
+  <line x1="175" y1="120" x2="175" y2="300" stroke="#333" stroke-width="1" />
+  <polygon points="172,120 175,130 178,120" fill="#333" />
+  <polygon points="172,300 175,290 178,300" fill="#333" />
+  <text x="175" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#333" transform="rotate(-90,175,215)">Ø 80 mm</text>
+
+  <!-- Dimension: core diameter 35mm -->
+  <line x1="370" y1="475" x2="370" y2="495" stroke="#333" stroke-width="1" />
+  <line x1="430" y1="475" x2="430" y2="495" stroke="#333" stroke-width="1" />
+  <line x1="370" y1="485" x2="430" y2="485" stroke="#333" stroke-width="1" />
+  <polygon points="370,482 380,485 370,488" fill="#333" />
+  <polygon points="430,482 420,485 430,488" fill="#333" />
+  <text x="400" y="503" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Ø 35 mm (nucleo)</text>
+
+  <!-- Flange holes -->
+  <circle cx="215" cy="125" r="4" fill="none" stroke="#333" stroke-width="1.5" />
+  <circle cx="215" cy="295" r="4" fill="none" stroke="#333" stroke-width="1.5" />
+  <circle cx="215" cy="160" r="4" fill="none" stroke="#333" stroke-width="1.5" />
+  <circle cx="215" cy="260" r="4" fill="none" stroke="#333" stroke-width="1.5" />
+
+  <!-- Flange holes label -->
+  <text x="80" y="400" font-family="Arial, sans-serif" font-size="10" fill="#333">Furos de flange: 8x M6</text>
+  <text x="80" y="413" font-family="Arial, sans-serif" font-size="10" fill="#333">Torque: 24 N·m</text>
+  <line x1="130" y1="390" x2="215" y2="300" stroke="#333" stroke-width="0.8" stroke-dasharray="3,2" />
+
+  <!-- Cryo port indication -->
+  <rect x="200" y="155" width="10" height="30" fill="#f0f4f8" stroke="#333" stroke-width="1" />
+  <text x="100" y="520" font-family="Arial, sans-serif" font-size="10" fill="#333">Porta criogenica NE-CRY-220</text>
+  <line x1="140" y1="510" x2="205" y2="180" stroke="#333" stroke-width="0.8" stroke-dasharray="3,2" />
+
+  <!-- Notes -->
+  <text x="400" y="545" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">Material da carcaca: Liga Ti-6Al-4V-Nb | Temperatura operacional: 77 K | Vida util: 8.000 h</text>
+  <text x="400" y="565" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">Tolerancias dimensionais: diametro +/- 0,05 mm | comprimento +/- 0,1 mm | massa: 1,85 kg +/- 0,02 kg</text>
+  <text x="400" y="585" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#333">NE-DEF-4400 Rev. C — Desenho dimensional de referencia (nao utilizar para fabricacao)</text>
+</svg>

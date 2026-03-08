@@ -25,7 +25,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/.."
 
 CONTAINER_NAME="wiki-rag-mediawiki"
 MW_SETTINGS_PATH="/var/www/html/LocalSettings.php"
@@ -36,6 +36,9 @@ SCOPE="wiki-rag"
 # -------------------------------------------------------
 if [ ! -f .env ]; then
     echo "📋 No .env found — generating from Databricks secrets..."
+    if [ -n "${DATABRICKS_CONFIG_PROFILE:-}" ]; then
+        echo "   Profile: $DATABRICKS_CONFIG_PROFILE"
+    fi
 
     if ! command -v databricks &>/dev/null; then
         echo "❌ .env not found and 'databricks' CLI not available."
@@ -43,15 +46,27 @@ if [ ! -f .env ]; then
         exit 1
     fi
 
-    LAKEBASE_HOST=$(databricks secrets get-secret "${SCOPE}" lakebase_host --output text 2>/dev/null || echo "")
-    LAKEBASE_PORT=$(databricks secrets get-secret "${SCOPE}" lakebase_port --output text 2>/dev/null || echo "5432")
-    LAKEBASE_DB=$(databricks secrets get-secret "${SCOPE}" lakebase_db --output text 2>/dev/null || echo "wikidb")
-    MW_ROLE=$(databricks secrets get-secret "${SCOPE}" mw_role --output text 2>/dev/null || echo "mediawiki")
-    MW_PASSWORD=$(databricks secrets get-secret "${SCOPE}" mw_password --output text 2>/dev/null || echo "")
+    # Helper: read a secret and base64-decode the value from the JSON response
+    get_secret() {
+        databricks secrets get-secret "${SCOPE}" "$1" -o json 2>/dev/null \
+            | python3 -c "import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)['value']).decode())" 2>/dev/null \
+            || echo ""
+    }
+
+    LAKEBASE_HOST=$(get_secret lakebase_host)
+    LAKEBASE_PORT=$(get_secret lakebase_port)
+    LAKEBASE_DB=$(get_secret lakebase_db)
+    MW_ROLE=$(get_secret mw_role)
+    MW_PASSWORD=$(get_secret mw_password)
+
+    [ -z "$LAKEBASE_PORT" ] && LAKEBASE_PORT="5432"
+    [ -z "$LAKEBASE_DB" ] && LAKEBASE_DB="wikidb"
+    [ -z "$MW_ROLE" ] && MW_ROLE="mediawiki"
 
     if [ -z "${LAKEBASE_HOST}" ] || [ -z "${MW_PASSWORD}" ]; then
         echo "❌ Required secrets not found in scope '${SCOPE}'."
         echo "   Run 'make setup-secrets' and 'make setup-lakebase' first."
+        echo "   If using a non-default profile: export PROFILE=my-workspace"
         exit 1
     fi
 

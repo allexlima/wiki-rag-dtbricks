@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Cronograma de Manutenção Preventiva — Sistema de Freios Magnéticos</title>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1a1a1a; }
+    .title-text { font-size: 18px; font-weight: bold; text-anchor: middle; }
+    .axis-text { font-size: 11px; text-anchor: middle; fill: #333333; }
+    .label-text { font-size: 11px; text-anchor: end; fill: #1a1a1a; }
+    .code-text { font-size: 9px; text-anchor: end; fill: #777777; }
+    .bar { stroke: #1a1a1a; stroke-width: 1; }
+    .bar-fill-1 { fill: #b0b0b0; }
+    .bar-fill-2 { fill: #909090; }
+    .bar-fill-3 { fill: #707070; }
+    .bar-fill-4 { fill: #505050; }
+    .bar-fill-5 { fill: #333333; }
+    .grid-line { stroke: #dddddd; stroke-width: 0.5; }
+    .axis-line { stroke: #1a1a1a; stroke-width: 1.5; }
+    .milestone { fill: #1a1a1a; }
+    .note-text { font-size: 9px; fill: #555555; }
+  </style>
+
+  <rect width="800" height="600" fill="#fafafa" />
+
+  <!-- Title -->
+  <text x="400" y="30" class="title-text">Cronograma de Manutenção Preventiva</text>
+  <text x="400" y="48" class="note-text" text-anchor="middle">Intervalos baseados em horas de operação do sistema de propulsão</text>
+
+  <!-- Chart area: left=230, right=750, top=80, bottom=480 -->
+  <!-- X axis scale: 0 to 10000 hours, width=520px → 1px = ~19.23h -->
+
+  <!-- Y axis (left) -->
+  <line x1="230" y1="80" x2="230" y2="480" class="axis-line" />
+
+  <!-- X axis (bottom) -->
+  <line x1="230" y1="480" x2="750" y2="480" class="axis-line" />
+
+  <!-- X axis labels (hours) -->
+  <text x="230" y="500" class="axis-text">0</text>
+  <line x1="230" y1="480" x2="230" y2="485" class="axis-line" />
+
+  <text x="282" y="500" class="axis-text">500</text>
+  <line x1="282" y1="80" x2="282" y2="480" class="grid-line" />
+  <line x1="282" y1="480" x2="282" y2="485" class="axis-line" />
+
+  <text x="334" y="500" class="axis-text">1000</text>
+  <line x1="334" y1="80" x2="334" y2="480" class="grid-line" />
+  <line x1="334" y1="480" x2="334" y2="485" class="axis-line" />
+
+  <text x="386" y="500" class="axis-text">1500</text>
+  <line x1="386" y1="80" x2="386" y2="480" class="grid-line" />
+
+  <text x="438" y="500" class="axis-text">2000</text>
+  <line x1="438" y1="80" x2="438" y2="480" class="grid-line" />
+  <line x1="438" y1="480" x2="438" y2="485" class="axis-line" />
+
+  <text x="490" y="500" class="axis-text">2500</text>
+  <line x1="490" y1="80" x2="490" y2="480" class="grid-line" />
+
+  <text x="542" y="500" class="axis-text">3000</text>
+  <line x1="542" y1="80" x2="542" y2="480" class="grid-line" />
+
+  <text x="594" y="500" class="axis-text">4000</text>
+  <line x1="594" y1="80" x2="594" y2="480" class="grid-line" />
+
+  <text x="646" y="500" class="axis-text">5000</text>
+  <line x1="646" y1="80" x2="646" y2="480" class="grid-line" />
+  <line x1="646" y1="480" x2="646" y2="485" class="axis-line" />
+
+  <text x="750" y="500" class="axis-text">10000</text>
+  <line x1="750" y1="80" x2="750" y2="480" class="grid-line" />
+  <line x1="750" y1="480" x2="750" y2="485" class="axis-line" />
+
+  <text x="490" y="520" class="axis-text" font-weight="bold">Horas de Operação</text>
+
+  <!-- ====== ROW 1: Teste de Frenagem — every 100h ====== -->
+  <!-- Y position: 105 -->
+  <text x="225" y="108" class="label-text">Teste de Frenagem</text>
+  <text x="225" y="120" class="code-text">SVC-BRK-100</text>
+  <!-- Repeating markers at 100h intervals (just show diamonds) -->
+  <!-- 100h increments: first few shown, then pattern implied -->
+  <polygon points="235,105 240,112 235,119 230,112" class="milestone" />
+  <polygon points="240,105 245,112 240,119 235,112" class="milestone" transform="translate(10,0)" />
+  <polygon points="250,105 255,112 250,119 245,112" class="milestone" transform="translate(10,0)" />
+  <polygon points="260,105 265,112 260,119 255,112" class="milestone" transform="translate(10,0)" />
+  <polygon points="270,105 275,112 270,119 265,112" class="milestone" transform="translate(10,0)" />
+  <!-- Bar representing continuous frequency -->
+  <rect x="230" y="106" width="520" height="12" rx="2" class="bar bar-fill-1" opacity="0.5" />
+  <text x="490" y="116" class="note-text" text-anchor="middle" fill="#ffffff" font-weight="bold">A cada 100 h (contínuo)</text>
+
+  <!-- ====== ROW 2: Leitura DTCs — every 300h ====== -->
+  <text x="225" y="158" class="label-text">Leitura de DTCs</text>
+  <text x="225" y="170" class="code-text">SVC-BRK-300</text>
+  <rect x="230" y="156" width="520" height="12" rx="2" class="bar bar-fill-1" opacity="0.4" />
+  <!-- Markers at 300h intervals -->
+  <line x1="261" y1="150" x2="261" y2="174" stroke="#1a1a1a" stroke-width="2" />
+  <line x1="292" y1="150" x2="292" y2="174" stroke="#1a1a1a" stroke-width="2" />
+  <line x1="323" y1="150" x2="323" y2="174" stroke="#1a1a1a" stroke-width="2" />
+  <line x1="354" y1="150" x2="354" y2="174" stroke="#1a1a1a" stroke-width="2" />
+  <text x="490" y="166" class="note-text" text-anchor="middle">A cada 300 h</text>
+
+  <!-- ====== ROW 3: Inspeção Bobinas — every 600h ====== -->
+  <text x="225" y="210" class="label-text">Inspeção Bobinas</text>
+  <text x="225" y="222" class="code-text">SVC-BRK-600</text>
+  <!-- Bar segments at 600h intervals -->
+  <rect x="261" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="292" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="354" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="438" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="542" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="646" y="206" width="20" height="14" rx="2" class="bar bar-fill-2" />
+  <text x="490" y="216" class="note-text" text-anchor="middle">A cada 600 h | 60 min/serviço</text>
+
+  <!-- ====== ROW 4: Teste Módulo Regenerativo — every 1200h ====== -->
+  <text x="225" y="260" class="label-text">Teste Regenerativo</text>
+  <text x="225" y="272" class="code-text">SVC-BRK-1200</text>
+  <rect x="292" y="256" width="25" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="438" y="256" width="25" height="14" rx="2" class="bar bar-fill-2" />
+  <rect x="594" y="256" width="25" height="14" rx="2" class="bar bar-fill-2" />
+  <text x="490" y="266" class="note-text" text-anchor="middle">A cada 1200 h | 45 min</text>
+
+  <!-- ====== ROW 5: Renovação Pasta Térmica — every 1200h ====== -->
+  <text x="225" y="310" class="label-text">Renov. Pasta Térmica</text>
+  <text x="225" y="322" class="code-text">SVC-BRK-1201</text>
+  <rect x="292" y="306" width="25" height="14" rx="2" class="bar bar-fill-3" />
+  <rect x="438" y="306" width="25" height="14" rx="2" class="bar bar-fill-3" />
+  <rect x="594" y="306" width="25" height="14" rx="2" class="bar bar-fill-3" />
+  <text x="490" y="316" class="note-text" text-anchor="middle">A cada 1200 h | 60 min</text>
+
+  <!-- ====== ROW 6: Resurface Disco — every 2000h ====== -->
+  <text x="225" y="360" class="label-text">Resurface Disco</text>
+  <text x="225" y="372" class="code-text">SVC-BRK-2000</text>
+  <rect x="438" y="356" width="30" height="14" rx="2" class="bar bar-fill-3" />
+  <rect x="594" y="356" width="30" height="14" rx="2" class="bar bar-fill-3" />
+  <text x="490" y="366" class="note-text" text-anchor="middle">A cada 2000 h | 120 min (se necessário)</text>
+
+  <!-- ====== ROW 7: Troca Completa — at 5000h ====== -->
+  <text x="225" y="410" class="label-text">Troca Completa</text>
+  <text x="225" y="422" class="code-text">SVC-BRK-5000</text>
+  <rect x="646" y="406" width="35" height="14" rx="2" class="bar bar-fill-4" />
+  <text x="490" y="416" class="note-text" text-anchor="middle">A cada 5000 h | Disco + Bobinas + Recertificação CTL</text>
+
+  <!-- ====== ROW 8: Overhaul Completo — at 10000h ====== -->
+  <text x="225" y="460" class="label-text">Overhaul Completo</text>
+  <text x="225" y="472" class="code-text">SVC-BRK-10K</text>
+  <rect x="750" y="456" width="10" height="14" rx="2" class="bar bar-fill-5" />
+  <!-- Star marker for overhaul -->
+  <polygon points="755,453 757,449 759,453 763,453 760,456 761,460 757,458 753,460 754,456 751,453" fill="#1a1a1a" />
+  <text x="490" y="466" class="note-text" text-anchor="middle">10000 h | Overhaul completo do sistema (480 min)</text>
+
+  <!-- Legend -->
+  <rect x="50" y="540" width="700" height="45" rx="4" fill="#f0f0f0" stroke="#cccccc" stroke-width="1" />
+  <rect x="70" y="553" width="20" height="10" rx="2" fill="#b0b0b0" stroke="#1a1a1a" stroke-width="0.5" />
+  <text x="95" y="562" class="note-text" text-anchor="start">Contínuo / Frequente</text>
+  <rect x="210" y="553" width="20" height="10" rx="2" fill="#909090" stroke="#1a1a1a" stroke-width="0.5" />
+  <text x="235" y="562" class="note-text" text-anchor="start">Periódico</text>
+  <rect x="310" y="553" width="20" height="10" rx="2" fill="#707070" stroke="#1a1a1a" stroke-width="0.5" />
+  <text x="335" y="562" class="note-text" text-anchor="start">Manutenção Maior</text>
+  <rect x="450" y="553" width="20" height="10" rx="2" fill="#505050" stroke="#1a1a1a" stroke-width="0.5" />
+  <text x="475" y="562" class="note-text" text-anchor="start">Substituição</text>
+  <rect x="570" y="553" width="20" height="10" rx="2" fill="#333333" stroke="#1a1a1a" stroke-width="0.5" />
+  <text x="595" y="562" class="note-text" text-anchor="start">Overhaul</text>
+  <text x="400" y="578" class="note-text" text-anchor="middle">Documento MR-BRK-008 | Reduzir intervalos em 30% para operação severa</text>
+</svg>

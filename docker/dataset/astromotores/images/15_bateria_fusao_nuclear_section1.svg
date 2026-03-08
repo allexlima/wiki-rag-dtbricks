@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <style>
+      text { font-family: 'Segoe UI', Arial, sans-serif; fill: #333; }
+      .title { font-size: 18px; font-weight: bold; }
+      .subtitle { font-size: 12px; font-style: italic; }
+      .block-label { font-size: 13px; font-weight: bold; text-anchor: middle; }
+      .block-sublabel { font-size: 10px; text-anchor: middle; fill: #555; }
+      .pn { font-size: 9px; text-anchor: middle; fill: #777; font-family: monospace; }
+      .arrow-label { font-size: 10px; text-anchor: middle; fill: #555; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f0f4f8" rx="8"/>
+
+  <!-- Title -->
+  <text x="400" y="40" class="title" text-anchor="middle">Diagrama de Blocos — Sistema de Fusão Nuclear</text>
+  <text x="400" y="60" class="subtitle" text-anchor="middle">Veículo Espacial Série Nova ERA — Fluxo de Energia</text>
+
+  <!-- Block 1: Reservatório de Trítio -->
+  <rect x="40" y="120" width="160" height="100" rx="6" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="120" y="155" class="block-label">Reservatório</text>
+  <text x="120" y="173" class="block-label">de Trítio</text>
+  <text x="120" y="193" class="block-sublabel">Mistura D-T criogênica</text>
+  <text x="120" y="210" class="pn">NE-FUS-1501</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="200" y1="170" x2="250" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="225" y="160" class="arrow-label">D-T</text>
+  <text x="225" y="190" class="arrow-label">2,4 MPa</text>
+
+  <!-- Block 2: Câmara de Fusão -->
+  <rect x="260" y="100" width="160" height="140" rx="6" fill="#fff" stroke="#333" stroke-width="2"/>
+  <rect x="268" y="108" width="144" height="124" rx="4" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="340" y="145" class="block-label">Câmara de</text>
+  <text x="340" y="163" class="block-label">Fusão</text>
+  <text x="340" y="183" class="block-sublabel">Tokamak Compacto S7</text>
+  <text x="340" y="198" class="block-sublabel">150 × 10⁶ K</text>
+  <text x="340" y="228" class="pn">NE-FUS-1510</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="420" y1="170" x2="470" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="445" y="160" class="arrow-label">Calor</text>
+  <text x="445" y="190" class="arrow-label">1.200°C</text>
+
+  <!-- Block 3: Conversor Termoelétrico -->
+  <rect x="480" y="120" width="160" height="100" rx="6" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="560" y="155" class="block-label">Conversor</text>
+  <text x="560" y="173" class="block-label">Termoelétrico</text>
+  <text x="560" y="193" class="block-sublabel">Módulos SiGe — η 38,7%</text>
+  <text x="560" y="210" class="pn">NE-FUS-1520</text>
+
+  <!-- Arrow 3→4 (going down) -->
+  <line x1="560" y1="220" x2="560" y2="300" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="580" y="265" class="arrow-label">850 kW</text>
+  <text x="580" y="280" class="arrow-label">(bruto)</text>
+
+  <!-- Block 4: Regulador de Tensão -->
+  <rect x="480" y="310" width="160" height="100" rx="6" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="560" y="345" class="block-label">Regulador</text>
+  <text x="560" y="363" class="block-label">de Tensão</text>
+  <text x="560" y="383" class="block-sublabel">480 VDC ± 0,5%</text>
+  <text x="560" y="400" class="pn">NE-FUS-1530</text>
+
+  <!-- Arrow 4→5 (going left) -->
+  <line x1="480" y1="360" x2="420" y2="360" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="450" y="350" class="arrow-label">480 VDC</text>
+  <text x="450" y="380" class="arrow-label">estável</text>
+
+  <!-- Block 5: Barramento Principal -->
+  <rect x="260" y="310" width="160" height="100" rx="6" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="340" y="345" class="block-label">Barramento</text>
+  <text x="340" y="363" class="block-label">Principal</text>
+  <text x="340" y="383" class="block-sublabel">Distribuição N+1</text>
+  <text x="340" y="400" class="pn">NE-FUS-1540</text>
+
+  <!-- Output arrows from Barramento -->
+  <line x1="260" y1="340" x2="190" y2="340" stroke="#333" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="170" y="336" class="block-sublabel">Propulsão</text>
+
+  <line x1="260" y1="360" x2="190" y2="360" stroke="#333" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="155" y="356" class="block-sublabel">Suporte Vital</text>
+
+  <line x1="260" y1="380" x2="190" y2="380" stroke="#333" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="155" y="376" class="block-sublabel">Navegação</text>
+
+  <line x1="260" y1="400" x2="190" y2="400" stroke="#333" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="145" y="396" class="block-sublabel">Comunicações</text>
+
+  <!-- Breeding loop: Câmara → Reservatório -->
+  <path d="M 300 240 L 300 270 L 120 270 L 120 220" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowhead)"/>
+  <text x="210" y="264" class="arrow-label">Breeding de ³H (TBR 1,08)</text>
+
+  <!-- Legend box -->
+  <rect x="40" y="460" width="720" height="110" rx="6" fill="#fff" stroke="#333" stroke-width="1"/>
+  <text x="60" y="485" class="block-label" text-anchor="start">Legenda</text>
+  <line x1="60" y1="505" x2="100" y2="505" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="110" y="509" class="block-sublabel" text-anchor="start">Fluxo principal de energia</text>
+  <line x1="60" y1="530" x2="100" y2="530" stroke="#333" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowhead)"/>
+  <text x="110" y="534" class="block-sublabel" text-anchor="start">Ciclo de regeneração de trítio (breeding)</text>
+  <rect x="60" y="545" width="30" height="15" rx="3" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="100" y="557" class="block-sublabel" text-anchor="start">Subsistema principal</text>
+  <text x="400" y="509" class="block-sublabel" text-anchor="start">Reação: ²H + ³H → ⁴He (3,5 MeV) + n (14,1 MeV)</text>
+  <text x="400" y="534" class="block-sublabel" text-anchor="start">Potência elétrica líquida: 850 kW</text>
+  <text x="400" y="557" class="block-sublabel" text-anchor="start">Documento: MR-FUS-015 | Nova ERA Aerospace</text>
+</svg>

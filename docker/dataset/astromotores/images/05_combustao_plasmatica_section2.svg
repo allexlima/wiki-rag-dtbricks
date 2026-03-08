@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Desenho Dimensional — Câmara de Combustão Plasmática (Corte Transversal)</title>
+  <style>
+    text { font-family: 'Courier New', monospace; fill: #1a1a1a; }
+    .title { font-size: 16px; font-weight: bold; text-anchor: middle; }
+    .subtitle { font-size: 10px; text-anchor: middle; fill: #555; }
+    .dim-label { font-size: 10px; text-anchor: middle; fill: #1a1a1a; }
+    .dim-value { font-size: 11px; font-weight: bold; text-anchor: middle; fill: #1a1a1a; }
+    .part-label { font-size: 10px; fill: #333; }
+    .dim-line { stroke: #1a1a1a; stroke-width: 0.8; }
+    .dim-ext { stroke: #1a1a1a; stroke-width: 0.5; stroke-dasharray: 4,2; }
+    .outline { fill: none; stroke: #1a1a1a; stroke-width: 2; }
+    .hatching { fill: none; stroke: #888; stroke-width: 0.5; }
+    .ceramic { fill: #e8e8e8; stroke: #1a1a1a; stroke-width: 1; }
+    .wall { fill: #d0d0d0; stroke: #1a1a1a; stroke-width: 1.5; }
+    .inner { fill: #f5f5f5; stroke: none; }
+  </style>
+
+  <!-- Background -->
+  <rect x="5" y="5" width="790" height="590" rx="8" ry="8" fill="#fafafa" stroke="#ccc" stroke-width="1"/>
+
+  <!-- Title -->
+  <text class="title" x="400" y="35">CORTE LONGITUDINAL — CÂMARA DE COMBUSTÃO</text>
+  <text class="subtitle" x="400" y="52">Escala: 1:4 | Dimensões em milímetros | Vista em corte pelo plano de simetria</text>
+
+  <!-- Centerline -->
+  <line x1="60" y1="300" x2="740" y2="300" stroke="#1a1a1a" stroke-width="0.5" stroke-dasharray="12,3,3,3"/>
+  <text x="50" y="303" style="font-size:8px; fill:#888;">CL</text>
+
+  <!-- Outer wall (containment wall) - top half cross section -->
+  <!-- Cylindrical section -->
+  <path class="wall" d="M 120,170 L 520,170 L 520,210 L 120,210 Z"/>
+  <!-- Bottom mirror -->
+  <path class="wall" d="M 120,390 L 520,390 L 520,430 L 120,430 Z"/>
+
+  <!-- Converging section walls - top -->
+  <path class="wall" d="M 520,170 L 640,255 L 640,270 L 520,210 Z"/>
+  <!-- Bottom mirror -->
+  <path class="wall" d="M 520,390 L 640,330 L 640,345 L 520,430 Z"/>
+
+  <!-- Nozzle throat - top -->
+  <path class="wall" d="M 640,255 L 640,270 L 720,220 L 720,205 Z"/>
+  <!-- Bottom mirror -->
+  <path class="wall" d="M 640,330 L 640,345 L 720,395 L 720,380 Z"/>
+
+  <!-- Ceramic lining - top -->
+  <path class="ceramic" d="M 120,210 L 520,210 L 520,240 L 120,240 Z"/>
+  <!-- Bottom mirror -->
+  <path class="ceramic" d="M 120,360 L 520,360 L 520,390 L 120,390 Z"/>
+
+  <!-- Converging ceramic - top -->
+  <path class="ceramic" d="M 520,210 L 630,268 L 630,280 L 520,240 Z"/>
+  <!-- Bottom mirror -->
+  <path class="ceramic" d="M 520,360 L 630,320 L 630,332 L 520,390 Z"/>
+
+  <!-- Inner combustion space -->
+  <path class="inner" d="M 120,240 L 520,240 L 630,280 L 630,320 L 520,360 L 120,360 Z"/>
+
+  <!-- Flange de Entrada (left) -->
+  <rect class="wall" x="80" y="150" width="40" height="30" rx="2"/>
+  <rect class="wall" x="80" y="420" width="40" height="30" rx="2"/>
+  <rect class="wall" x="80" y="180" width="40" height="240" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>
+
+  <!-- Hatching for ceramic (diagonal lines) -->
+  <g clip-path="url(#ceramic-clip-top)">
+    <line class="hatching" x1="120" y1="240" x2="160" y2="210"/>
+    <line class="hatching" x1="150" y1="240" x2="190" y2="210"/>
+    <line class="hatching" x1="180" y1="240" x2="220" y2="210"/>
+    <line class="hatching" x1="210" y1="240" x2="250" y2="210"/>
+    <line class="hatching" x1="240" y1="240" x2="280" y2="210"/>
+    <line class="hatching" x1="270" y1="240" x2="310" y2="210"/>
+    <line class="hatching" x1="300" y1="240" x2="340" y2="210"/>
+    <line class="hatching" x1="330" y1="240" x2="370" y2="210"/>
+    <line class="hatching" x1="360" y1="240" x2="400" y2="210"/>
+    <line class="hatching" x1="390" y1="240" x2="430" y2="210"/>
+    <line class="hatching" x1="420" y1="240" x2="460" y2="210"/>
+    <line class="hatching" x1="450" y1="240" x2="490" y2="210"/>
+    <line class="hatching" x1="480" y1="240" x2="520" y2="210"/>
+  </g>
+
+  <!-- Dimension: Total length 1840mm -->
+  <line class="dim-ext" x1="80" y1="140" x2="80" y2="100"/>
+  <line class="dim-ext" x1="720" y1="140" x2="720" y2="100"/>
+  <line class="dim-line" x1="80" y1="110" x2="720" y2="110"/>
+  <polygon points="80,107 90,110 80,113" fill="#1a1a1a"/>
+  <polygon points="720,107 710,110 720,113" fill="#1a1a1a"/>
+  <text class="dim-value" x="400" y="105">1.840</text>
+
+  <!-- Dimension: Internal diameter 620mm -->
+  <line class="dim-ext" x1="55" y1="240" x2="30" y2="240"/>
+  <line class="dim-ext" x1="55" y1="360" x2="30" y2="360"/>
+  <line class="dim-line" x1="40" y1="240" x2="40" y2="360"/>
+  <polygon points="37,240 40,250 43,240" fill="#1a1a1a"/>
+  <polygon points="37,360 40,350 43,360" fill="#1a1a1a"/>
+  <text class="dim-value" x="40" y="295" transform="rotate(-90,40,295)">620 (int.)</text>
+
+  <!-- Dimension: External diameter 780mm -->
+  <line class="dim-ext" x1="250" y1="165" x2="250" y2="82"/>
+  <line class="dim-ext" x1="250" y1="435" x2="250" y2="505"/>
+  <line class="dim-line" x1="250" y1="90" x2="250" y2="82"/>
+  <line class="dim-line" x1="250" y1="498" x2="250" y2="505"/>
+  <line class="dim-ext" x1="245" y1="90" x2="15" y2="90"/>
+  <line class="dim-ext" x1="245" y1="500" x2="15" y2="500"/>
+  <line class="dim-line" x1="20" y1="90" x2="20" y2="500"/>
+  <polygon points="17,90 20,100 23,90" fill="#1a1a1a"/>
+  <polygon points="17,500 20,490 23,500" fill="#1a1a1a"/>
+  <text class="dim-value" x="20" y="290" transform="rotate(-90,20,290)">780 (ext.)</text>
+
+  <!-- Dimension: Wall thickness 42mm -->
+  <line class="dim-line" x1="300" y1="170" x2="300" y2="210"/>
+  <polygon points="297,170 300,176 303,170" fill="#1a1a1a"/>
+  <polygon points="297,210 300,204 303,210" fill="#1a1a1a"/>
+  <text class="dim-label" x="330" y="195">42</text>
+
+  <!-- Dimension: Ceramic thickness 38mm -->
+  <line class="dim-line" x1="350" y1="210" x2="350" y2="240"/>
+  <polygon points="347,210 350,216 353,210" fill="#1a1a1a"/>
+  <polygon points="347,240 350,234 353,240" fill="#1a1a1a"/>
+  <text class="dim-label" x="375" y="230">38</text>
+
+  <!-- Dimension: Throat diameter 185mm -->
+  <line class="dim-ext" x1="650" y1="280" x2="670" y2="280"/>
+  <line class="dim-ext" x1="650" y1="320" x2="670" y2="320"/>
+  <line class="dim-line" x1="660" y1="280" x2="660" y2="320"/>
+  <polygon points="657,280 660,286 663,280" fill="#1a1a1a"/>
+  <polygon points="657,320 660,314 663,320" fill="#1a1a1a"/>
+  <text class="dim-value" x="700" y="303">185</text>
+
+  <!-- Labels with leader lines -->
+  <!-- Revestimento Cerâmico -->
+  <line x1="450" y1="225" x2="580" y2="140" stroke="#1a1a1a" stroke-width="0.8"/>
+  <circle cx="450" cy="225" r="2" fill="#1a1a1a"/>
+  <text class="part-label" x="585" y="135">Revestimento Cerâmico</text>
+  <text style="font-size:8px; fill:#666;" x="585" y="147">YSZ — NE-PLS-5535</text>
+
+  <!-- Parede de Contenção -->
+  <line x1="450" y1="190" x2="620" y2="125" stroke="#1a1a1a" stroke-width="0.8"/>
+  <circle cx="450" cy="190" r="2" fill="#1a1a1a"/>
+  <text class="part-label" x="625" y="120">Parede de Contenção</text>
+  <text style="font-size:8px; fill:#666;" x="625" y="132">Ti-6Al-4V-Nb — NE-PLS-5531</text>
+
+  <!-- Garganta do Bocal -->
+  <line x1="640" y1="300" x2="740" y2="340" stroke="#1a1a1a" stroke-width="0.8"/>
+  <circle cx="640" cy="300" r="2" fill="#1a1a1a"/>
+  <text class="part-label" x="700" y="355">Garganta do Bocal</text>
+  <text style="font-size:8px; fill:#666;" x="700" y="367">HfTaC₄ — NE-PLS-5591</text>
+
+  <!-- Flange de Entrada -->
+  <line x1="100" y1="155" x2="140" y2="80" stroke="#1a1a1a" stroke-width="0.8"/>
+  <circle cx="100" cy="155" r="2" fill="#1a1a1a"/>
+  <text class="part-label" x="145" y="75">Flange de Entrada</text>
+  <text style="font-size:8px; fill:#666;" x="145" y="87">NE-PLS-5515</text>
+
+  <!-- Angle dimension: 22° divergent cone -->
+  <path d="M 640,300 L 720,260" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
+  <path d="M 640,300 L 680,300" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
+  <path d="M 660,300 A 20,20 0 0,0 658,290" fill="none" stroke="#1a1a1a" stroke-width="0.8"/>
+  <text class="dim-label" x="675" y="290">22°</text>
+
+  <!-- Expansion ratio -->
+  <text class="dim-label" x="700" y="425">Ae/At = 14,2:1</text>
+
+  <!-- Scale bar -->
+  <line x1="600" y1="560" x2="700" y2="560" stroke="#1a1a1a" stroke-width="2"/>
+  <line x1="600" y1="555" x2="600" y2="565" stroke="#1a1a1a" stroke-width="1.5"/>
+  <line x1="700" y1="555" x2="700" y2="565" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text class="dim-label" x="650" y="555">400 mm (escala 1:4)</text>
+
+  <!-- Drawing info box -->
+  <rect x="580" y="530" width="200" height="55" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <text style="font-size:8px; fill:#555; text-anchor:start;" x="585" y="545">NOVA ERA PROPULSÃO LTDA.</text>
+  <text style="font-size:8px; fill:#555; text-anchor:start;" x="585" y="558">DES. NE-PLS-5530-D01 Rev.3</text>
+  <text style="font-size:8px; fill:#555; text-anchor:start;" x="585" y="571">Dim. em mm | Tol. ±0,5</text>
+  <text style="font-size:8px; fill:#555; text-anchor:start;" x="585" y="581">Escala 1:4</text>
+</svg>

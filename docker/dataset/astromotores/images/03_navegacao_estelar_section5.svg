@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#333">Cronograma de Manutenção Preventiva — SNE</text>
+  <text x="400" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">Intervalos em horas de operação (escala: 0–6.000h)</text>
+
+  <!-- Y axis -->
+  <line x1="250" y1="80" x2="250" y2="480" stroke="#333" stroke-width="1.5" />
+  <!-- X axis -->
+  <line x1="250" y1="480" x2="770" y2="480" stroke="#333" stroke-width="1.5" />
+
+  <!-- X axis labels (hours) -->
+  <text x="250" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">0</text>
+  <line x1="250" y1="480" x2="250" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="336" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">1000</text>
+  <line x1="336" y1="480" x2="336" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="423" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">2000</text>
+  <line x1="423" y1="480" x2="423" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="509" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">3000</text>
+  <line x1="509" y1="480" x2="509" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="596" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">4000</text>
+  <line x1="596" y1="480" x2="596" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="683" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">5000</text>
+  <line x1="683" y1="480" x2="683" y2="485" stroke="#333" stroke-width="1" />
+
+  <text x="769" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#333">6000</text>
+  <line x1="769" y1="480" x2="769" y2="485" stroke="#333" stroke-width="1" />
+
+  <!-- X axis title -->
+  <text x="510" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#333">Horas de Operação</text>
+
+  <!-- Grid lines (vertical, light) -->
+  <line x1="336" y1="80" x2="336" y2="480" stroke="#ddd" stroke-width="0.5" />
+  <line x1="423" y1="80" x2="423" y2="480" stroke="#ddd" stroke-width="0.5" />
+  <line x1="509" y1="80" x2="509" y2="480" stroke="#ddd" stroke-width="0.5" />
+  <line x1="596" y1="80" x2="596" y2="480" stroke="#ddd" stroke-width="0.5" />
+  <line x1="683" y1="80" x2="683" y2="480" stroke="#ddd" stroke-width="0.5" />
+
+  <!-- Scale: 1 hour = (770-250)/6000 = 0.08667 px -->
+  <!-- 300h = 26px, 500h = 43.3px, 1000h = 86.7px, 2000h = 173.3px, 3000h = 260px, 5000h = 433.3px, 6000h = 520px -->
+
+  <!-- Row 1: Calibração Giroscópio — every 300h -->
+  <text x="245" y="120" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Calibração</text>
+  <text x="245" y="135" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Giroscópio</text>
+  <text x="245" y="148" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 300h)</text>
+  <!-- Bars at 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600, 3900, 4200, 4500, 4800, 5100, 5400, 5700, 6000 -->
+  <rect x="276" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="302" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="328" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="354" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="380" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="406" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="432" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="458" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="484" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="510" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="536" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="562" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="588" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="614" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="640" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="666" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="692" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="718" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="744" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+  <rect x="770" y="110" width="8" height="30" rx="2" ry="2" fill="#333" opacity="0.7" />
+
+  <!-- Separator -->
+  <line x1="250" y1="160" x2="770" y2="160" stroke="#eee" stroke-width="1" />
+
+  <!-- Row 2: Limpeza Sensores — every 500h -->
+  <text x="245" y="195" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Limpeza</text>
+  <text x="245" y="210" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Sensores</text>
+  <text x="245" y="223" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 500h)</text>
+  <!-- Bars at 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000 -->
+  <rect x="293" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="336" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="380" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="423" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="466" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="509" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="553" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="596" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="640" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="683" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="726" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+  <rect x="770" y="185" width="10" height="30" rx="2" ry="2" fill="#333" opacity="0.55" />
+
+  <!-- Separator -->
+  <line x1="250" y1="235" x2="770" y2="235" stroke="#eee" stroke-width="1" />
+
+  <!-- Row 3: Atualização Firmware — every 1000h -->
+  <text x="245" y="270" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Atualização</text>
+  <text x="245" y="285" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Firmware</text>
+  <text x="245" y="298" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 1.000h)</text>
+  <!-- Bars at 1000, 2000, 3000, 4000, 5000, 6000 -->
+  <rect x="333" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+  <rect x="420" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+  <rect x="506" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+  <rect x="593" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+  <rect x="680" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+  <rect x="766" y="260" width="12" height="30" rx="2" ry="2" fill="#333" opacity="0.4" />
+
+  <!-- Separator -->
+  <line x1="250" y1="310" x2="770" y2="310" stroke="#eee" stroke-width="1" />
+
+  <!-- Row 4: Inspeção Antena — every 2000h -->
+  <text x="245" y="345" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Inspeção</text>
+  <text x="245" y="360" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Antena</text>
+  <text x="245" y="373" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 2.000h)</text>
+  <!-- Bars at 2000, 4000, 6000 -->
+  <rect x="418" y="335" width="14" height="30" rx="2" ry="2" fill="#333" opacity="0.3" />
+  <rect x="591" y="335" width="14" height="30" rx="2" ry="2" fill="#333" opacity="0.3" />
+  <rect x="764" y="335" width="14" height="30" rx="2" ry="2" fill="#333" opacity="0.3" />
+
+  <!-- Separator -->
+  <line x1="250" y1="385" x2="770" y2="385" stroke="#eee" stroke-width="1" />
+
+  <!-- Row 5: Substituição Sensores — at 5000h -->
+  <text x="245" y="415" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Substituição</text>
+  <text x="245" y="430" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Sensores</text>
+  <text x="245" y="443" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 5.000h)</text>
+  <!-- Bar at 5000 -->
+  <rect x="678" y="408" width="14" height="30" rx="2" ry="2" fill="#333" opacity="0.25" />
+
+  <!-- Separator -->
+  <line x1="250" y1="455" x2="770" y2="455" stroke="#eee" stroke-width="1" />
+
+  <!-- Row 6: Substituição Antena — at 6000h -->
+  <text x="245" y="470" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Substituição</text>
+  <text x="245" y="478" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Antena</text>
+  <!-- Bar at 6000 -->
+  <rect x="764" y="460" width="14" height="20" rx="2" ry="2" fill="#333" opacity="0.2" />
+  <text x="245" y="490" text-anchor="end" font-family="Arial, sans-serif" font-size="9" fill="#666">(a cada 6.000h)</text>
+
+  <!-- Legend -->
+  <rect x="260" y="530" width="500" height="35" rx="4" ry="4" fill="#f0f4f8" stroke="#333" stroke-width="1" />
+  <text x="275" y="552" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#333">Legenda:</text>
+  <rect x="340" y="541" width="10" height="12" fill="#333" opacity="0.7" />
+  <text x="356" y="552" font-family="Arial, sans-serif" font-size="9" fill="#333">Alta frequência</text>
+  <rect x="440" y="541" width="10" height="12" fill="#333" opacity="0.4" />
+  <text x="456" y="552" font-family="Arial, sans-serif" font-size="9" fill="#333">Média frequência</text>
+  <rect x="555" y="541" width="10" height="12" fill="#333" opacity="0.2" />
+  <text x="571" y="552" font-family="Arial, sans-serif" font-size="9" fill="#333">Baixa frequência</text>
+
+  <!-- Footer -->
+  <text x="400" y="585" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">Nova ERA — Cronograma de Manutenção Preventiva — NE-PM-NAV</text>
+</svg>

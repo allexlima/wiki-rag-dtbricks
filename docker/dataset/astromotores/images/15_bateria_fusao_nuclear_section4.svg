@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <style>
+      text { font-family: 'Segoe UI', Arial, sans-serif; fill: #333; font-size: 14px; }
+      .title { font-size: 16px; font-weight: bold; }
+      .component { fill: #f0f4f8; stroke: #333; stroke-width: 2; }
+      .dashed { stroke: #333; stroke-width: 1.5; stroke-dasharray: 6,4; fill: none; }
+      .num { font-size: 12px; font-weight: bold; }
+    </style>
+  </defs>
+
+  <text x="400" y="35" text-anchor="middle" class="title">Vista Explodida — Bateria de Fusão Nuclear</text>
+
+  <!-- Component 1: Blindagem Externa -->
+  <text x="230" y="90" text-anchor="end" class="num">1</text>
+  <rect x="250" y="65" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="95" text-anchor="middle">Blindagem Externa</text>
+
+  <line x1="400" y1="115" x2="400" y2="145" class="dashed"/>
+
+  <!-- Component 2: Câmara de Fusão -->
+  <text x="230" y="175" text-anchor="end" class="num">2</text>
+  <rect x="250" y="145" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="175" text-anchor="middle">Câmara de Fusão</text>
+
+  <line x1="400" y1="195" x2="400" y2="225" class="dashed"/>
+
+  <!-- Component 3: Eletrodo Central -->
+  <text x="230" y="255" text-anchor="end" class="num">3</text>
+  <rect x="250" y="225" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="255" text-anchor="middle">Eletrodo Central</text>
+
+  <line x1="400" y1="275" x2="400" y2="305" class="dashed"/>
+
+  <!-- Component 4: Conversor Termoelétrico -->
+  <text x="230" y="335" text-anchor="end" class="num">4</text>
+  <rect x="250" y="305" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="335" text-anchor="middle">Conversor Termoelétrico</text>
+
+  <line x1="400" y1="355" x2="400" y2="385" class="dashed"/>
+
+  <!-- Component 5: Módulo Regulador -->
+  <text x="230" y="415" text-anchor="end" class="num">5</text>
+  <rect x="250" y="385" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="415" text-anchor="middle">Módulo Regulador</text>
+
+  <line x1="400" y1="435" x2="400" y2="465" class="dashed"/>
+
+  <!-- Component 6: Placa de Conexão -->
+  <text x="230" y="495" text-anchor="end" class="num">6</text>
+  <rect x="250" y="465" width="300" height="50" rx="4" class="component"/>
+  <text x="400" y="495" text-anchor="middle">Placa de Conexão</text>
+</svg>
