@@ -542,8 +542,9 @@ def run_agent(question: str, thread_id: str | None = None) -> dict:
 
     answer = ""
     for item in response.output:
-        if hasattr(item, "text"):
-            answer = item.text
+        if hasattr(item, "content") and item.content:
+            block = item.content[0]
+            answer = block.text if hasattr(block, "text") else str(block)
             break
 
     return {"answer": answer, "conversation_id": conv_id}
