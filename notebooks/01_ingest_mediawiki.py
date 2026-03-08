@@ -9,11 +9,14 @@
 # MAGIC cleans it, chunks it, generates embeddings via Foundation Model API,
 # MAGIC and writes everything back to the `wiki_rag` schema.
 # MAGIC
+# MAGIC **Multimodal:** extracts image references, fetches images from MediaWiki,
+# MAGIC and generates text descriptions via a vision LLM.
+# MAGIC
 # MAGIC **Incremental** — only processes pages with `rev_id` greater than the last watermark.
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary pgvector mwparserfromhell langchain-text-splitters databricks-openai databricks-sdk --upgrade -q
+# MAGIC %pip install psycopg2-binary pgvector mwparserfromhell langchain-text-splitters databricks-openai databricks-sdk tenacity Pillow --upgrade -q
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -23,6 +26,7 @@
 
 # COMMAND ----------
 
+import logging
 import os
 import sys
 
@@ -32,9 +36,12 @@ from psycopg2.extras import execute_values
 
 from src.config import get_lakebase_conn
 from src.ingestion.mediawiki_reader import fetch_pages
-from src.pipeline.chunker import TextChunk, chunk_page
-from src.pipeline.cleaner import clean_wikitext
+from src.pipeline.chunker import TextChunk, chunk_image_caption, chunk_page
+from src.pipeline.cleaner import clean_wikitext, extract_image_refs
 from src.pipeline.embedder import embed_texts
+from src.pipeline.image_captioner import caption_image, fetch_image_from_mediawiki
+
+log = logging.getLogger(__name__)
 
 conn = get_lakebase_conn()
 
@@ -54,31 +61,67 @@ print(f"Current watermark: rev_id = {watermark}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Fetch pages, clean, and chunk
+# MAGIC ## Fetch pages, clean, chunk, and process images
 
 # COMMAND ----------
 
 all_chunks: list[TextChunk] = []
+image_records: list[tuple] = []  # (page_id, page_title, filename, alt_text, caption)
 max_rev_id = watermark
 page_count = 0
 
 for page in fetch_pages(conn, watermark):
     clean_text = clean_wikitext(page.wikitext)
-    if not clean_text.strip():
-        continue
 
-    chunks = chunk_page(
+    # --- Text chunks ---
+    text_chunks = chunk_page(
         page_id=page.page_id,
         page_title=page.page_title,
         page_ns=page.page_ns,
         rev_id=page.rev_id,
         clean_text=clean_text,
-    )
-    all_chunks.extend(chunks)
+    ) if clean_text.strip() else []
+    all_chunks.extend(text_chunks)
+
+    # --- Image processing (multimodal) ---
+    image_refs = extract_image_refs(page.wikitext)
+    for ref in image_refs:
+        try:
+            image_bytes = fetch_image_from_mediawiki(ref.filename)
+            if image_bytes is None:
+                continue
+
+            caption = caption_image(
+                image_bytes=image_bytes,
+                alt_text=ref.alt_text,
+                page_title=page.page_title,
+            )
+
+            # Track for DB insert
+            image_records.append((
+                page.page_id, page.page_title, ref.filename, ref.alt_text, caption,
+            ))
+
+            # Create image-sourced chunks
+            img_chunks = chunk_image_caption(
+                page_id=page.page_id,
+                page_title=page.page_title,
+                page_ns=page.page_ns,
+                rev_id=page.rev_id,
+                filename=ref.filename,
+                caption=caption,
+                chunk_index_offset=len(text_chunks) + len(all_chunks),
+            )
+            all_chunks.extend(img_chunks)
+            print(f"  📷 {ref.filename}: captioned ({len(caption)} chars)")
+
+        except Exception:
+            log.warning("Failed to process image '%s' on page '%s'", ref.filename, page.page_title, exc_info=True)
+
     max_rev_id = max(max_rev_id, page.rev_id)
     page_count += 1
 
-print(f"✓ {page_count} pages → {len(all_chunks)} chunks (max rev_id: {max_rev_id})")
+print(f"✓ {page_count} pages → {len(all_chunks)} chunks ({len(image_records)} images)")
 
 # COMMAND ----------
 
@@ -121,15 +164,22 @@ try:
         )
         print(f"  Deleted {cur.rowcount} old chunks for {len(page_ids)} pages")
 
-        # Insert chunks
+        # Remove stale image records
+        cur.execute(
+            "DELETE FROM wiki_rag.wiki_images WHERE page_id = ANY(%s)",
+            (page_ids,),
+        )
+        print(f"  Deleted {cur.rowcount} old image records")
+
+        # Insert chunks (with chunk_source)
         chunk_rows = [
-            (c.page_id, c.page_title, c.page_ns, c.rev_id, c.chunk_index, c.text)
+            (c.page_id, c.page_title, c.page_ns, c.rev_id, c.chunk_index, c.text, c.chunk_source)
             for c in all_chunks
         ]
         chunk_ids = execute_values(
             cur,
             """INSERT INTO wiki_rag.wiki_chunks
-                   (page_id, page_title, page_ns, rev_id, chunk_index, chunk_text)
+                   (page_id, page_title, page_ns, rev_id, chunk_index, chunk_text, chunk_source)
                VALUES %s RETURNING chunk_id""",
             chunk_rows,
             fetch=True,
@@ -146,6 +196,17 @@ try:
             template="(%s, %s::vector)",
         )
         print(f"  Inserted {len(emb_rows)} embeddings")
+
+        # Insert image metadata
+        if image_records:
+            execute_values(
+                cur,
+                """INSERT INTO wiki_rag.wiki_images
+                       (page_id, page_title, filename, alt_text, caption)
+                   VALUES %s""",
+                image_records,
+            )
+            print(f"  Inserted {len(image_records)} image records")
 
         # Advance watermark
         cur.execute(
@@ -172,14 +233,21 @@ with conn.cursor() as cur:
     cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_chunks")
     total_chunks = cur.fetchone()[0]
 
+    cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_chunks WHERE chunk_source = 'image'")
+    image_chunks = cur.fetchone()[0]
+
     cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_embeddings")
     total_embeddings = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_images")
+    total_images = cur.fetchone()[0]
 
     cur.execute("SELECT value FROM wiki_rag.sync_state WHERE key = 'last_processed_rev_id'")
     current_wm = cur.fetchone()[0]
 
-print(f"Total chunks:     {total_chunks}")
+print(f"Total chunks:     {total_chunks} ({image_chunks} from images)")
 print(f"Total embeddings: {total_embeddings}")
+print(f"Total images:     {total_images}")
 print(f"Watermark:        rev_id = {current_wm}")
 
 # COMMAND ----------

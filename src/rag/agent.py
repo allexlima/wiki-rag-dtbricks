@@ -171,6 +171,7 @@ class WikiRAGAgent(ResponsesAgent):
                         "title": d.page_title,
                         "text": d.chunk_text,
                         "similarity": d.similarity,
+                        "source": d.chunk_source,
                     }
                     for d in docs
                 ]
@@ -236,7 +237,11 @@ class WikiRAGAgent(ResponsesAgent):
 
         def generate_node(state: _RAGState) -> dict:
             docs = state["documents"]
-            context = "\n\n".join(f"[{d['title']}]\n{d['text']}" for d in docs)
+            def _format_doc(d: dict) -> str:
+                label = f"[{d['title']}] (image description)" if d.get("source") == "image" else f"[{d['title']}]"
+                return f"{label}\n{d['text']}"
+
+            context = "\n\n".join(_format_doc(d) for d in docs)
 
             history = state.get("conversation_history", "")
             history_block = (

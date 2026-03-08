@@ -20,6 +20,7 @@ class RetrievedDoc:
     page_title: str
     chunk_text: str
     similarity: float
+    chunk_source: str = "text"
 
 
 def retrieve(
@@ -36,7 +37,8 @@ def retrieve(
             cur.execute(
                 """
                 SELECT c.chunk_id, c.page_title, c.chunk_text,
-                       1 - (e.embedding <=> %s::vector) AS similarity
+                       1 - (e.embedding <=> %s::vector) AS similarity,
+                       COALESCE(c.chunk_source, 'text') AS chunk_source
                 FROM wiki_rag.wiki_embeddings e
                 JOIN wiki_rag.wiki_chunks c ON c.chunk_id = e.chunk_id
                 ORDER BY e.embedding <=> %s::vector
@@ -47,7 +49,7 @@ def retrieve(
             rows = cur.fetchall()
 
         docs = [
-            RetrievedDoc(chunk_id=r[0], page_title=r[1], chunk_text=r[2], similarity=r[3])
+            RetrievedDoc(chunk_id=r[0], page_title=r[1], chunk_text=r[2], similarity=r[3], chunk_source=r[4])
             for r in rows
         ]
         log.info("Retrieved %d docs for query (top similarity: %.3f)", len(docs), docs[0].similarity if docs else 0.0)

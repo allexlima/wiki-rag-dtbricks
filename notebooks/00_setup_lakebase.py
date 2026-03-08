@@ -270,6 +270,25 @@ DDL: list[tuple[str, str]] = [
         VALUES ('last_processed_rev_id', '0')
         ON CONFLICT (key) DO NOTHING;"""),
 
+    # Image metadata (multimodal processing — vision LLM captions)
+    (f"{SCHEMA}.wiki_images",
+     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_images (
+            image_id    BIGSERIAL   PRIMARY KEY,
+            page_id     BIGINT      NOT NULL,
+            page_title  TEXT        NOT NULL,
+            filename    TEXT        NOT NULL,
+            alt_text    TEXT        DEFAULT '',
+            caption     TEXT        NOT NULL,
+            created_at  TIMESTAMPTZ DEFAULT now()
+        );"""),
+
+    (f"idx: {SCHEMA}.wiki_images(page_id)",
+     f"CREATE INDEX IF NOT EXISTS idx_images_page_id ON {SCHEMA}.wiki_images(page_id);"),
+
+    # Add chunk_source column to track text vs image-sourced chunks
+    (f"alter: {SCHEMA}.wiki_chunks add chunk_source",
+     f"ALTER TABLE {SCHEMA}.wiki_chunks ADD COLUMN IF NOT EXISTS chunk_source TEXT DEFAULT 'text';"),
+
     # Conversation memory tables (for multi-turn RAG with persistent history)
     (f"{SCHEMA}.conversations",
      f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.conversations (
