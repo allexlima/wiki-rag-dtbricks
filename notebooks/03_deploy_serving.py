@@ -9,7 +9,7 @@
 # MAGIC and deploys a Model Serving endpoint.
 # MAGIC
 # MAGIC Uses the **"Models from Code"** pattern — the model source is
-# MAGIC `src/rag/agent.py` (a `ResponsesAgent` wrapping LangGraph).
+# MAGIC `src/rag.py` (a `ResponsesAgent` wrapping LangGraph).
 
 # COMMAND ----------
 
@@ -60,7 +60,7 @@ input_example = {
 with mlflow.start_run(run_name="wiki-rag-agent") as run:
     model_info = mlflow.pyfunc.log_model(
         artifact_path="wiki_rag_agent",
-        python_model="src/rag/agent.py",
+        python_model="src/rag.py",
         code_paths=["src/"],
         resources=resources,
         input_example=input_example,

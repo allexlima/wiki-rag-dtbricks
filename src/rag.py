@@ -2,10 +2,10 @@
 Wiki RAG Agent — ResponsesAgent wrapping a LangGraph agentic RAG flow.
 
 Single source of truth: used by both notebook testing and model serving.
-Deployment: mlflow.pyfunc.log_model(python_model="src/rag/agent.py")
+Deployment: ``mlflow.pyfunc.log_model(python_model="src/rag.py")``
 
 Flow: retrieve → grade_documents → (rewrite_query loop) → generate
-Memory: conversation history persisted in Lakebase wiki_rag.messages table.
+Memory: conversation history persisted in Lakebase ``wiki_rag.messages``.
 """
 from __future__ import annotations
 
@@ -13,9 +13,11 @@ import json
 import logging
 import os
 import uuid
+from dataclasses import dataclass
 from typing import Generator, TypedDict
 
 import mlflow
+import psycopg2
 from databricks_openai import DatabricksOpenAI
 from langgraph.graph import END, StateGraph
 from mlflow.pyfunc import ResponsesAgent
@@ -24,9 +26,10 @@ from mlflow.types.responses import (
     ResponsesAgentResponse,
     ResponsesAgentStreamEvent,
 )
+from pgvector.psycopg2 import register_vector
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from src.rag.retriever import RetrievedDoc, retrieve
+from src.pipeline import WikiPipeline
 
 log = logging.getLogger(__name__)
 
@@ -40,8 +43,31 @@ MAX_HISTORY_TURNS = 5  # previous exchanges to include as context
 
 
 # ---------------------------------------------------------------------------
-# Internal LangGraph state (custom RAG pipeline, not message-based)
+# Dataclass
 # ---------------------------------------------------------------------------
+
+
+@dataclass
+class RetrievedDoc:
+    """A document chunk retrieved from pgvector similarity search.
+
+    Attributes:
+        chunk_source: ``"text"`` for regular wiki content,
+            ``"image"`` for vision-LLM-generated captions.
+    """
+
+    chunk_id: int
+    page_title: str
+    chunk_text: str
+    similarity: float
+    chunk_source: str = "text"
+
+
+# ---------------------------------------------------------------------------
+# Internal LangGraph state
+# ---------------------------------------------------------------------------
+
+
 class _RAGState(TypedDict):
     question: str
     documents: list[dict]
@@ -53,9 +79,19 @@ class _RAGState(TypedDict):
 # ---------------------------------------------------------------------------
 # LLM call wrapper with retry + timeout
 # ---------------------------------------------------------------------------
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=30))
 def _llm_call(client: DatabricksOpenAI, **kwargs) -> str:
-    """Make an LLM call with retry and timeout. Returns content string."""
+    """Make an LLM call with retry and timeout.
+
+    Args:
+        client: DatabricksOpenAI client instance.
+        **kwargs: Forwarded to ``client.chat.completions.create()``.
+
+    Returns:
+        The stripped content string from the first choice.
+    """
     kwargs.setdefault("timeout", LLM_TIMEOUT)
     response = client.chat.completions.create(**kwargs)
     content = response.choices[0].message.content
@@ -67,31 +103,116 @@ def _llm_call(client: DatabricksOpenAI, **kwargs) -> str:
 # ---------------------------------------------------------------------------
 # WikiRAGAgent
 # ---------------------------------------------------------------------------
-class WikiRAGAgent(ResponsesAgent):
-    """Agentic RAG over a MediaWiki knowledge base stored in Lakebase/pgvector."""
 
-    def __init__(self):
+
+class WikiRAGAgent(ResponsesAgent):
+    """Agentic RAG over a MediaWiki knowledge base stored in Lakebase/pgvector.
+
+    Implements the MLflow 3 ``ResponsesAgent`` interface so it can be deployed
+    directly as a Model Serving endpoint via *models from code*.
+
+    The agent runs a LangGraph ``StateGraph`` with four nodes:
+
+    1. **retrieve** — embed query and search pgvector for top-k chunks.
+    2. **grade_documents** — LLM relevance judgment on each chunk.
+    3. **rewrite_query** — LLM rewrites the query if no relevant docs found.
+    4. **generate** — LLM produces the answer citing source pages.
+
+    Multi-turn conversation history is persisted in Lakebase
+    (``wiki_rag.conversations`` / ``wiki_rag.messages``).
+    """
+
+    def __init__(self) -> None:
+        """Initialise with lazy clients (created on first use)."""
         self._client: DatabricksOpenAI | None = None
         self._conn = None
 
     @property
     def client(self) -> DatabricksOpenAI:
+        """Lazy-initialised DatabricksOpenAI client."""
         if self._client is None:
             self._client = DatabricksOpenAI()
         return self._client
 
-    def _get_conn(self):
-        """Lazy psycopg2 connection via src.config."""
+    def _get_conn(self) -> psycopg2.extensions.connection:
+        """Return a live psycopg2 connection, reconnecting if needed.
+
+        Uses :func:`src.config.get_lakebase_conn` which supports both
+        password auth (serving) and OAuth (notebooks).
+        """
         if self._conn is None or self._conn.closed:
             from src.config import get_lakebase_conn
 
             self._conn = get_lakebase_conn()
         return self._conn
 
+    # --- Retriever --------------------------------------------------------
+
+    def retrieve(
+        self,
+        conn: psycopg2.extensions.connection,
+        query: str,
+        top_k: int = 5,
+    ) -> list[RetrievedDoc]:
+        """Embed *query* and search pgvector for the *top_k* most similar chunks.
+
+        Args:
+            conn: A psycopg2 connection to Lakebase.
+            query: The user's natural-language question.
+            top_k: Number of results to return.
+
+        Returns:
+            A list of :class:`RetrievedDoc` ordered by descending similarity.
+            Returns an empty list on any failure.
+        """
+        try:
+            register_vector(conn)
+            query_embedding = WikiPipeline.embed_texts([query])[0]
+
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT c.chunk_id, c.page_title, c.chunk_text,
+                           1 - (e.embedding <=> %s::vector) AS similarity,
+                           COALESCE(c.chunk_source, 'text') AS chunk_source
+                    FROM wiki_rag.wiki_embeddings e
+                    JOIN wiki_rag.wiki_chunks c ON c.chunk_id = e.chunk_id
+                    ORDER BY e.embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (query_embedding, query_embedding, top_k),
+                )
+                rows = cur.fetchall()
+
+            docs = [
+                RetrievedDoc(
+                    chunk_id=r[0], page_title=r[1], chunk_text=r[2],
+                    similarity=r[3], chunk_source=r[4],
+                )
+                for r in rows
+            ]
+            log.info(
+                "Retrieved %d docs for query (top similarity: %.3f)",
+                len(docs), docs[0].similarity if docs else 0.0,
+            )
+            return docs
+
+        except Exception:
+            log.exception("Retrieval failed for query: %s", query[:100])
+            return []
+
     # --- Conversation memory (Lakebase) -----------------------------------
 
     def _load_history(self, conversation_id: str) -> str:
-        """Load recent conversation history from Lakebase as formatted context."""
+        """Load recent conversation history from Lakebase.
+
+        Args:
+            conversation_id: UUID identifying the conversation thread.
+
+        Returns:
+            Formatted previous turns as ``"role: content"`` lines,
+            or an empty string if unavailable.
+        """
         try:
             conn = self._get_conn()
             with conn.cursor() as cur:
@@ -110,7 +231,7 @@ class WikiRAGAgent(ResponsesAgent):
             if not rows:
                 return ""
 
-            rows.reverse()  # chronological order
+            rows.reverse()
             return "\n".join(f"{role}: {content}" for role, content in rows)
 
         except Exception:
@@ -125,7 +246,18 @@ class WikiRAGAgent(ResponsesAgent):
         answer: str,
         sources: list[dict],
     ) -> None:
-        """Persist the user question and assistant answer to Lakebase."""
+        """Persist the user question and assistant answer to Lakebase.
+
+        Creates the conversation record on first exchange (upsert),
+        then appends both messages atomically.
+
+        Args:
+            conversation_id: UUID for the conversation thread.
+            user_id: Identifier of the user (email or ``"anonymous"``).
+            question: The user's original question.
+            answer: The generated answer text.
+            sources: List of source dicts (``title``, ``similarity``).
+        """
         try:
             conn = self._get_conn()
             with conn.cursor() as cur:
@@ -158,12 +290,16 @@ class WikiRAGAgent(ResponsesAgent):
     # --- LangGraph RAG pipeline -------------------------------------------
 
     def _build_graph(self):
-        """Build and compile the LangGraph RAG agent."""
+        """Build and compile the LangGraph RAG agent.
+
+        Returns:
+            A compiled ``StateGraph`` ready for ``.invoke()`` or ``.stream()``.
+        """
         client = self.client
 
         def retrieve_node(state: _RAGState) -> dict:
             conn = self._get_conn()
-            docs = retrieve(conn, state["question"], top_k=5)
+            docs = self.retrieve(conn, state["question"], top_k=5)
             return {
                 "documents": [
                     {
@@ -237,16 +373,19 @@ class WikiRAGAgent(ResponsesAgent):
 
         def generate_node(state: _RAGState) -> dict:
             docs = state["documents"]
+
             def _format_doc(d: dict) -> str:
-                label = f"[{d['title']}] (image description)" if d.get("source") == "image" else f"[{d['title']}]"
+                label = (
+                    f"[{d['title']}] (image description)"
+                    if d.get("source") == "image"
+                    else f"[{d['title']}]"
+                )
                 return f"{label}\n{d['text']}"
 
             context = "\n\n".join(_format_doc(d) for d in docs)
 
             history = state.get("conversation_history", "")
-            history_block = (
-                f"\n\nPrevious conversation:\n{history}" if history else ""
-            )
+            history_block = f"\n\nPrevious conversation:\n{history}" if history else ""
 
             answer = _llm_call(
                 client,
@@ -294,7 +433,21 @@ class WikiRAGAgent(ResponsesAgent):
     # --- ResponsesAgent interface -----------------------------------------
 
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
-        """Run the RAG pipeline and return a structured response."""
+        """Run the full RAG pipeline and return a structured response.
+
+        Extracts the user's question from the last message, loads
+        conversation history if a ``conversation_id`` is provided,
+        executes the LangGraph pipeline, persists the exchange,
+        and returns the answer with source citations.
+
+        Args:
+            request: An MLflow ``ResponsesAgentRequest`` with at least
+                one user message in ``request.input``.
+
+        Returns:
+            A ``ResponsesAgentResponse`` containing the answer text
+            and appended source citations.
+        """
         if not request.input:
             return ResponsesAgentResponse(
                 output=[self.create_text_output_item(text="Please provide a question.", id="msg_err")]
@@ -308,7 +461,6 @@ class WikiRAGAgent(ResponsesAgent):
                 output=[self.create_text_output_item(text="Please provide a non-empty question.", id="msg_err")]
             )
 
-        # Context from request
         conv_id = None
         user_id = "anonymous"
         if request.context:
@@ -319,10 +471,8 @@ class WikiRAGAgent(ResponsesAgent):
 
         log.info("Processing: %s (conv=%s)", question[:80], conv_id[:8])
 
-        # Load conversation history for multi-turn context
         history = self._load_history(conv_id)
 
-        # Run the LangGraph RAG pipeline
         graph = self._build_graph()
         result = graph.invoke({
             "question": question,
@@ -338,10 +488,8 @@ class WikiRAGAgent(ResponsesAgent):
             for d in result.get("documents", [])
         ]
 
-        # Persist the exchange
         self._save_exchange(conv_id, user_id, question, answer, sources)
 
-        # Build response with sources appended
         response_text = answer
         if sources:
             source_list = ", ".join(s["title"] for s in sources)
@@ -354,7 +502,14 @@ class WikiRAGAgent(ResponsesAgent):
     def predict_stream(
         self, request: ResponsesAgentRequest,
     ) -> Generator[ResponsesAgentStreamEvent, None, None]:
-        """Streaming predict — delegates to non-streaming for simplicity."""
+        """Streaming predict — delegates to non-streaming for simplicity.
+
+        Args:
+            request: An MLflow ``ResponsesAgentRequest``.
+
+        Yields:
+            ``ResponsesAgentStreamEvent`` objects for each output item.
+        """
         result = self.predict(request)
         for item in result.output:
             yield ResponsesAgentStreamEvent(type="response.output_item.done", item=item)
@@ -363,6 +518,8 @@ class WikiRAGAgent(ResponsesAgent):
 # ---------------------------------------------------------------------------
 # Convenience function for notebook testing
 # ---------------------------------------------------------------------------
+
+
 def run_agent(question: str, thread_id: str | None = None) -> dict:
     """Run the RAG agent directly (for notebook testing).
 
@@ -371,7 +528,7 @@ def run_agent(question: str, thread_id: str | None = None) -> dict:
         thread_id: Optional conversation ID for multi-turn memory.
 
     Returns:
-        dict with 'answer' and 'conversation_id' keys.
+        A dict with ``"answer"`` and ``"conversation_id"`` keys.
     """
     from mlflow.types.responses import ChatContext
 

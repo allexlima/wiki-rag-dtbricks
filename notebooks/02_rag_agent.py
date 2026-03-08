@@ -31,8 +31,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from pgvector.psycopg2 import register_vector
 
 from src.config import get_lakebase_conn
-from src.rag.agent import run_agent
-from src.rag.retriever import retrieve
+from src.rag import WikiRAGAgent, run_agent
 
 conn = get_lakebase_conn()
 register_vector(conn)
@@ -44,7 +43,8 @@ register_vector(conn)
 
 # COMMAND ----------
 
-docs = retrieve(conn, "What is the main topic of the wiki?", top_k=3)
+agent = WikiRAGAgent()
+docs = agent.retrieve(conn, "What is the main topic of the wiki?", top_k=3)
 
 for doc in docs:
     print(f"[{doc.page_title}] (similarity: {doc.similarity:.4f})")

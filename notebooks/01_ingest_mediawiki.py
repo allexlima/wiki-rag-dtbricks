@@ -35,14 +35,13 @@ sys.path.insert(0, os.path.join(os.getcwd(), ".."))
 from psycopg2.extras import execute_values
 
 from src.config import get_lakebase_conn
-from src.ingestion.mediawiki_reader import fetch_pages
-from src.pipeline.chunker import TextChunk, chunk_image_caption, chunk_page
-from src.pipeline.cleaner import clean_wikitext, extract_image_refs
-from src.pipeline.embedder import embed_texts
-from src.pipeline.image_captioner import caption_image, fetch_image_from_mediawiki
+from src.ingestion import MediaWikiIngestion
+from src.pipeline import TextChunk, WikiPipeline
 
 log = logging.getLogger(__name__)
 
+ingestion = MediaWikiIngestion()
+pipeline = WikiPipeline()
 conn = get_lakebase_conn()
 
 # COMMAND ----------
@@ -70,11 +69,11 @@ image_records: list[tuple] = []  # (page_id, page_title, filename, alt_text, cap
 max_rev_id = watermark
 page_count = 0
 
-for page in fetch_pages(conn, watermark):
-    clean_text = clean_wikitext(page.wikitext)
+for page in ingestion.fetch_pages(conn, watermark):
+    clean_text = pipeline.clean_wikitext(page.wikitext)
 
     # --- Text chunks ---
-    text_chunks = chunk_page(
+    text_chunks = pipeline.chunk_page(
         page_id=page.page_id,
         page_title=page.page_title,
         page_ns=page.page_ns,
@@ -84,14 +83,14 @@ for page in fetch_pages(conn, watermark):
     all_chunks.extend(text_chunks)
 
     # --- Image processing (multimodal) ---
-    image_refs = extract_image_refs(page.wikitext)
+    image_refs = pipeline.extract_image_refs(page.wikitext)
     for ref in image_refs:
         try:
-            image_bytes = fetch_image_from_mediawiki(ref.filename)
+            image_bytes = pipeline.fetch_image_from_mediawiki(ref.filename)
             if image_bytes is None:
                 continue
 
-            caption = caption_image(
+            caption = pipeline.caption_image(
                 image_bytes=image_bytes,
                 alt_text=ref.alt_text,
                 page_title=page.page_title,
@@ -103,7 +102,7 @@ for page in fetch_pages(conn, watermark):
             ))
 
             # Create image-sourced chunks
-            img_chunks = chunk_image_caption(
+            img_chunks = pipeline.chunk_image_caption(
                 page_id=page.page_id,
                 page_title=page.page_title,
                 page_ns=page.page_ns,
@@ -139,7 +138,7 @@ if not all_chunks:
 chunk_texts = [c.text for c in all_chunks]
 print(f"⏳ Embedding {len(chunk_texts)} chunks...")
 
-embeddings = embed_texts(chunk_texts)
+embeddings = pipeline.embed_texts(chunk_texts)
 print(f"✓ {len(embeddings)} embeddings (dim={len(embeddings[0])})")
 
 # COMMAND ----------

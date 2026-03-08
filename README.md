@@ -49,15 +49,9 @@ wiki-rag-dtbricks/
 │   └── setup.sh                  # One-command bootstrap
 ├── src/
 │   ├── config.py                 # Shared Lakebase connection helper
-│   ├── ingestion/
-│   │   └── mediawiki_reader.py   # Reads MW native PG tables
-│   ├── pipeline/
-│   │   ├── cleaner.py            # Strips wikitext → plain text
-│   │   ├── chunker.py            # RecursiveCharacterTextSplitter
-│   │   └── embedder.py           # Foundation Model API embeddings
-│   └── rag/
-│       ├── retriever.py          # pgvector cosine search
-│       └── agent.py              # ResponsesAgent + LangGraph RAG (with memory)
+│   ├── ingestion.py              # MediaWikiIngestion — reads MW native PG tables
+│   ├── pipeline.py               # WikiPipeline — clean, chunk, embed, caption images
+│   └── rag.py                    # WikiRAGAgent — ResponsesAgent + LangGraph RAG
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL
 │   ├── 01_ingest_mediawiki.py    # Ingest → clean → chunk → embed
