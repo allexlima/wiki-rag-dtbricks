@@ -1,5 +1,5 @@
-# Wiki RAG on Databricks — deployment automation
-# Usage: make deploy | make destroy-all | make help
+# 🧠 Wiki RAG on Databricks — deployment automation
+# Usage: make deploy | make destroy | make help
 #
 # Override target:  make deploy TARGET=prod
 # Override profile: make deploy PROFILE=my-workspace
@@ -9,93 +9,168 @@ SHELL := /bin/bash
 TARGET ?= dev
 PROFILE ?=
 
-# Build CLI flags from optional PROFILE
+# ─── Config (matches databricks.yml defaults) ────────────────
+SECRET_SCOPE  := wiki-rag
+INSTANCE_NAME := wiki-rag-lakebase
+ENDPOINT_NAME := wiki-rag-endpoint
+APP_NAME      := wiki-rag-app
+
+# ─── CLI flags ────────────────────────────────────────────────
 CLI_FLAGS := -t $(TARGET)
+PROFILE_FLAG :=
 ifdef PROFILE
-CLI_FLAGS += --profile $(PROFILE)
+CLI_FLAGS    += --profile $(PROFILE)
+PROFILE_FLAG := --profile $(PROFILE)
 endif
 
-# ---------- Pre-flight ----------
+# ─── Internal helpers ─────────────────────────────────────────
+
+.PHONY: _check-cli _check-auth _require-secrets
+
+_check-cli:
+	@command -v databricks >/dev/null 2>&1 || { echo "❌ 'databricks' CLI not found"; exit 1; }
+
+_check-auth: _check-cli
+	@databricks auth env $(PROFILE_FLAG) >/dev/null 2>&1 \
+		|| { echo "❌ Not authenticated. Run: databricks auth login $(PROFILE_FLAG)"; exit 1; }
+
+_require-secrets: _check-auth
+	@databricks secrets get-secret $(SECRET_SCOPE) mw_password $(PROFILE_FLAG) >/dev/null 2>&1 \
+		|| { echo "❌ Secret 'mw_password' not found in scope '$(SECRET_SCOPE)'. Run 'make setup-secrets' first."; exit 1; }
+
+# ─────────────────────────────────────────────────────────────
+# 🔍 Pre-flight
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: validate
-validate:  ## Check prerequisites (Databricks CLI, Docker, auth)
-	@echo "=== Pre-flight checks ==="
-	@command -v databricks >/dev/null 2>&1 || { echo "ERROR: 'databricks' CLI not found"; exit 1; }
-	@command -v docker >/dev/null 2>&1 || { echo "ERROR: 'docker' not found"; exit 1; }
-	@databricks auth env $(if $(PROFILE),--profile $(PROFILE),) >/dev/null 2>&1 || { echo "ERROR: Databricks CLI not authenticated. Run 'databricks auth login'"; exit 1; }
-	@databricks bundle validate $(CLI_FLAGS) >/dev/null 2>&1 || { echo "ERROR: Bundle validation failed"; databricks bundle validate $(CLI_FLAGS); exit 1; }
-	@echo "=== All checks passed ==="
+validate: _check-auth  ## 🔍 Check prerequisites (Databricks CLI, auth, Docker)
+	@echo "🔍 Running pre-flight checks..."
+	@command -v docker >/dev/null 2>&1 || { echo "❌ 'docker' not found"; exit 1; }
+	@echo "✅ All checks passed"
 
-# ---------- Secrets (one-time, interactive) ----------
+# ─────────────────────────────────────────────────────────────
+# 🔑 Secrets
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: setup-secrets
-setup-secrets:  ## Create secret scope and store Lakebase password (interactive, one-time)
-	$(if $(PROFILE),DATABRICKS_CONFIG_PROFILE=$(PROFILE) ,)python src/setup_secrets.py
+setup-secrets: _check-auth  ## 🔑 Create secret scope + store Lakebase password (interactive, one-time)
+	@echo "" && \
+	echo "🔑 Wiki RAG — Secret Scope Setup" && \
+	if [ -n "$(PROFILE)" ]; then echo "   Profile: $(PROFILE)"; fi && \
+	echo "" && \
+	read -s -p "   Enter password for the 'mediawiki' Lakebase PG role: " PW && echo && \
+	read -s -p "   Confirm password: " PW2 && echo && \
+	if [ "$$PW" != "$$PW2" ]; then echo "   ❌ Passwords do not match"; exit 1; fi && \
+	if [ $${#PW} -lt 8 ]; then echo "   ❌ Password must be at least 8 characters"; exit 1; fi && \
+	echo "" && \
+	(databricks secrets create-scope $(SECRET_SCOPE) $(PROFILE_FLAG) 2>/dev/null \
+	  && echo "   ✅ Created secret scope '$(SECRET_SCOPE)'" \
+	  || echo "   ✅ Secret scope '$(SECRET_SCOPE)' already exists") && \
+	databricks secrets put-secret $(SECRET_SCOPE) mw_password --string-value "$$PW" $(PROFILE_FLAG) && \
+	echo "   ✅ Stored 'mw_password' in scope '$(SECRET_SCOPE)'" && \
+	echo "" && \
+	echo "🔑 Done. Run 'make setup-lakebase' next."
 
-# ---------- Infrastructure ----------
+# ─────────────────────────────────────────────────────────────
+# 🗄️  Infrastructure
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: setup-lakebase
-setup-lakebase: validate  ## Provision Lakebase instance, create DB, role, DDL (runs DAB job)
-	databricks bundle deploy $(CLI_FLAGS)
-	databricks bundle run setup_lakebase $(CLI_FLAGS)
+setup-lakebase: _require-secrets  ## 🗄️  Provision Lakebase instance + create DB, role, DDL
+	@echo "🗄️  Deploying bundle and running Lakebase setup..."
+	@databricks bundle deploy $(CLI_FLAGS)
+	@databricks bundle run setup_lakebase $(CLI_FLAGS)
+	@echo "✅ Lakebase setup complete"
 
-# ---------- MediaWiki (local Docker) ----------
+# ─────────────────────────────────────────────────────────────
+# 🐳 Docker (MediaWiki)
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: docker-up
-docker-up:  ## Start MediaWiki container (auto-generates .env if missing)
-	$(if $(PROFILE),DATABRICKS_CONFIG_PROFILE=$(PROFILE) ,)cd docker && chmod +x setup.sh && ./setup.sh
+docker-up: _require-secrets  ## 🐳 Start MediaWiki container (auto-generates .env if missing)
+	@$(if $(PROFILE),DATABRICKS_CONFIG_PROFILE=$(PROFILE) ,)cd docker && chmod +x setup.sh && ./setup.sh
 
 .PHONY: docker-down
-docker-down:  ## Stop and remove MediaWiki container + volumes
-	cd docker && docker compose down -v
+docker-down:  ## 🐳 Stop and remove MediaWiki container + volumes
+	@echo "🐳 Stopping MediaWiki..."
+	@cd docker && docker compose down -v
+	@echo "✅ MediaWiki stopped"
 
-# ---------- Data ----------
-
-.PHONY: ingest
-ingest: validate  ## Run ingestion pipeline (reads MW, chunks, embeds)
-	databricks bundle run wiki_rag_ingestion $(CLI_FLAGS)
-
-# ---------- Model + Endpoint ----------
+# ─────────────────────────────────────────────────────────────
+# 🤖 Model + Endpoint
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: deploy-agent
-deploy-agent: validate  ## Log model to MLflow, register in UC, deploy serving endpoint
-	databricks bundle deploy $(CLI_FLAGS)
-	databricks bundle run deploy_agent $(CLI_FLAGS)
+deploy-agent: _require-secrets  ## 🤖 Log model to MLflow, register in UC, deploy serving endpoint
+	@echo "🤖 Deploying RAG agent..."
+	@databricks bundle deploy $(CLI_FLAGS)
+	@databricks bundle run deploy_agent $(CLI_FLAGS)
+	@echo "✅ Agent deployed"
 
-# ---------- Full Stack ----------
+# ─────────────────────────────────────────────────────────────
+# 📊 Data
+# ─────────────────────────────────────────────────────────────
+
+.PHONY: ingest
+ingest: _require-secrets  ## 📊 Run ingestion pipeline (reads MW → chunks → embeds)
+	@echo "📊 Running ingestion pipeline..."
+	@databricks bundle deploy $(CLI_FLAGS)
+	@databricks bundle run wiki_rag_ingestion $(CLI_FLAGS)
+
+# ─────────────────────────────────────────────────────────────
+# 🚀 Full Stack
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: deploy
-deploy: setup-lakebase docker-up deploy-agent ingest bundle-deploy  ## Full deployment (all steps)
+deploy: setup-lakebase docker-up deploy-agent ingest  ## 🚀 Full deployment (all steps)
 	@echo ""
-	@echo "=== Deployment complete ==="
-	@echo "  Streamlit app:  databricks apps get wiki-rag-app"
-	@echo "  Serving endpoint: databricks serving-endpoints get wiki-rag-endpoint"
+	@echo "🎉 Deployment complete!"
+	@echo "   📱 App:      databricks apps get $(APP_NAME)"
+	@echo "   🔌 Endpoint: databricks serving-endpoints get $(ENDPOINT_NAME)"
 
-.PHONY: bundle-deploy
-bundle-deploy: validate  ## Deploy DAB resources (app, job schedules)
-	databricks bundle deploy $(CLI_FLAGS)
-
-# ---------- Teardown ----------
+# ─────────────────────────────────────────────────────────────
+# 💥 Teardown
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: destroy
-destroy:  ## Tear down Databricks resources (keeps Lakebase + Docker)
-	databricks bundle destroy $(CLI_FLAGS) --auto-approve || true
+destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + secrets
 	@echo ""
-	@echo "NOTE: Lakebase instance and secrets are NOT destroyed (manual cleanup if needed)"
-	@echo "NOTE: Docker containers are NOT stopped (run: make docker-down)"
+	@echo "💥 Tearing down Wiki RAG..."
+	@echo ""
+	@echo "  📦 Bundle resources..."
+	@databricks bundle destroy $(CLI_FLAGS) --auto-approve 2>&1 | sed 's/^/     /' || true
+	@echo ""
+	@echo "  🐳 Docker containers..."
+	@cd docker && docker compose down -v 2>&1 | sed 's/^/     /' || true
+	@echo ""
+	@echo "  🗄️  Lakebase instance ($(INSTANCE_NAME))..."
+	@if databricks database delete-database-instance $(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
+		echo "     ✅ Deleted"; \
+	else \
+		echo "     ⏭️  Not found (already deleted or never created)"; \
+	fi
+	@echo ""
+	@echo "  🔑 Secret scope ($(SECRET_SCOPE))..."
+	@if databricks secrets delete-scope $(SECRET_SCOPE) $(PROFILE_FLAG) 2>/dev/null; then \
+		echo "     ✅ Deleted"; \
+	else \
+		echo "     ⏭️  Not found (already deleted or never created)"; \
+	fi
+	@echo ""
+	@echo "🏁 Teardown complete."
 
-.PHONY: destroy-all
-destroy-all: destroy docker-down  ## Tear down everything (Databricks + Docker)
-	@echo "=== All resources destroyed ==="
-
-# ---------- Help ----------
+# ─────────────────────────────────────────────────────────────
+# ❓ Help
+# ─────────────────────────────────────────────────────────────
 
 .PHONY: help
-help:  ## Show available targets
-	@echo "Wiki RAG on Databricks — Deployment Targets"
+help:  ## ❓ Show available targets
 	@echo ""
-	@echo "  TARGET=$(TARGET) (override with TARGET=prod)"
-	@echo "  PROFILE=$(if $(PROFILE),$(PROFILE),<default>) (override with PROFILE=my-workspace)"
+	@printf "  🧠 \033[1mWiki RAG on Databricks\033[0m\n"
+	@echo ""
+	@printf "  \033[2mTARGET\033[0m  = \033[1m$(TARGET)\033[0m    (override with TARGET=prod)\n"
+	@printf "  \033[2mPROFILE\033[0m = \033[1m$(if $(PROFILE),$(PROFILE),<default>)\033[0m  (override with PROFILE=my-workspace)\n"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""

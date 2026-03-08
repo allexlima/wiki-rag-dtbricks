@@ -1,4 +1,6 @@
 # Databricks App — Streamlit chat UI for the Wiki RAG agent.
+# The app reads SERVING_ENDPOINT_NAME from app.yaml (plain value)
+# and queries it via WorkspaceClient() — no resource binding needed.
 
 resources:
   apps:
@@ -6,9 +8,3 @@ resources:
       name: ${var.app_name}
       source_code_path: ../app
       description: "Wiki RAG Chat UI"
-
-      resources:
-        - name: wiki-rag-serving
-          serving_endpoint:
-            name: ${var.endpoint_name}
-            permission: CAN_QUERY

@@ -52,7 +52,6 @@ make docker-up          # Auto-generates .env from secrets, starts MediaWiki
 ```bash
 make deploy-agent       # Logs model to MLflow, deploys serving endpoint
 make ingest             # Runs ingestion pipeline (clean, caption images, chunk, embed)
-make bundle-deploy      # Deploys Streamlit app + job schedules
 ```
 
 Or run everything at once: `make deploy`
@@ -68,7 +67,7 @@ Open the URL and ask a question about your wiki content.
 ### Teardown
 
 ```bash
-make destroy-all                    # Removes all Databricks resources + Docker
+make destroy                       # Removes everything: bundle + Docker + Lakebase + secrets
 ```
 
 Run `make help` to see all available targets.
@@ -122,7 +121,7 @@ MLflow Model Serving --> Streamlit Chat UI
 ```
 wiki-rag-dtbricks/
 ├── databricks.yml                # DAB config — single source of truth for all variables
-├── Makefile                      # Deployment automation (make deploy / make destroy-all)
+├── Makefile                      # Deployment automation (make deploy / make destroy)
 ├── pyproject.toml                # Pytest + coverage configuration
 │
 ├── resources/
@@ -131,7 +130,6 @@ wiki-rag-dtbricks/
 │
 ├── src/
 │   ├── config.py                 # Lakebase connection helper (password + OAuth dual-auth)
-│   ├── setup_secrets.py          # One-time: create secret scope + store password
 │   ├── ingestion.py              # MediaWikiIngestion — reads MW native PG tables
 │   ├── pipeline.py               # WikiPipeline — clean, chunk, embed, caption images
 │   └── rag.py                    # WikiRAGAgent (ResponsesAgent + LangGraph + memory)

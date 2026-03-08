@@ -5,67 +5,50 @@
 # MAGIC %md
 # MAGIC # 00 — Lakebase Setup
 # MAGIC 
-# MAGIC One-time provisioning of the **Lakebase Provisioned PostgreSQL** backend
-# MAGIC for the Wiki RAG pipeline.
+# MAGIC One-time provisioning of the **Lakebase Provisioned PostgreSQL 16** backend
+# MAGIC for the Wiki RAG pipeline. This notebook sets up everything the project needs
+# MAGIC from a database perspective — a single Lakebase instance that hosts both the
+# MAGIC **MediaWiki native tables** (via the `mediawiki` role) and the **RAG pipeline
+# MAGIC tables** (embeddings, chunks, conversation memory) in the `wiki_rag` schema.
 # MAGIC 
-# MAGIC | Step | Action |
-# MAGIC |------|--------|
-# MAGIC | 🏗️ | Provision Lakebase instance (PG 16, 1 CU) |
-# MAGIC | 🗄️ | Create `wikidb` database |
-# MAGIC | 🔐 | Enable native PG login & create `mediawiki` role |
-# MAGIC | 🔑 | Store credentials in Databricks secret scope |
-# MAGIC | 📐 | Enable pgvector · create `wiki_rag` schema, tables & indexes |
-# MAGIC | ✅ | Verify setup with password auth |
+# MAGIC **Architecture:**
+# MAGIC ```
+# MAGIC Lakebase (wiki-rag-lakebase)
+# MAGIC └── wikidb
+# MAGIC     ├── public schema     ← MediaWiki's native tables (page, revision, ...)
+# MAGIC     └── wiki_rag schema   ← RAG tables (chunks, embeddings, conversations)
+# MAGIC ```
 # MAGIC 
-# MAGIC > **Idempotent** — uses `IF NOT EXISTS` / `ON CONFLICT DO NOTHING` throughout.
-# MAGIC >
-# MAGIC > Lakebase is PostgreSQL — DDL runs via **psycopg2**, not `%sql`.
+# MAGIC **Prerequisites:** Run `make setup-secrets` first — this notebook reads the
+# MAGIC `mw_password` secret from the Databricks secret scope.
+# MAGIC 
+# MAGIC | Step | What it does |
+# MAGIC |------|-------------|
+# MAGIC | 1 | Provision or wake Lakebase instance (PG 16, `CU_1`) using the Databricks SDK |
+# MAGIC | 2 | Create `wikidb` database + enable native PG login (static passwords) |
+# MAGIC | 3 | Create `mediawiki` PostgreSQL role with grants on `public` schema |
+# MAGIC | 4 | Create `wiki_rag` schema, 6 tables, pgvector HNSW index, and role grants |
+# MAGIC | 5 | Store all connection details in the Databricks secret scope |
+# MAGIC | 6 | Verify end-to-end connectivity using password auth |
+# MAGIC 
+# MAGIC > **Idempotent** — safe to re-run at any time. All DDL uses `IF NOT EXISTS`
+# MAGIC > and `ON CONFLICT DO NOTHING`.
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary databricks-sdk pgvector --upgrade -q
+# MAGIC %pip install psycopg2-binary "databricks-sdk>=0.40" pgvector --upgrade -q
 # MAGIC %restart_python
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 🔧 Configuration
+# MAGIC ## Configuration
 
 # COMMAND ----------
 
-dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Instance Name")
+dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Instance")
 dbutils.widgets.text("db_name", "wikidb", "Database Name")
-dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope Name")
-
-# COMMAND ----------
-
-INSTANCE_NAME = dbutils.widgets.get("instance_name")
-DB_NAME = dbutils.widgets.get("db_name")
-DB_PORT = "5432"
-MW_ROLE = "mediawiki"
-SCOPE = dbutils.widgets.get("secret_scope")
-SCHEMA = "wiki_rag"
-
-# Password is read from the secret scope (stored by scripts/setup_secrets.py)
-try:
-    MW_PASSWORD = dbutils.secrets.get(SCOPE, "mw_password")
-except Exception:
-    raise ValueError(
-        f"Secret 'mw_password' not found in scope '{SCOPE}'. "
-        "Run 'make setup-secrets' or 'python scripts/setup_secrets.py' first."
-    )
-
-if not MW_PASSWORD or len(MW_PASSWORD) < 8:
-    raise ValueError("Secret 'mw_password' must be at least 8 characters.")
-
-# SCHEMA is interpolated into DDL f-strings below — must be a safe identifier
-if not SCHEMA.isidentifier():
-    raise ValueError(f"Invalid schema name: {SCHEMA}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 🏗️ Provision Lakebase instance
+dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
 
 # COMMAND ----------
 
@@ -76,12 +59,78 @@ import psycopg2
 from psycopg2 import sql
 
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.errors import NotFound, ResourceAlreadyExists
+from databricks.sdk.errors import NotFound, ResourceAlreadyExists, ResourceDoesNotExist
 from databricks.sdk.service.database import DatabaseInstance
+
+# ─── Parameters ───────────────────────────────────────────────────────
+
+INSTANCE_NAME = dbutils.widgets.get("instance_name")
+DB_NAME = dbutils.widgets.get("db_name")
+SCOPE = dbutils.widgets.get("secret_scope")
+DB_PORT = "5432"
+MW_ROLE = "mediawiki"
+SCHEMA = "wiki_rag"
+
+# ─── Validate prerequisites ──────────────────────────────────────────
+
+try:
+    MW_PASSWORD = dbutils.secrets.get(SCOPE, "mw_password")
+    assert MW_PASSWORD and len(MW_PASSWORD) >= 8, "Password must be >= 8 chars."
+except ResourceDoesNotExist:
+    raise SystemExit(
+        f"\n❌ Secret scope '{SCOPE}' does not exist.\n"
+        f"   Run 'make setup-secrets' first to create it and store the password.\n"
+    )
+except Exception as e:
+    if "does not exist" in str(e).lower():
+        raise SystemExit(
+            f"\n❌ Secret 'mw_password' not found in scope '{SCOPE}'.\n"
+            f"   Run 'make setup-secrets' first.\n"
+        )
+    raise
+assert SCHEMA.isidentifier(), f"Invalid schema name: {SCHEMA}"
 
 w = WorkspaceClient()
 CURRENT_USER = w.current_user.me().user_name
+print(f"🔧 User: {CURRENT_USER}  Instance: {INSTANCE_NAME}  DB: {DB_NAME}")
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 1. Provision Lakebase instance
+# MAGIC 
+# MAGIC Creates a **Lakebase Provisioned** PostgreSQL 16 instance (smallest tier: `CU_1`).
+# MAGIC If the instance already exists, it's a no-op. The SDK's `.result()` blocks until the
+# MAGIC instance reaches `AVAILABLE` state — handles both fresh provisioning (~3 min) and
+# MAGIC scale-to-zero wake-up (~1 min).
+
+# COMMAND ----------
+
+try:
+    instance = w.database.get_database_instance(name=INSTANCE_NAME)
+    print(f"✅ Instance '{INSTANCE_NAME}' exists (state={instance.state})")
+except NotFound:
+    print(f"⏳ Creating instance '{INSTANCE_NAME}' (this may take a few minutes)...")
+    instance = w.database.create_database_instance(
+        database_instance=DatabaseInstance(name=INSTANCE_NAME, capacity="CU_1"),
+    ).result()
+    print("✅ Instance created")
+
+print(f"✅ Instance AVAILABLE → {instance.read_write_dns}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Create database + enable native PG login
+# MAGIC 
+# MAGIC Lakebase ships with a default `databricks_postgres` database. We create a dedicated
+# MAGIC `wikidb` database for MediaWiki + RAG data. All admin operations use **short-lived OAuth
+# MAGIC tokens** generated via the SDK (valid ~1 hour).
+# MAGIC 
+# MAGIC **Native PG login** is required so that MediaWiki containers and the serving endpoint
+# MAGIC can authenticate with a static password (OAuth tokens expire too quickly for long-running processes).
+
+# COMMAND ----------
 
 def _oauth_conn(dbname: str) -> psycopg2.extensions.connection:
     """Open an autocommit OAuth connection as the workspace owner (admin ops)."""
@@ -96,56 +145,26 @@ def _oauth_conn(dbname: str) -> psycopg2.extensions.connection:
         user=CURRENT_USER,
         password=cred.token,
         sslmode="require",
+        connect_timeout=30,
     )
     conn.autocommit = True
     return conn
 
 
-try:
-    instance = w.database.get_database_instance(name=INSTANCE_NAME)
-    print(f"✅ Instance '{INSTANCE_NAME}' exists (state={instance.state})")
-except NotFound:
-    print(f"⏳ Creating instance '{INSTANCE_NAME}' ...")
-    instance = w.database.create_database_instance(
-        database_instance=DatabaseInstance(
-            name=INSTANCE_NAME,
-            capacity="CU_1",
-            pg_version="16",
-        )
-    ).result()
-    print(f"✅ Instance '{INSTANCE_NAME}' created")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 🗄️ Create database
-# MAGIC 
-# MAGIC `CREATE DATABASE` requires autocommit — bootstrap via `databricks_postgres`.
-
-# COMMAND ----------
-
+# CREATE DATABASE requires autocommit — connect to the default `databricks_postgres` first
 with closing(_oauth_conn("databricks_postgres")) as conn:
     with conn.cursor() as cur:
         cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (DB_NAME,))
         if cur.fetchone():
-            print(f"✅ Database '{DB_NAME}' already exists")
+            print(f"✅ Database '{DB_NAME}' exists")
         else:
             cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(DB_NAME)))
             print(f"✅ Database '{DB_NAME}' created")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 🔐 Native PG login & MediaWiki role
-# MAGIC 
-# MAGIC OAuth tokens expire in ~1 h — unsuitable for long-running containers.
-# MAGIC Native PG login gives the `mediawiki` role a static password.
-
-# COMMAND ----------
-
-if not instance.enable_pg_native_login:
-    print("⏳ Enabling native PG login ...")
-    op = w.database.update_database_instance(
+# Enable native PG login so the mediawiki role can use a static password
+if not instance.effective_enable_pg_native_login:
+    print("⏳ Enabling native PG login...")
+    instance = w.database.update_database_instance(
         name=INSTANCE_NAME,
         database_instance=DatabaseInstance(
             name=INSTANCE_NAME,
@@ -153,12 +172,18 @@ if not instance.enable_pg_native_login:
         ),
         update_mask="enable_pg_native_login",
     )
-    if hasattr(op, "result"):
-        op.result()
-    instance = w.database.get_database_instance(name=INSTANCE_NAME)
     print("✅ Native PG login enabled")
 else:
     print("✅ Native PG login already enabled")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 3. Create role + grants
+# MAGIC 
+# MAGIC Creates the `mediawiki` PostgreSQL role with the static password from the secret scope.
+# MAGIC This role is used by the MediaWiki Docker container and the model serving endpoint.
+# MAGIC Grants full access to the `public` schema (for MediaWiki's native tables).
 
 # COMMAND ----------
 
@@ -166,138 +191,90 @@ _role = sql.Identifier(MW_ROLE)
 
 with closing(_oauth_conn(DB_NAME)) as conn:
     with conn.cursor() as cur:
-        # Upsert role — CREATE or ALTER depending on existence
+        # Upsert role
         cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (MW_ROLE,))
         verb = sql.SQL("ALTER ROLE") if cur.fetchone() else sql.SQL("CREATE ROLE")
         cur.execute(
-            sql.SQL("{} {} WITH LOGIN PASSWORD %s").format(verb, _role),
-            (MW_PASSWORD,),
+            sql.SQL("{} {} WITH LOGIN PASSWORD %s").format(verb, _role), (MW_PASSWORD,)
         )
-        print(f"✅ Role '{MW_ROLE}' upserted")
+        print(f"✅ Role '{MW_ROLE}' ready")
 
-        # MediaWiki needs full ownership of the public schema
-        grants = [
+        # MediaWiki needs full ownership of public schema
+        for stmt in [
             sql.SQL("GRANT ALL ON DATABASE {} TO {}").format(
-                sql.Identifier(DB_NAME),
-                _role,
+                sql.Identifier(DB_NAME), _role
             ),
-            sql.SQL("GRANT ALL ON SCHEMA {} TO {}").format(
-                sql.Identifier("public"),
-                _role,
-            ),
+            sql.SQL("GRANT ALL ON SCHEMA public TO {}").format(_role),
             sql.SQL(
-                "ALTER DEFAULT PRIVILEGES IN SCHEMA {} GRANT ALL ON TABLES TO {}"
-            ).format(sql.Identifier("public"), _role),
-        ]
-        for stmt in grants:
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO {}"
+            ).format(_role),
+        ]:
             cur.execute(stmt)
-        print(f"✅ Grants applied to '{MW_ROLE}'")
+        print("✅ Public schema grants applied")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 🔑 Store credentials in secret scope
-
-# COMMAND ----------
-
-try:
-    w.secrets.create_scope(scope=SCOPE)
-    print(f"✅ Scope '{SCOPE}' created")
-except ResourceAlreadyExists:
-    print(f"✅ Scope '{SCOPE}' already exists")
-
-SECRETS = {
-    "lakebase_instance_name": INSTANCE_NAME,
-    "lakebase_user": CURRENT_USER,
-    "lakebase_db": DB_NAME,
-    "lakebase_host": instance.read_write_dns,
-    "lakebase_port": DB_PORT,
-    "mw_role": MW_ROLE,
-    "mw_password": MW_PASSWORD,
-}
-
-print("✅ Secrets stored:\n")
-for k, v in SECRETS.items():
-    print(f"\t{k} = {v}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 📐 Schema, tables & indexes
+# MAGIC ## 4. Schema, tables & pgvector index
+# MAGIC 
+# MAGIC Creates the `wiki_rag` schema with all tables for the RAG pipeline:
+# MAGIC - **wiki_chunks** / **wiki_embeddings** — text chunks + 1024-dim pgvector embeddings (HNSW cosine index)
+# MAGIC - **wiki_images** — vision LLM captions for multimodal processing
+# MAGIC - **sync_state** — incremental processing watermark
+# MAGIC - **conversations** / **messages** — multi-turn conversation memory
+# MAGIC 
+# MAGIC Also grants the `mediawiki` role full access to this schema (needed by the serving endpoint).
 
 # COMMAND ----------
 
 # fmt: off
-DDL: list[tuple[str, str]] = [
-    ("pgvector extension",
-     "CREATE EXTENSION IF NOT EXISTS vector;"),
+DDL = [
+    # Extensions & schema
+    ("pgvector",               "CREATE EXTENSION IF NOT EXISTS vector;"),
+    (f"{SCHEMA} schema",       f"CREATE SCHEMA IF NOT EXISTS {SCHEMA};"),
 
-    (f"{SCHEMA} schema",
-     f"CREATE SCHEMA IF NOT EXISTS {SCHEMA};"),
-
-    (f"{SCHEMA}.wiki_chunks",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_chunks (
-            chunk_id    BIGSERIAL   PRIMARY KEY,
-            page_id     BIGINT      NOT NULL,
-            page_title  TEXT        NOT NULL,
-            page_ns     INT         NOT NULL DEFAULT 0,
-            rev_id      BIGINT      NOT NULL,
-            chunk_index INT         NOT NULL,
-            chunk_text  TEXT        NOT NULL,
-            created_at  TIMESTAMPTZ DEFAULT now()
+    # RAG tables
+    (f"{SCHEMA}.wiki_chunks",  f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_chunks (
+            chunk_id     BIGSERIAL   PRIMARY KEY,
+            page_id      BIGINT      NOT NULL,
+            page_title   TEXT        NOT NULL,
+            page_ns      INT         NOT NULL DEFAULT 0,
+            rev_id       BIGINT      NOT NULL,
+            chunk_index  INT         NOT NULL,
+            chunk_text   TEXT        NOT NULL,
+            chunk_source TEXT        DEFAULT 'text',
+            created_at   TIMESTAMPTZ DEFAULT now()
         );"""),
 
-    (f"{SCHEMA}.wiki_embeddings",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_embeddings (
-            embedding_id BIGSERIAL  PRIMARY KEY,
-            chunk_id     BIGINT     REFERENCES {SCHEMA}.wiki_chunks(chunk_id) ON DELETE CASCADE,
+    (f"{SCHEMA}.wiki_embeddings", f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_embeddings (
+            embedding_id BIGSERIAL   PRIMARY KEY,
+            chunk_id     BIGINT      REFERENCES {SCHEMA}.wiki_chunks(chunk_id) ON DELETE CASCADE,
             embedding    vector(1024) NOT NULL
         );"""),
 
-    (f"{SCHEMA}.sync_state",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.sync_state (
-            key         TEXT        PRIMARY KEY,
-            value       TEXT        NOT NULL,
-            updated_at  TIMESTAMPTZ DEFAULT now()
+    (f"{SCHEMA}.wiki_images",  f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_images (
+            image_id     BIGSERIAL   PRIMARY KEY,
+            page_id      BIGINT      NOT NULL,
+            page_title   TEXT        NOT NULL,
+            filename     TEXT        NOT NULL,
+            alt_text     TEXT        DEFAULT '',
+            caption      TEXT        NOT NULL,
+            created_at   TIMESTAMPTZ DEFAULT now()
         );"""),
 
-    (f"idx: {SCHEMA}.wiki_chunks(page_id)",
-     f"CREATE INDEX IF NOT EXISTS idx_chunks_page_id ON {SCHEMA}.wiki_chunks(page_id);"),
-
-    # HNSW: ~95 % recall, sub-ms latency. m=16, ef_construction=64 balance build speed vs accuracy.
-    (f"idx: HNSW on {SCHEMA}.wiki_embeddings(embedding)",
-     f"""CREATE INDEX IF NOT EXISTS idx_embeddings_hnsw
-            ON {SCHEMA}.wiki_embeddings
-            USING hnsw (embedding vector_cosine_ops)
-            WITH (m = 16, ef_construction = 64);"""),
-
-    ("seed sync watermark",
-     f"""INSERT INTO {SCHEMA}.sync_state (key, value)
-        VALUES ('last_processed_rev_id', '0')
-        ON CONFLICT (key) DO NOTHING;"""),
-
-    # Image metadata (multimodal processing — vision LLM captions)
-    (f"{SCHEMA}.wiki_images",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.wiki_images (
-            image_id    BIGSERIAL   PRIMARY KEY,
-            page_id     BIGINT      NOT NULL,
-            page_title  TEXT        NOT NULL,
-            filename    TEXT        NOT NULL,
-            alt_text    TEXT        DEFAULT '',
-            caption     TEXT        NOT NULL,
-            created_at  TIMESTAMPTZ DEFAULT now()
+    (f"{SCHEMA}.sync_state",   f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.sync_state (
+            key          TEXT        PRIMARY KEY,
+            value        TEXT        NOT NULL,
+            updated_at   TIMESTAMPTZ DEFAULT now()
         );"""),
 
-    (f"idx: {SCHEMA}.wiki_images(page_id)",
-     f"CREATE INDEX IF NOT EXISTS idx_images_page_id ON {SCHEMA}.wiki_images(page_id);"),
-
-    # Add chunk_source column to track text vs image-sourced chunks
-    (f"alter: {SCHEMA}.wiki_chunks add chunk_source",
-     f"ALTER TABLE {SCHEMA}.wiki_chunks ADD COLUMN IF NOT EXISTS chunk_source TEXT DEFAULT 'text';"),
-
-    # Conversation memory tables (for multi-turn RAG with persistent history)
-    (f"{SCHEMA}.conversations",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.conversations (
+    # Conversation memory
+    (f"{SCHEMA}.conversations", f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.conversations (
             conversation_id UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id         TEXT        NOT NULL,
             created_at      TIMESTAMPTZ DEFAULT now(),
@@ -305,8 +282,8 @@ DDL: list[tuple[str, str]] = [
             metadata        JSONB       DEFAULT '{{}}'::jsonb
         );"""),
 
-    (f"{SCHEMA}.messages",
-     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.messages (
+    (f"{SCHEMA}.messages",     f"""
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.messages (
             message_id      BIGSERIAL   PRIMARY KEY,
             conversation_id UUID        NOT NULL REFERENCES {SCHEMA}.conversations(conversation_id) ON DELETE CASCADE,
             role            TEXT        NOT NULL,
@@ -315,34 +292,36 @@ DDL: list[tuple[str, str]] = [
             created_at      TIMESTAMPTZ DEFAULT now()
         );"""),
 
-    (f"idx: {SCHEMA}.conversations(user_id, updated_at)",
-     f"CREATE INDEX IF NOT EXISTS idx_conversations_user ON {SCHEMA}.conversations(user_id, updated_at DESC);"),
+    # Indexes
+    ("idx chunks(page_id)",         f"CREATE INDEX IF NOT EXISTS idx_chunks_page_id    ON {SCHEMA}.wiki_chunks(page_id);"),
+    ("idx images(page_id)",         f"CREATE INDEX IF NOT EXISTS idx_images_page_id    ON {SCHEMA}.wiki_images(page_id);"),
+    ("idx conversations(user)",     f"CREATE INDEX IF NOT EXISTS idx_conversations_user ON {SCHEMA}.conversations(user_id, updated_at DESC);"),
+    ("idx messages(conv)",          f"CREATE INDEX IF NOT EXISTS idx_messages_conv      ON {SCHEMA}.messages(conversation_id, created_at);"),
 
-    (f"idx: {SCHEMA}.messages(conversation_id, created_at)",
-     f"CREATE INDEX IF NOT EXISTS idx_messages_conv ON {SCHEMA}.messages(conversation_id, created_at);"),
+    # HNSW vector index — ~95% recall, sub-ms latency
+    ("HNSW cosine index",           f"""
+        CREATE INDEX IF NOT EXISTS idx_embeddings_hnsw
+        ON {SCHEMA}.wiki_embeddings
+        USING hnsw (embedding vector_cosine_ops)
+        WITH (m = 16, ef_construction = 64);"""),
 
-    # Grant mediawiki role access to wiki_rag schema (needed for serving + ingestion)
-    (f"grant {SCHEMA} to {MW_ROLE}",
-     f"GRANT USAGE ON SCHEMA {SCHEMA} TO {MW_ROLE};"),
+    # Seed watermark
+    ("seed sync watermark",         f"""
+        INSERT INTO {SCHEMA}.sync_state (key, value)
+        VALUES ('last_processed_rev_id', '0')
+        ON CONFLICT (key) DO NOTHING;"""),
 
-    (f"grant tables in {SCHEMA} to {MW_ROLE}",
-     f"GRANT ALL ON ALL TABLES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
-
-    (f"grant sequences in {SCHEMA} to {MW_ROLE}",
-     f"GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
-
-    (f"default privileges on {SCHEMA} for {MW_ROLE}",
-     f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT ALL ON TABLES TO {MW_ROLE};"),
-
-    (f"default privileges on sequences in {SCHEMA} for {MW_ROLE}",
-     f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT USAGE, SELECT ON SEQUENCES TO {MW_ROLE};"),
+    # Grants for mediawiki role on wiki_rag schema
+    ("grant schema usage",          f"GRANT USAGE ON SCHEMA {SCHEMA} TO {MW_ROLE};"),
+    ("grant all tables",            f"GRANT ALL ON ALL TABLES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
+    ("grant all sequences",         f"GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
+    ("default table privileges",    f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT ALL ON TABLES TO {MW_ROLE};"),
+    ("default sequence privileges", f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT USAGE, SELECT ON SEQUENCES TO {MW_ROLE};"),
 ]
 # fmt: on
 
-# DDL needs owner privileges (e.g. CREATE EXTENSION) — use OAuth admin connection
 with closing(_oauth_conn(DB_NAME)) as conn:
     with conn.cursor() as cur:
-        print("📐 Running DDL:")
         for label, stmt in DDL:
             cur.execute(stmt)
             print(f"  ✅ {label}")
@@ -352,24 +331,60 @@ print("\n✅ DDL complete")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## ✅ Verify setup
+# MAGIC ## 5. Store credentials in secret scope
+# MAGIC 
+# MAGIC Persists Lakebase connection details into the Databricks secret scope so that
+# MAGIC other notebooks, the serving endpoint, and `docker/setup.sh` can read them.
+# MAGIC 
+# MAGIC > `mw_password` is NOT written here — it was already stored by `make setup-secrets`.
 
 # COMMAND ----------
 
-import os
-import sys
+# Scope was already created by `make setup-secrets`, but ensure it exists
+try:
+    w.secrets.create_scope(scope=SCOPE)
+    print(f"✅ Scope '{SCOPE}' created")
+except ResourceAlreadyExists:
+    print(f"✅ Scope '{SCOPE}' already exists")
 
-# Add repo root to sys.path so `from src.* import ...` works.
-# Databricks Repos sets CWD to repo root; notebooks/ subfolder needs parent.
-for _candidate in [os.getcwd(), os.path.join(os.getcwd(), "..")]:
-    if os.path.isdir(os.path.join(_candidate, "src")):
-        sys.path.insert(0, os.path.abspath(_candidate))
-        break
+# Store Lakebase connection details (mw_password already exists from setup-secrets)
+secrets = {
+    "lakebase_instance_name": INSTANCE_NAME,
+    "lakebase_host": instance.read_write_dns,
+    "lakebase_port": DB_PORT,
+    "lakebase_db": DB_NAME,
+    "lakebase_user": CURRENT_USER,
+    "mw_role": MW_ROLE,
+}
 
-from src.config import get_lakebase_conn
+for k, v in secrets.items():
+    w.secrets.put_secret(scope=SCOPE, key=k, string_value=str(v))
 
-# Verify the password-auth path works end-to-end
-with closing(get_lakebase_conn(w)) as conn:
+print("✅ Secrets stored:")
+for k, v in secrets.items():
+    print(f"   {k:30s} = {v}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 6. Verify setup (password auth)
+# MAGIC 
+# MAGIC End-to-end smoke test: connects as the `mediawiki` role using the static password
+# MAGIC (not OAuth) to confirm that native PG login, grants, and all DDL are working correctly.
+
+# COMMAND ----------
+
+with closing(
+    psycopg2.connect(
+        host=instance.read_write_dns,
+        port=DB_PORT,
+        dbname=DB_NAME,
+        user=MW_ROLE,
+        password=MW_PASSWORD,
+        sslmode="require",
+        connect_timeout=30,
+    )
+) as conn:
     with conn.cursor() as cur:
         cur.execute(
             "SELECT table_name FROM information_schema.tables "
@@ -379,19 +394,19 @@ with closing(get_lakebase_conn(w)) as conn:
         tables = [r[0] for r in cur.fetchall()]
 
         cur.execute(
-            "SELECT indexname, indexdef FROM pg_indexes "
-            "WHERE schemaname = %s ORDER BY indexname",
+            "SELECT indexname FROM pg_indexes WHERE schemaname = %s ORDER BY indexname",
             (SCHEMA,),
         )
-        indexes = cur.fetchall()
+        indexes = [r[0] for r in cur.fetchall()]
 
-print(f"📋 Tables in {SCHEMA}:")
-for t in tables:
-    print(f"  • {t}")
+        cur.execute("SELECT version();")
+        pg_version = cur.fetchone()[0].split(",")[0]
 
-print(f"\n📋 Indexes in {SCHEMA}:")
-for name, defn in indexes:
-    print(f"  • {name}")
-    print(f"    {defn}")
+print(f"📋 PostgreSQL: {pg_version}")
+print(f"📋 Tables ({len(tables)}):  {', '.join(tables)}")
+print(f"📋 Indexes ({len(indexes)}): {', '.join(indexes)}")
+print(f"\n🎉 Lakebase is ready — {instance.read_write_dns}")
 
-print("\n🎉 Done — Lakebase is ready")
+# COMMAND ----------
+
+

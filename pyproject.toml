@@ -6,9 +6,7 @@ markers = [
 
 [tool.coverage.run]
 source = ["src"]
-omit = [
-    "src/setup_secrets.py",
-]
+omit = []
 
 [tool.coverage.report]
 fail_under = 80
