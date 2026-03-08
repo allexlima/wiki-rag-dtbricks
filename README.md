@@ -131,6 +131,13 @@ All configuration is centralized in `databricks.yml` variables:
 | `embedding_model` | `databricks-gte-large-en` | Embedding endpoint |
 | `llm_model` | `databricks-meta-llama-3-3-70b-instruct` | LLM endpoint |
 
+**Environment variables** (read at runtime, not in DAB):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VISION_MODEL` | `databricks-claude-sonnet-4-6` | Vision LLM for image captioning |
+| `MEDIAWIKI_URL` | `http://localhost:8080` | MediaWiki base URL for image fetching |
+
 Override for production: `make deploy TARGET=prod`
 
 ---

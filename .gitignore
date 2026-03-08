@@ -3,6 +3,8 @@ docker/.env
 docker/LocalSettings.php
 docker/dataset/
 __builtins__.pyi
+mlflow.db
+.coverage
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

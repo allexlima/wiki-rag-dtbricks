@@ -328,8 +328,14 @@ DDL: list[tuple[str, str]] = [
     (f"grant tables in {SCHEMA} to {MW_ROLE}",
      f"GRANT ALL ON ALL TABLES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
 
+    (f"grant sequences in {SCHEMA} to {MW_ROLE}",
+     f"GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {SCHEMA} TO {MW_ROLE};"),
+
     (f"default privileges on {SCHEMA} for {MW_ROLE}",
      f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT ALL ON TABLES TO {MW_ROLE};"),
+
+    (f"default privileges on sequences in {SCHEMA} for {MW_ROLE}",
+     f"ALTER DEFAULT PRIVILEGES IN SCHEMA {SCHEMA} GRANT USAGE, SELECT ON SEQUENCES TO {MW_ROLE};"),
 ]
 # fmt: on
 

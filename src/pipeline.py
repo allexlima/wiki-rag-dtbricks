@@ -127,7 +127,7 @@ class WikiPipeline:
 
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 64
-    EMBEDDING_MODEL: str = "databricks-gte-large-en"
+    EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "databricks-gte-large-en")
     EMBEDDING_DIMS: int = 1024
     EMBEDDING_BATCH_SIZE: int = 64
     VISION_MODEL: str = os.environ.get("VISION_MODEL", "databricks-claude-sonnet-4-6")
