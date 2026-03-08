@@ -24,12 +24,22 @@ Supports **multimodal content** (text + images), **multi-turn conversations** wi
 
 ### 1. Setup (one-time, ~10 min)
 
-If you have multiple Databricks profiles in `~/.databrickscfg`, export them once — all `make` commands will use them automatically:
-
-```bash
-export PROFILE=my-workspace   # Databricks CLI profile (omit if using DEFAULT)
-export TARGET=dev             # DAB target: dev (default) or prod
-```
+> [!NOTE]
+> **Multiple Databricks profiles?** If you have more than one profile in `~/.databrickscfg` (or a non-`DEFAULT` profile), you need to tell the Makefile which one to use. This is **optional** — skip this block entirely if you only have a single `DEFAULT` profile.
+>
+> ```bash
+> # 1. List your configured profiles
+> databricks auth profiles
+>
+> # 2. Export once per terminal session — all make commands will use it
+> export PROFILE=my-workspace   # profile name from the list above
+> export TARGET=dev             # DAB target: dev (default) or prod
+> ```
+>
+> If your profile token has expired, re-authenticate first:
+> ```bash
+> databricks auth login --profile my-workspace
+> ```
 
 ```bash
 make setup-secrets      # Prompts for Lakebase password (the ONE interactive step)
