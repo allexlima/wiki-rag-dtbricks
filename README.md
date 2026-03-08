@@ -174,7 +174,15 @@ Runtime environment variables (read by `src/pipeline.py`):
 | `VISION_MODEL`  | `databricks-claude-sonnet-4-6` | Vision LLM for image captioning       |
 | `MEDIAWIKI_URL` | `http://localhost:8080`        | MediaWiki base URL for image fetching |
 
-Deploy to a different target: `make deploy TARGET=prod`
+Makefile overrides:
+
+```bash
+make deploy TARGET=prod                          # Deploy to the prod DAB target
+make deploy PROFILE=my-workspace                 # Use a specific Databricks CLI profile
+make deploy TARGET=prod PROFILE=prod-workspace   # Combine both
+```
+
+The `PROFILE` flag is passed as `--profile` to all `databricks` CLI commands and as `DATABRICKS_CONFIG_PROFILE` to Python SDK scripts (`setup_secrets.py`) and shell scripts (`docker/setup.sh`).
 
 ---
 
