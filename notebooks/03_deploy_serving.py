@@ -5,15 +5,15 @@
 # MAGIC %md
 # MAGIC # 03 — Register Model + Deploy Serving Endpoint
 # MAGIC
-# MAGIC Logs the WikiRAG PyFunc model to MLflow, registers it in Unity Catalog,
-# MAGIC and creates or updates a Model Serving endpoint.
+# MAGIC Logs the WikiRAG **ResponsesAgent** to MLflow, registers it in Unity Catalog,
+# MAGIC and deploys a Model Serving endpoint.
 # MAGIC
 # MAGIC Uses the **"Models from Code"** pattern — the model source is
-# MAGIC `src/serving/pyfunc_model.py`, not a serialized pickle.
+# MAGIC `src/rag/agent.py` (a `ResponsesAgent` wrapping LangGraph).
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow databricks-sdk databricks-openai psycopg2-binary pgvector langgraph langchain-core langchain-text-splitters --upgrade -q
+# MAGIC %pip install mlflow>=3.0.0 databricks-sdk databricks-openai psycopg2-binary pgvector langgraph langchain-core langchain-text-splitters tenacity --upgrade -q
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -23,44 +23,57 @@
 
 # COMMAND ----------
 
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+
 import mlflow
-from mlflow.models.signature import ModelSignature
-from mlflow.types.schema import ColSpec, Schema
+from mlflow.models.resources import DatabricksServingEndpoint
 
 CATALOG = "main"
 SCHEMA = "wiki_rag"
 MODEL_NAME = f"{CATALOG}.{SCHEMA}.wiki_rag_agent"
 ENDPOINT_NAME = "wiki-rag-endpoint"
 
+LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+EMBEDDING_ENDPOINT = "databricks-gte-large-en"
+
 mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Log model
+# MAGIC ## Log model (ResponsesAgent)
 
 # COMMAND ----------
 
-input_schema = Schema([ColSpec("string", "question")])
-output_schema = Schema([
-    ColSpec("string", "answer"),
-    ColSpec("string", "sources"),
-])
-signature = ModelSignature(inputs=input_schema, outputs=output_schema)
+resources = [
+    DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
+    DatabricksServingEndpoint(endpoint_name=EMBEDDING_ENDPOINT),
+]
+
+input_example = {
+    "input": [{"role": "user", "content": "What is the main topic of the wiki?"}]
+}
 
 with mlflow.start_run(run_name="wiki-rag-agent") as run:
     model_info = mlflow.pyfunc.log_model(
         artifact_path="wiki_rag_agent",
-        python_model="src/serving/pyfunc_model.py",
+        python_model="src/rag/agent.py",
         code_paths=["src/"],
-        signature=signature,
+        resources=resources,
+        input_example=input_example,
         pip_requirements=[
-            "mlflow>=2.17.0",
-            "databricks-sdk>=0.40.0",
-            "databricks-openai>=0.2.0",
-            "psycopg2-binary>=2.9.0",
-            "pgvector>=0.3.0",
-            "langchain-text-splitters>=0.3.0",
+            "mlflow>=3.0.0,<4.0.0",
+            "langgraph>=0.3.0,<0.4.0",
+            "databricks-langchain>=0.5.0,<0.6.0",
+            "langchain-core>=0.3.0,<0.4.0",
+            "databricks-sdk>=0.40.0,<0.50.0",
+            "databricks-openai>=0.2.0,<0.3.0",
+            "psycopg2-binary>=2.9.0,<3.0.0",
+            "pgvector>=0.3.0,<0.4.0",
+            "tenacity>=8.0.0,<10.0.0",
         ],
     )
     run_id = run.info.run_id
@@ -83,18 +96,45 @@ print(f"✓ Registered {MODEL_NAME} v{registered.version}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Deploy serving endpoint
+# MAGIC ## Validate secrets before deployment
 
 # COMMAND ----------
 
 from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+REQUIRED_SECRETS = [
+    "lakebase_instance_name",
+    "lakebase_host",
+    "lakebase_port",
+    "lakebase_db",
+    "mw_role",
+    "mw_password",
+]
+
+print("Validating secrets in scope 'wiki-rag':")
+for key in REQUIRED_SECRETS:
+    try:
+        val = w.secrets.get_secret("wiki-rag", key)
+        print(f"  ✓ {key}")
+    except Exception as e:
+        raise ValueError(f"Missing required secret 'wiki-rag/{key}': {e}") from e
+
+print("✓ All secrets validated")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Deploy serving endpoint
+
+# COMMAND ----------
+
 from databricks.sdk.errors import NotFound
 from databricks.sdk.service.serving import (
     EndpointCoreConfigInput,
     ServedEntityInput,
 )
-
-w = WorkspaceClient()
 
 served_entity = ServedEntityInput(
     entity_name=MODEL_NAME,
@@ -108,8 +148,8 @@ served_entity = ServedEntityInput(
         "LAKEBASE_DB": "{{secrets/wiki-rag/lakebase_db}}",
         "LAKEBASE_USER": "{{secrets/wiki-rag/mw_role}}",
         "LAKEBASE_PASSWORD": "{{secrets/wiki-rag/mw_password}}",
-        "EMBEDDING_MODEL": "databricks-gte-large-en",
-        "LLM_MODEL": "databricks-meta-llama-3-3-70b-instruct",
+        "EMBEDDING_MODEL": EMBEDDING_ENDPOINT,
+        "LLM_MODEL": LLM_ENDPOINT,
     },
 )
 
@@ -153,27 +193,21 @@ while elapsed < MAX_WAIT_SECONDS:
     time.sleep(POLL_INTERVAL)
     elapsed += POLL_INTERVAL
 else:
-    raise TimeoutError(
-        f"Endpoint not ready after {MAX_WAIT_SECONDS}s"
-    )
+    raise TimeoutError(f"Endpoint not ready after {MAX_WAIT_SECONDS}s")
 
 print("✓ Endpoint is ready")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test the endpoint
+# MAGIC ## Test the endpoint (chat completions format)
 
 # COMMAND ----------
 
-from databricks.sdk.service.serving import DataframeSplitInput
-
 response = w.serving_endpoints.query(
     name=ENDPOINT_NAME,
-    dataframe_split=DataframeSplitInput(
-        columns=["question"],
-        data=[["What is the main topic of the wiki?"]],
-    ),
+    messages=[{"role": "user", "content": "What is the main topic of the wiki?"}],
+    max_tokens=500,
 )
 
-print(response.predictions)
+print(response.choices[0].message.content)

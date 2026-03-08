@@ -10,11 +10,15 @@ Falls back to OAuth token generation via the Databricks SDK.
 """
 from __future__ import annotations
 
+import logging
 import os
 import uuid
+from urllib.parse import quote_plus
 
 import psycopg2
 from databricks.sdk import WorkspaceClient
+
+log = logging.getLogger(__name__)
 
 SCOPE = "wiki-rag"
 CONNECT_TIMEOUT_SECONDS = 30
@@ -133,4 +137,30 @@ def get_lakebase_conn(
         password=cred.token,
         sslmode="require",
         connect_timeout=CONNECT_TIMEOUT_SECONDS,
+    )
+
+
+def get_lakebase_conn_string() -> str:
+    """Build a PostgreSQL connection URI for libraries that need a string (e.g.
+    langgraph-checkpoint-postgres).
+
+    Requires password auth (host + user + password).  OAuth tokens are
+    short-lived and unsuitable for connection-string-based libraries.
+    """
+    config = _get_secrets()
+    host = config["endpoint_host"]
+    port = config["port"]
+    user = config["db_user"]
+    password = config["password"]
+    dbname = config["db_name"]
+
+    if not (host and user and password):
+        raise ValueError(
+            "get_lakebase_conn_string() requires password auth. "
+            "Set LAKEBASE_HOST, LAKEBASE_USER, and LAKEBASE_PASSWORD."
+        )
+
+    return (
+        f"postgresql://{quote_plus(user)}:{quote_plus(password)}"
+        f"@{host}:{port}/{dbname}?sslmode=require"
     )

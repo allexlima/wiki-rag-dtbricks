@@ -19,7 +19,7 @@ def clean_wikitext(wikitext: str) -> str:
     # Remove noisy templates
     for template in wikicode.filter_templates():
         name = template.name.strip().lower()
-        if any(skip in name for skip in _SKIP_TEMPLATES):
+        if name in _SKIP_TEMPLATES:
             try:
                 wikicode.remove(template)
             except ValueError:

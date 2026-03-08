@@ -1,21 +1,25 @@
-# Model serving endpoint is created programmatically by notebooks/03_deploy_serving.py
-# after the model is registered in Unity Catalog.
-#
-# Keeping this as a reference for future production deployment when the model exists:
-#
-# resources:
-#   model_serving_endpoints:
-#     wiki_rag_endpoint:
-#       name: ${var.endpoint_name}
-#       config:
-#         served_entities:
-#           - entity_name: ${var.model_name}
-#             scale_to_zero_enabled: true
-#             workload_size: Small
-#             environment_vars:
-#               LAKEBASE_INSTANCE: "{{secrets/wiki-rag/lakebase_instance_name}}"
-#               LAKEBASE_DB: "{{secrets/wiki-rag/lakebase_db}}"
-#               LAKEBASE_USER: "{{secrets/wiki-rag/lakebase_user}}"
-#       permissions:
-#         - level: CAN_QUERY
-#           group_name: users
+# Model serving endpoint for the Wiki RAG ResponsesAgent.
+# Created by notebooks/03_deploy_serving.py on first run.
+# This DAB resource manages updates on subsequent `databricks bundle deploy`.
+
+resources:
+  model_serving_endpoints:
+    wiki_rag_endpoint:
+      name: ${var.endpoint_name}
+      config:
+        served_entities:
+          - entity_name: ${var.model_name}
+            scale_to_zero_enabled: true
+            workload_size: Small
+            environment_vars:
+              LAKEBASE_INSTANCE: "{{secrets/wiki-rag/lakebase_instance_name}}"
+              LAKEBASE_HOST: "{{secrets/wiki-rag/lakebase_host}}"
+              LAKEBASE_PORT: "{{secrets/wiki-rag/lakebase_port}}"
+              LAKEBASE_DB: "{{secrets/wiki-rag/lakebase_db}}"
+              LAKEBASE_USER: "{{secrets/wiki-rag/mw_role}}"
+              LAKEBASE_PASSWORD: "{{secrets/wiki-rag/mw_password}}"
+              EMBEDDING_MODEL: "databricks-gte-large-en"
+              LLM_MODEL: "databricks-meta-llama-3-3-70b-instruct"
+      permissions:
+        - level: CAN_QUERY
+          group_name: users

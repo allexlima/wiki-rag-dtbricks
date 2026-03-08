@@ -8,10 +8,12 @@
 # MAGIC Interactive notebook to test the LangGraph RAG agent against Lakebase.
 # MAGIC
 # MAGIC **Pipeline:** embed query → pgvector retrieval → grade docs → (rewrite?) → generate answer.
+# MAGIC
+# MAGIC The agent now uses **ResponsesAgent** (MLflow 3) with optional conversation memory.
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary pgvector databricks-openai databricks-sdk langchain-text-splitters langgraph langchain-core --upgrade -q
+# MAGIC %pip install psycopg2-binary pgvector databricks-openai databricks-sdk langchain-text-splitters langgraph langchain-core mlflow tenacity --upgrade -q
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -51,16 +53,28 @@ for doc in docs:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test full RAG agent
+# MAGIC ## Test full RAG agent (single turn)
 
 # COMMAND ----------
 
-result = run_agent(conn, "What is the main topic of the wiki?")
+result = run_agent("What is the main topic of the wiki?")
 
 print(f"Answer:\n{result['answer']}\n")
-print("Sources:")
-for src in result["sources"]:
-    print(f"  - {src['title']} (similarity: {src['similarity']})")
+print(f"Conversation ID: {result['conversation_id']}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Test multi-turn conversation (memory)
+# MAGIC
+# MAGIC Uses the same `conversation_id` to test that the agent remembers context.
+
+# COMMAND ----------
+
+conv_id = result["conversation_id"]
+
+followup = run_agent("Can you tell me more about that?", thread_id=conv_id)
+print(f"Follow-up answer:\n{followup['answer']}")
 
 # COMMAND ----------
 
@@ -73,13 +87,10 @@ for src in result["sources"]:
 
 QUESTION = "Tell me about the latest changes in the wiki"
 
-result = run_agent(conn, QUESTION)
+result = run_agent(QUESTION)
 
 print(f"Q: {QUESTION}\n")
-print(f"A: {result['answer']}\n")
-print("Sources:")
-for src in result["sources"]:
-    print(f"  - {src['title']} ({src['similarity']})")
+print(f"A: {result['answer']}")
 
 # COMMAND ----------
 

@@ -12,9 +12,10 @@ End-to-end Retrieval-Augmented Generation (RAG) system that turns a self-hosted 
 | Database         | Lakebase Provisioned (PG 16)             | Hosts both MediaWiki and RAG tables     |
 | Embeddings       | `databricks-gte-large-en`                | Foundation Model API — 1024-dim vectors |
 | Vector search    | pgvector + HNSW index                    | Cosine similarity retrieval             |
-| RAG agent        | LangGraph StateGraph                     | retrieve → grade → rewrite → generate   |
+| RAG agent        | LangGraph + ResponsesAgent (MLflow 3)    | retrieve → grade → rewrite → generate   |
+| Conversation mem | Lakebase PostgreSQL                      | Multi-turn conversation history         |
 | LLM              | `databricks-meta-llama-3-3-70b-instruct` | Answer generation                       |
-| Model serving    | MLflow PyFunc + Model Serving            | Real-time endpoint with auto-scaling    |
+| Model serving    | MLflow ResponsesAgent + Model Serving    | Real-time endpoint with auto-scaling    |
 | Chat UI          | Streamlit (Databricks App)               | Web interface for end users             |
 
 **Data flow:**
@@ -54,11 +55,9 @@ wiki-rag-dtbricks/
 │   │   ├── cleaner.py            # Strips wikitext → plain text
 │   │   ├── chunker.py            # RecursiveCharacterTextSplitter
 │   │   └── embedder.py           # Foundation Model API embeddings
-│   ├── rag/
-│   │   ├── retriever.py          # pgvector cosine search
-│   │   └── agent.py              # LangGraph RAG agent
-│   └── serving/
-│       └── pyfunc_model.py       # MLflow PyFunc wrapper
+│   └── rag/
+│       ├── retriever.py          # pgvector cosine search
+│       └── agent.py              # ResponsesAgent + LangGraph RAG (with memory)
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL
 │   ├── 01_ingest_mediawiki.py    # Ingest → clean → chunk → embed
@@ -172,7 +171,7 @@ Tests retriever isolation and the full LangGraph agent. Edit `QUESTION` to try y
 
 Run **`notebooks/03_deploy_serving.py`** on your Databricks workspace.
 
-Logs the `WikiRAGModel` PyFunc to MLflow, registers in Unity Catalog (`main.wiki_rag.wiki_rag_agent`), and creates a Model Serving endpoint with scale-to-zero. Secret scope wiring is automatic.
+Logs the `WikiRAGAgent` (ResponsesAgent + LangGraph) to MLflow, registers in Unity Catalog (`main.wiki_rag.wiki_rag_agent`), and creates a Model Serving endpoint with scale-to-zero. Secret scope wiring is automatic.
 
 ---
 
@@ -214,7 +213,7 @@ A single `wikidb` database on Lakebase hosts two schemas:
 | Schema      | Owner        | Purpose                                                                    |
 | ----------- | ------------ | -------------------------------------------------------------------------- |
 | `mediawiki` | MediaWiki    | Native tables (`page`, `revision`, `slots`, `content`, `pagecontent`, ...) |
-| `wiki_rag`  | RAG pipeline | Chunks, embeddings, and sync state                                         |
+| `wiki_rag`  | RAG pipeline | Chunks, embeddings, sync state, and conversation memory                    |
 
 ```sql
 -- Cleaned and split wiki text
@@ -225,6 +224,10 @@ wiki_rag.wiki_embeddings (embedding_id, chunk_id, embedding vector(1024))
 
 -- Watermark for incremental processing
 wiki_rag.sync_state (key, value, updated_at)
+
+-- Conversation memory (multi-turn RAG)
+wiki_rag.conversations (conversation_id, user_id, created_at, updated_at, metadata)
+wiki_rag.messages (message_id, conversation_id, role, content, sources, created_at)
 ```
 
 ---

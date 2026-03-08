@@ -270,6 +270,32 @@ DDL: list[tuple[str, str]] = [
         VALUES ('last_processed_rev_id', '0')
         ON CONFLICT (key) DO NOTHING;"""),
 
+    # Conversation memory tables (for multi-turn RAG with persistent history)
+    (f"{SCHEMA}.conversations",
+     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.conversations (
+            conversation_id UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id         TEXT        NOT NULL,
+            created_at      TIMESTAMPTZ DEFAULT now(),
+            updated_at      TIMESTAMPTZ DEFAULT now(),
+            metadata        JSONB       DEFAULT '{{}}'::jsonb
+        );"""),
+
+    (f"{SCHEMA}.messages",
+     f"""CREATE TABLE IF NOT EXISTS {SCHEMA}.messages (
+            message_id      BIGSERIAL   PRIMARY KEY,
+            conversation_id UUID        NOT NULL REFERENCES {SCHEMA}.conversations(conversation_id) ON DELETE CASCADE,
+            role            TEXT        NOT NULL,
+            content         TEXT        NOT NULL,
+            sources         JSONB,
+            created_at      TIMESTAMPTZ DEFAULT now()
+        );"""),
+
+    (f"idx: {SCHEMA}.conversations(user_id, updated_at)",
+     f"CREATE INDEX IF NOT EXISTS idx_conversations_user ON {SCHEMA}.conversations(user_id, updated_at DESC);"),
+
+    (f"idx: {SCHEMA}.messages(conversation_id, created_at)",
+     f"CREATE INDEX IF NOT EXISTS idx_messages_conv ON {SCHEMA}.messages(conversation_id, created_at);"),
+
     # Grant mediawiki role access to wiki_rag schema (needed for serving + ingestion)
     (f"grant {SCHEMA} to {MW_ROLE}",
      f"GRANT USAGE ON SCHEMA {SCHEMA} TO {MW_ROLE};"),
