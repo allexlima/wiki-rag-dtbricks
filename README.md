@@ -20,7 +20,7 @@ Supports **multimodal content** (text + images), **multi-turn conversations** wi
 | Databricks workspace | Unity Catalog enabled | All cloud resources                        |
 
 > [!IMPORTANT]
-> **Azure Brazil South:** enable [cross-geography routing](https://learn.microsoft.com/en-us/azure/databricks/resources/databricks-geos#cross-geo-processing) for Foundation Model API access. Lakebase Provisioned is in **Public Preview** on Azure (PG 16).
+> **Azure Brazil South:** enable [cross-geography routing](https://learn.microsoft.com/en-us/azure/databricks/resources/databricks-geos#cross-geo-processing) for Foundation Model API access. Lakebase Autoscaling is in **Public Preview** on Azure (PG 16).
 
 ### 1. Setup (one-time, ~10 min)
 
@@ -79,7 +79,7 @@ Run `make help` to see all available targets.
 | Layer                | Technology                               | Description                                                  |
 | -------------------- | ---------------------------------------- | ------------------------------------------------------------ |
 | **Knowledge source** | MediaWiki 1.42 (Docker)                  | Self-hosted wiki writing to Lakebase PostgreSQL              |
-| **Database**         | Lakebase Provisioned (PG 16)             | Hosts MediaWiki tables, RAG tables, and conversation memory  |
+| **Database**         | Lakebase Autoscaling (PG 16)             | Hosts MediaWiki tables, RAG tables, and conversation memory  |
 | **Embeddings**       | `databricks-gte-large-en`                | Foundation Model API, 1024-dim vectors                       |
 | **Vector search**    | pgvector + HNSW index                    | Cosine similarity retrieval (m=16, ef=64)                    |
 | **Multimodal**       | `databricks-claude-sonnet-4-6`           | Vision LLM captions images at pipeline time                  |

@@ -58,10 +58,18 @@ setup-secrets: _check-auth  ## 🔑 Create secret scope + store Lakebase passwor
 	echo "🔑 Wiki RAG — Secret Scope Setup" && \
 	if [ -n "$(PROFILE)" ]; then echo "   Profile: $(PROFILE)"; fi && \
 	echo "" && \
+	echo "   Password requirements (Lakebase Autoscaling):" && \
+	echo "   • At least 12 characters" && \
+	echo "   • Mix of uppercase, lowercase, digits, and special chars (!@#$$%)" && \
+	echo "" && \
 	read -s -p "   Enter password for the 'mediawiki' Lakebase PG role: " PW && echo && \
 	read -s -p "   Confirm password: " PW2 && echo && \
 	if [ "$$PW" != "$$PW2" ]; then echo "   ❌ Passwords do not match"; exit 1; fi && \
-	if [ $${#PW} -lt 8 ]; then echo "   ❌ Password must be at least 8 characters"; exit 1; fi && \
+	if [ $${#PW} -lt 12 ]; then echo "   ❌ Password must be at least 12 characters"; exit 1; fi && \
+	if ! echo "$$PW" | grep -q '[A-Z]'; then echo "   ❌ Password must contain at least one uppercase letter"; exit 1; fi && \
+	if ! echo "$$PW" | grep -q '[a-z]'; then echo "   ❌ Password must contain at least one lowercase letter"; exit 1; fi && \
+	if ! echo "$$PW" | grep -q '[0-9]'; then echo "   ❌ Password must contain at least one digit"; exit 1; fi && \
+	if ! echo "$$PW" | grep -q '[^a-zA-Z0-9]'; then echo "   ❌ Password must contain at least one special character"; exit 1; fi && \
 	echo "" && \
 	(databricks secrets create-scope $(SECRET_SCOPE) $(PROFILE_FLAG) 2>/dev/null \
 	  && echo "   ✅ Created secret scope '$(SECRET_SCOPE)'" \
@@ -143,8 +151,8 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 	@echo "  🐳 Docker containers..."
 	@cd docker && docker compose down -v 2>&1 | sed 's/^/     /' || true
 	@echo ""
-	@echo "  🗄️  Lakebase instance ($(INSTANCE_NAME))..."
-	@if databricks database delete-database-instance $(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
+	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."
+	@if databricks postgres delete-project projects/$(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
 		echo "     ✅ Deleted"; \
 	else \
 		echo "     ⏭️  Not found (already deleted or never created)"; \

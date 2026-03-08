@@ -5,18 +5,19 @@
 # MAGIC %md
 # MAGIC # 00 — Lakebase Setup
 # MAGIC 
-# MAGIC One-time provisioning of the **Lakebase Provisioned PostgreSQL 16** backend
+# MAGIC One-time provisioning of the **Lakebase Autoscaling PostgreSQL 16** backend
 # MAGIC for the Wiki RAG pipeline. This notebook sets up everything the project needs
-# MAGIC from a database perspective — a single Lakebase instance that hosts both the
+# MAGIC from a database perspective — a single Lakebase project that hosts both the
 # MAGIC **MediaWiki native tables** (via the `mediawiki` role) and the **RAG pipeline
 # MAGIC tables** (embeddings, chunks, conversation memory) in the `wiki_rag` schema.
 # MAGIC 
 # MAGIC **Architecture:**
 # MAGIC ```
-# MAGIC Lakebase (wiki-rag-lakebase)
-# MAGIC └── wikidb
-# MAGIC     ├── public schema     ← MediaWiki's native tables (page, revision, ...)
-# MAGIC     └── wiki_rag schema   ← RAG tables (chunks, embeddings, conversations)
+# MAGIC Lakebase Autoscaling (wiki-rag-lakebase)
+# MAGIC └── production branch
+# MAGIC     └── wikidb
+# MAGIC         ├── public schema     ← MediaWiki's native tables (page, revision, ...)
+# MAGIC         └── wiki_rag schema   ← RAG tables (chunks, embeddings, conversations)
 # MAGIC ```
 # MAGIC 
 # MAGIC **Prerequisites:** Run `make setup-secrets` first — this notebook reads the
@@ -24,8 +25,8 @@
 # MAGIC 
 # MAGIC | Step | What it does |
 # MAGIC |------|-------------|
-# MAGIC | 1 | Provision or wake Lakebase instance (PG 16, `CU_1`) using the Databricks SDK |
-# MAGIC | 2 | Create `wikidb` database + enable native PG login (static passwords) |
+# MAGIC | 1 | Create Lakebase Autoscaling project (PG 16, scale-to-zero) via `w.postgres` SDK |
+# MAGIC | 2 | Create `wikidb` database |
 # MAGIC | 3 | Create `mediawiki` PostgreSQL role with grants on `public` schema |
 # MAGIC | 4 | Create `wiki_rag` schema, 6 tables, pgvector HNSW index, and role grants |
 # MAGIC | 5 | Store all connection details in the Databricks secret scope |
@@ -36,17 +37,20 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary "databricks-sdk>=0.40" pgvector --upgrade -q
+# MAGIC %pip install psycopg2-binary "databricks-sdk>=0.81" pgvector --upgrade -q
 # MAGIC %restart_python
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Configuration
+# MAGIC 
+# MAGIC Parameters are auto-populated by the DAB job (`resources/jobs.yml`), or you can
+# MAGIC set them manually via the widget bar when running interactively.
 
 # COMMAND ----------
 
-dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Instance")
+dbutils.widgets.text("instance_name", "wiki-rag-lakebase", "Lakebase Project")
 dbutils.widgets.text("db_name", "wikidb", "Database Name")
 dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
 
@@ -60,16 +64,21 @@ from psycopg2 import sql
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import NotFound, ResourceAlreadyExists, ResourceDoesNotExist
-from databricks.sdk.service.database import DatabaseInstance
+from databricks.sdk.service.postgres import Project, ProjectSpec
 
 # ─── Parameters ───────────────────────────────────────────────────────
 
-INSTANCE_NAME = dbutils.widgets.get("instance_name")
+PROJECT_ID = dbutils.widgets.get("instance_name")  # reuse widget name for DAB compat
 DB_NAME = dbutils.widgets.get("db_name")
 SCOPE = dbutils.widgets.get("secret_scope")
 DB_PORT = "5432"
 MW_ROLE = "mediawiki"
 SCHEMA = "wiki_rag"
+
+# Autoscaling resource paths
+PROJECT_PATH = f"projects/{PROJECT_ID}"
+BRANCH_PATH = f"{PROJECT_PATH}/branches/production"
+ENDPOINT_PATH = f"{BRANCH_PATH}/endpoints/primary"
 
 # ─── Validate prerequisites ──────────────────────────────────────────
 
@@ -92,54 +101,54 @@ assert SCHEMA.isidentifier(), f"Invalid schema name: {SCHEMA}"
 
 w = WorkspaceClient()
 CURRENT_USER = w.current_user.me().user_name
-print(f"🔧 User: {CURRENT_USER}  Instance: {INSTANCE_NAME}  DB: {DB_NAME}")
+print(f"🔧 User: {CURRENT_USER}  Project: {PROJECT_ID}  DB: {DB_NAME}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Provision Lakebase instance
+# MAGIC ## 1. Create Lakebase Autoscaling project
 # MAGIC 
-# MAGIC Creates a **Lakebase Provisioned** PostgreSQL 16 instance (smallest tier: `CU_1`).
-# MAGIC If the instance already exists, it's a no-op. The SDK's `.result()` blocks until the
-# MAGIC instance reaches `AVAILABLE` state — handles both fresh provisioning (~3 min) and
-# MAGIC scale-to-zero wake-up (~1 min).
+# MAGIC Creates a **Lakebase Autoscaling** project with PG 16. A new project automatically
+# MAGIC creates a `production` branch with a default compute endpoint (`ep-primary`) and
+# MAGIC the `databricks_postgres` database. The compute auto-scales based on load and
+# MAGIC scales to zero when idle (cost-optimized).
+# MAGIC 
+# MAGIC `.wait()` blocks until the project is fully provisioned (~2-3 min).
 
 # COMMAND ----------
 
 try:
-    instance = w.database.get_database_instance(name=INSTANCE_NAME)
-    print(f"✅ Instance '{INSTANCE_NAME}' exists (state={instance.state})")
+    project = w.postgres.get_project(name=PROJECT_PATH)
+    print(f"✅ Project '{PROJECT_ID}' exists (pg_version={project.status.pg_version})")
 except NotFound:
-    print(f"⏳ Creating instance '{INSTANCE_NAME}' (this may take a few minutes)...")
-    instance = w.database.create_database_instance(
-        database_instance=DatabaseInstance(name=INSTANCE_NAME, capacity="CU_1"),
-    ).result()
-    print("✅ Instance created")
+    print(f"⏳ Creating project '{PROJECT_ID}' (this may take a few minutes)...")
+    project = w.postgres.create_project(
+        project=Project(spec=ProjectSpec(display_name=PROJECT_ID, pg_version="16")),
+        project_id=PROJECT_ID,
+    ).wait()
+    print("✅ Project created")
 
-print(f"✅ Instance AVAILABLE → {instance.read_write_dns}")
+# Get the primary endpoint DNS and state
+endpoint = w.postgres.get_endpoint(name=ENDPOINT_PATH)
+HOST = endpoint.status.hosts.host
+print(f"✅ Endpoint {endpoint.status.current_state} → {HOST}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Create database + enable native PG login
+# MAGIC ## 2. Create database
 # MAGIC 
 # MAGIC Lakebase ships with a default `databricks_postgres` database. We create a dedicated
 # MAGIC `wikidb` database for MediaWiki + RAG data. All admin operations use **short-lived OAuth
 # MAGIC tokens** generated via the SDK (valid ~1 hour).
-# MAGIC 
-# MAGIC **Native PG login** is required so that MediaWiki containers and the serving endpoint
-# MAGIC can authenticate with a static password (OAuth tokens expire too quickly for long-running processes).
 
 # COMMAND ----------
 
 def _oauth_conn(dbname: str) -> psycopg2.extensions.connection:
     """Open an autocommit OAuth connection as the workspace owner (admin ops)."""
-    cred = w.database.generate_database_credential(
-        request_id=str(uuid.uuid4()),
-        instance_names=[INSTANCE_NAME],
-    )
+    cred = w.postgres.generate_database_credential(endpoint=ENDPOINT_PATH)
     conn = psycopg2.connect(
-        host=instance.read_write_dns,
+        host=HOST,
         port=DB_PORT,
         dbname=dbname,
         user=CURRENT_USER,
@@ -160,21 +169,6 @@ with closing(_oauth_conn("databricks_postgres")) as conn:
         else:
             cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(DB_NAME)))
             print(f"✅ Database '{DB_NAME}' created")
-
-# Enable native PG login so the mediawiki role can use a static password
-if not instance.effective_enable_pg_native_login:
-    print("⏳ Enabling native PG login...")
-    instance = w.database.update_database_instance(
-        name=INSTANCE_NAME,
-        database_instance=DatabaseInstance(
-            name=INSTANCE_NAME,
-            enable_pg_native_login=True,
-        ),
-        update_mask="enable_pg_native_login",
-    )
-    print("✅ Native PG login enabled")
-else:
-    print("✅ Native PG login already enabled")
 
 # COMMAND ----------
 
@@ -349,8 +343,8 @@ except ResourceAlreadyExists:
 
 # Store Lakebase connection details (mw_password already exists from setup-secrets)
 secrets = {
-    "lakebase_instance_name": INSTANCE_NAME,
-    "lakebase_host": instance.read_write_dns,
+    "lakebase_instance_name": PROJECT_ID,
+    "lakebase_host": HOST,
     "lakebase_port": DB_PORT,
     "lakebase_db": DB_NAME,
     "lakebase_user": CURRENT_USER,
@@ -376,7 +370,7 @@ for k, v in secrets.items():
 
 with closing(
     psycopg2.connect(
-        host=instance.read_write_dns,
+        host=HOST,
         port=DB_PORT,
         dbname=DB_NAME,
         user=MW_ROLE,
@@ -405,8 +399,4 @@ with closing(
 print(f"📋 PostgreSQL: {pg_version}")
 print(f"📋 Tables ({len(tables)}):  {', '.join(tables)}")
 print(f"📋 Indexes ({len(indexes)}): {', '.join(indexes)}")
-print(f"\n🎉 Lakebase is ready — {instance.read_write_dns}")
-
-# COMMAND ----------
-
-
+print(f"\n🎉 Lakebase is ready — {HOST}")
