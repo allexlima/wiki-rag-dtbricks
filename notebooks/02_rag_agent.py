@@ -5,11 +5,33 @@
 # MAGIC %md
 # MAGIC # 02 — RAG Agent Testing
 # MAGIC
-# MAGIC Interactive notebook to test the LangGraph RAG agent against Lakebase.
+# MAGIC Interactive notebook to test the **LangGraph RAG agent** against Lakebase.
+# MAGIC Use this to explore retrieval quality, agent responses, and multi-turn
+# MAGIC conversation memory — all without deploying to a serving endpoint.
 # MAGIC
-# MAGIC **Pipeline:** embed query → pgvector retrieval → grade docs → (rewrite?) → generate answer.
+# MAGIC **Pipeline:**
+# MAGIC ```
+# MAGIC embed query → pgvector retrieval → grade_documents → (rewrite_query loop) → generate
+# MAGIC ```
 # MAGIC
-# MAGIC The agent now uses **ResponsesAgent** (MLflow 3) with optional conversation memory.
+# MAGIC The agent uses **ResponsesAgent** (MLflow 3) wrapping a LangGraph `StateGraph`.
+# MAGIC Conversation memory is persisted in Lakebase (`wiki_rag.conversations` / `wiki_rag.messages`).
+# MAGIC
+# MAGIC **Prerequisites:**
+# MAGIC - Run `00_setup_lakebase` to provision the database and schema
+# MAGIC - Run `01_ingestion` to populate embeddings
+# MAGIC - Secrets stored via `make setup-secrets`
+# MAGIC
+# MAGIC | Step | What it does |
+# MAGIC |------|-------------|
+# MAGIC | 1 | Initialize agent and Lakebase connection |
+# MAGIC | 2 | Test raw vector retrieval (pgvector similarity search) |
+# MAGIC | 3 | Test full RAG agent (single-turn question → answer) |
+# MAGIC | 4 | Test multi-turn conversation (memory persistence) |
+# MAGIC | 5 | Interactive query using the widget bar |
+# MAGIC
+# MAGIC > **Safe to re-run** — each section is independent (except step 4 which
+# MAGIC > depends on step 3 for the conversation ID).
 
 # COMMAND ----------
 
@@ -19,80 +41,281 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup
+# MAGIC ## Configuration
+# MAGIC
+# MAGIC Set parameters via the widget bar above when running interactively.
+# MAGIC - **secret_scope** — Databricks secret scope with Lakebase credentials
+# MAGIC - **question** — Default question for the interactive query (step 5)
+# MAGIC - **top_k** — Number of documents to retrieve in the vector search test
+
+# COMMAND ----------
+
+dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
+dbutils.widgets.text("question", "Quais são os sistemas principais do veículo Databricks Galáctica?", "Question")
+dbutils.widgets.text("top_k", "3", "Top K Results")
 
 # COMMAND ----------
 
 import os
 import sys
+from contextlib import closing
 
-sys.path.insert(0, os.path.join(os.getcwd(), ".."))
+# ─── Defensive path handling ────────────────────────────────────────────
+_cwd = os.getcwd()
+if os.path.basename(_cwd) == "notebooks":
+    BUNDLE_ROOT = os.path.dirname(_cwd)
+else:
+    BUNDLE_ROOT = _cwd
+sys.path.insert(0, BUNDLE_ROOT)
 
 from pgvector.psycopg2 import register_vector
 
 from src.config import get_lakebase_conn
 from src.rag import WikiRAGAgent, run_agent
 
-conn = get_lakebase_conn()
-register_vector(conn)
+# ─── Parameters ─────────────────────────────────────────────────────────
+SCOPE = dbutils.widgets.get("secret_scope")
+QUESTION = dbutils.widgets.get("question")
+TOP_K = int(dbutils.widgets.get("top_k"))
+
+print(f"Secret scope : {SCOPE}")
+print(f"Top K        : {TOP_K}")
+print(f"Question     : {QUESTION[:80]}{'...' if len(QUESTION) > 80 else ''}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test retriever only
+# MAGIC ## 1. Initialize Agent
+# MAGIC
+# MAGIC Creates a `WikiRAGAgent` instance and verifies the Lakebase connection.
+# MAGIC The agent lazily initialises its LLM client on first call.
 
 # COMMAND ----------
 
 agent = WikiRAGAgent()
-docs = agent.retrieve(conn, "What is the main topic of the wiki?", top_k=3)
 
-for doc in docs:
-    print(f"[{doc.page_title}] (similarity: {doc.similarity:.4f})")
-    print(f"  {doc.chunk_text[:200]}...\n")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Test full RAG agent (single turn)
-
-# COMMAND ----------
-
-result = run_agent("What is the main topic of the wiki?")
-
-print(f"Answer:\n{result['answer']}\n")
-print(f"Conversation ID: {result['conversation_id']}")
+try:
+    conn = get_lakebase_conn()
+    register_vector(conn)
+    with conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_embeddings")
+        embedding_count = cur.fetchone()[0]
+    print(f"Agent initialised — {embedding_count:,} embeddings in wiki_rag.wiki_embeddings")
+except Exception as e:
+    print(f"Failed to connect to Lakebase: {e}")
+    print("Ensure 00_setup_lakebase and 01_ingestion have been run.")
+    raise
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test multi-turn conversation (memory)
+# MAGIC ## 2. Test Retrieval
 # MAGIC
-# MAGIC Uses the same `conversation_id` to test that the agent remembers context.
+# MAGIC Runs a raw **pgvector similarity search** without the LLM grading/generation steps.
+# MAGIC Useful for debugging embedding quality and checking what documents the agent "sees"
+# MAGIC before generating an answer.
 
 # COMMAND ----------
 
-conv_id = result["conversation_id"]
+try:
+    docs = agent.retrieve(conn, QUESTION, top_k=TOP_K)
 
-followup = run_agent("Can you tell me more about that?", thread_id=conv_id)
-print(f"Follow-up answer:\n{followup['answer']}")
+    if not docs:
+        print("No documents retrieved. Check that embeddings have been ingested (01_ingestion).")
+    else:
+        rows_html = ""
+        for i, doc in enumerate(docs, 1):
+            snippet = doc.chunk_text[:300].replace("<", "&lt;").replace(">", "&gt;")
+            rows_html += f"""
+            <tr>
+                <td style="text-align:center">{i}</td>
+                <td><strong>{doc.page_title}</strong></td>
+                <td style="text-align:center">{doc.similarity:.4f}</td>
+                <td style="text-align:center">{doc.chunk_source}</td>
+                <td style="font-size:0.9em">{snippet}...</td>
+            </tr>"""
+
+        displayHTML(f"""
+        <h4>Retrieved {len(docs)} documents (top_k={TOP_K})</h4>
+        <table style="width:100%; border-collapse:collapse; margin-top:8px">
+            <thead>
+                <tr style="background:#f0f0f0">
+                    <th style="padding:6px; border:1px solid #ddd; width:40px">#</th>
+                    <th style="padding:6px; border:1px solid #ddd">Page Title</th>
+                    <th style="padding:6px; border:1px solid #ddd; width:80px">Similarity</th>
+                    <th style="padding:6px; border:1px solid #ddd; width:70px">Source</th>
+                    <th style="padding:6px; border:1px solid #ddd">Chunk Preview</th>
+                </tr>
+            </thead>
+            <tbody>{rows_html}</tbody>
+        </table>
+        """)
+
+except Exception as e:
+    print(f"Retrieval failed: {e}")
+    print("This usually means embeddings haven't been ingested yet, or the Lakebase connection dropped.")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Try your own questions
+# MAGIC ## 3. Test Full Agent (single-turn)
 # MAGIC
-# MAGIC Change `QUESTION` below and re-run the cell.
+# MAGIC Runs the complete RAG pipeline end-to-end:
+# MAGIC **retrieve** → **grade_documents** → (**rewrite_query** if needed) → **generate**
+# MAGIC
+# MAGIC The agent uses the LLM to grade document relevance, optionally rewrites the query
+# MAGIC (up to 2 times), and then generates a cited answer.
 
 # COMMAND ----------
 
-QUESTION = "Tell me about the latest changes in the wiki"
+try:
+    result = run_agent(QUESTION)
 
-result = run_agent(QUESTION)
+    answer = result["answer"]
+    conv_id = result["conversation_id"]
 
-print(f"Q: {QUESTION}\n")
-print(f"A: {result['answer']}")
+    displayHTML(f"""
+    <div style="padding:12px; background:#f8f9fa; border-left:4px solid #1b6ac9; margin-bottom:12px">
+        <strong>Question:</strong> {QUESTION}
+    </div>
+    <div style="padding:12px; background:#fff; border:1px solid #e0e0e0; border-radius:4px">
+        <strong>Answer:</strong><br><br>
+        {answer.replace(chr(10), '<br>')}
+    </div>
+    <div style="margin-top:8px; font-size:0.85em; color:#666">
+        Conversation ID: <code>{conv_id}</code>
+    </div>
+    """)
+
+except Exception as e:
+    print(f"Agent call failed: {e}")
+    print("Check that the LLM endpoint is accessible and Lakebase connection is live.")
+    raise
 
 # COMMAND ----------
 
-conn.close()
-print("✓ Done")
+# MAGIC %md
+# MAGIC ## 4. Test Multi-Turn Conversation
+# MAGIC
+# MAGIC Uses the same `conversation_id` from step 3 to verify that the agent loads
+# MAGIC previous turns from Lakebase and uses them as context. This tests the full
+# MAGIC memory persistence loop:
+# MAGIC
+# MAGIC 1. Step 3 saved the exchange to `wiki_rag.messages`
+# MAGIC 2. This step loads that history and asks a follow-up
+# MAGIC 3. The agent should reference context from the first answer
+
+# COMMAND ----------
+
+try:
+    followup_question = "Can you tell me more about that?"
+    followup = run_agent(followup_question, thread_id=conv_id)
+
+    displayHTML(f"""
+    <div style="padding:12px; background:#f8f9fa; border-left:4px solid #28a745; margin-bottom:12px">
+        <strong>Follow-up:</strong> {followup_question}<br>
+        <span style="font-size:0.85em; color:#666">(using conversation {conv_id[:8]}...)</span>
+    </div>
+    <div style="padding:12px; background:#fff; border:1px solid #e0e0e0; border-radius:4px">
+        <strong>Answer:</strong><br><br>
+        {followup['answer'].replace(chr(10), '<br>')}
+    </div>
+    """)
+
+    # Show conversation history from Lakebase
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT role, LEFT(content, 120) AS content_preview, created_at
+            FROM wiki_rag.messages
+            WHERE conversation_id = %s
+            ORDER BY created_at
+            """,
+            (conv_id,),
+        )
+        messages = cur.fetchall()
+
+    if messages:
+        msg_rows = ""
+        for role, preview, ts in messages:
+            color = "#1b6ac9" if role == "user" else "#28a745"
+            msg_rows += f"""
+            <tr>
+                <td style="padding:4px 8px; color:{color}; font-weight:bold">{role}</td>
+                <td style="padding:4px 8px; font-size:0.9em">{preview}...</td>
+                <td style="padding:4px 8px; font-size:0.8em; color:#888">{ts}</td>
+            </tr>"""
+
+        displayHTML(f"""
+        <h4>Conversation History ({len(messages)} messages)</h4>
+        <table style="width:100%; border-collapse:collapse">
+            <thead>
+                <tr style="background:#f0f0f0">
+                    <th style="padding:6px; border:1px solid #ddd; width:80px">Role</th>
+                    <th style="padding:6px; border:1px solid #ddd">Content Preview</th>
+                    <th style="padding:6px; border:1px solid #ddd; width:160px">Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>{msg_rows}</tbody>
+        </table>
+        """)
+
+except Exception as e:
+    print(f"Multi-turn test failed: {e}")
+    print("Ensure step 3 completed successfully (conv_id must exist).")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 5. Interactive Query
+# MAGIC
+# MAGIC Uses the **question** widget from the widget bar at the top of the notebook.
+# MAGIC Change the widget value and re-run this cell to explore different queries.
+# MAGIC
+# MAGIC > **Tip:** Update the `question` widget above and click **Run** on this cell
+# MAGIC > to quickly iterate on different questions without touching the code.
+
+# COMMAND ----------
+
+interactive_q = dbutils.widgets.get("question")
+
+try:
+    interactive_result = run_agent(interactive_q)
+
+    displayHTML(f"""
+    <div style="padding:16px; background:#fff; border:1px solid #e0e0e0; border-radius:6px">
+        <div style="padding:8px 12px; background:#e8f0fe; border-radius:4px; margin-bottom:12px">
+            <strong>Q:</strong> {interactive_q}
+        </div>
+        <div style="padding:8px 12px">
+            <strong>A:</strong><br><br>
+            {interactive_result['answer'].replace(chr(10), '<br>')}
+        </div>
+        <div style="margin-top:8px; font-size:0.85em; color:#666; border-top:1px solid #eee; padding-top:8px">
+            Conversation ID: <code>{interactive_result['conversation_id']}</code>
+        </div>
+    </div>
+    """)
+
+except Exception as e:
+    print(f"Interactive query failed: {e}")
+    print("Check that the question widget is non-empty and that the agent is operational.")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Cleanup
+# MAGIC
+# MAGIC Close the Lakebase connection. This cell is safe to skip if you want to keep
+# MAGIC the connection open for further ad-hoc queries in the notebook.
+
+# COMMAND ----------
+
+try:
+    if conn and not conn.closed:
+        conn.close()
+        print("Lakebase connection closed.")
+    else:
+        print("Connection already closed.")
+except NameError:
+    print("No connection to close.")

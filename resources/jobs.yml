@@ -52,5 +52,9 @@ resources:
         - task_key: ingest_and_embed
           notebook_task:
             notebook_path: ../notebooks/01_ingest_mediawiki.py
+            base_parameters:
+              secret_scope: ${var.secret_scope}
+              embedding_model: ${var.embedding_model}
+              llm_model: ${var.llm_model}
             source: WORKSPACE
       max_concurrent_runs: 1
