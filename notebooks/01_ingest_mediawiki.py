@@ -4,18 +4,18 @@
 
 # MAGIC %md
 # MAGIC # 01 — Ingest MediaWiki
-# MAGIC
+# MAGIC 
 # MAGIC Incremental ingestion pipeline that reads wikitext from MediaWiki's native
 # MAGIC PostgreSQL tables (on Lakebase), cleans it, chunks it, generates embeddings
 # MAGIC via Foundation Model API, and writes everything back to the `wiki_rag` schema.
-# MAGIC
+# MAGIC 
 # MAGIC **Multimodal:** extracts `[[File:...]]` image references, fetches images from
 # MAGIC MediaWiki's API, and generates text descriptions via a vision LLM — these
 # MAGIC become image-sourced chunks alongside regular text chunks.
-# MAGIC
+# MAGIC 
 # MAGIC **Incremental** — only processes pages whose `rev_id` exceeds the stored
 # MAGIC watermark in `wiki_rag.sync_state`. Safe to re-run at any time.
-# MAGIC
+# MAGIC 
 # MAGIC | Step | What it does |
 # MAGIC |------|-------------|
 # MAGIC | 1 | Read the sync watermark (`last_processed_rev_id`) from Lakebase |
@@ -23,7 +23,7 @@
 # MAGIC | 3 | Generate vector embeddings for all chunks via Foundation Model API |
 # MAGIC | 4 | Write chunks, embeddings, and image metadata to Lakebase in a single transaction |
 # MAGIC | 5 | Advance the watermark and print a summary |
-# MAGIC
+# MAGIC 
 # MAGIC > **Prerequisites:** Run `00_setup_lakebase` first — this notebook expects the
 # MAGIC > `wiki_rag` schema, tables, and secret scope to already exist.
 
@@ -36,7 +36,7 @@
 
 # MAGIC %md
 # MAGIC ## Configuration
-# MAGIC
+# MAGIC 
 # MAGIC Parameters are auto-populated by the DAB job (`resources/jobs.yml`), or you can
 # MAGIC set them manually via the widget bar when running interactively.
 
@@ -98,7 +98,7 @@ print(f"Vision LLM:      {LLM_MODEL}")
 
 # MAGIC %md
 # MAGIC ## 1. Connect to Lakebase
-# MAGIC
+# MAGIC 
 # MAGIC Opens a psycopg2 connection to the Lakebase PostgreSQL database using
 # MAGIC credentials from the secret scope. The `get_lakebase_conn` helper auto-detects
 # MAGIC whether to use password auth (preferred) or OAuth token generation.
@@ -128,7 +128,7 @@ print(f"Connected to Lakebase (server={conn.info.host})")
 
 # MAGIC %md
 # MAGIC ## 2. Read watermark
-# MAGIC
+# MAGIC 
 # MAGIC The watermark (`last_processed_rev_id`) tracks the highest MediaWiki revision
 # MAGIC ID we've already ingested. Only pages with `rev_id > watermark` will be
 # MAGIC processed, making the pipeline incremental and idempotent.
@@ -150,17 +150,17 @@ print(f"Current watermark: rev_id = {watermark}")
 
 # MAGIC %md
 # MAGIC ## 3. Fetch pages, clean, chunk, and process images
-# MAGIC
+# MAGIC 
 # MAGIC Iterates over all main-namespace pages updated since the watermark.
 # MAGIC For each page:
-# MAGIC
+# MAGIC 
 # MAGIC 1. **Clean wikitext** — strips markup (templates, categories, refs) to plain text.
 # MAGIC 2. **Chunk text** — splits into 512-char overlapping chunks with semantic separators.
 # MAGIC 3. **Extract images** — finds `[[File:...]]` / `[[Image:...]]` references in raw
 # MAGIC    wikitext (must run *before* cleaning, which removes them).
 # MAGIC 4. **Caption images** — fetches each image from MediaWiki's API, sends it to a
 # MAGIC    vision LLM for a factual description, and creates image-sourced chunks.
-# MAGIC
+# MAGIC 
 # MAGIC The MCR (Multi-Content Revisions) schema join in `MediaWikiIngestion.fetch_pages`
 # MAGIC traverses: `page → revision → slots → content → pagecontent` to reach the actual
 # MAGIC wikitext blob. This is the standard MW 1.32+ storage layout.
@@ -232,9 +232,14 @@ print(f"✓ {page_count} pages → {len(all_chunks)} chunks ({len(image_records)
 
 # COMMAND ----------
 
+image_bytes
+
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Early exit — no new pages
-# MAGIC
+# MAGIC 
 # MAGIC If the watermark is already at the latest revision, there's nothing to do.
 # MAGIC This is the normal path when the scheduled job runs and no wiki edits happened.
 
@@ -248,7 +253,7 @@ if not all_chunks:
 
 # MAGIC %md
 # MAGIC ## 4. Generate embeddings
-# MAGIC
+# MAGIC 
 # MAGIC Sends all chunk texts to the Foundation Model API embedding endpoint
 # MAGIC in batches of 64. Each text becomes a 1024-dim vector (for `databricks-gte-large-en`).
 # MAGIC Transient failures are retried automatically with exponential backoff.
@@ -265,9 +270,9 @@ print(f"✓ {len(embeddings)} embeddings (dim={len(embeddings[0])})")
 
 # MAGIC %md
 # MAGIC ## 5. Write to Lakebase
-# MAGIC
+# MAGIC 
 # MAGIC All writes happen in a **single transaction** for atomicity:
-# MAGIC
+# MAGIC 
 # MAGIC 1. **Delete stale data** — removes old chunks for re-processed pages.
 # MAGIC    The FK cascade on `wiki_embeddings.chunk_id` automatically deletes
 # MAGIC    associated embeddings.
@@ -278,7 +283,7 @@ print(f"✓ {len(embeddings)} embeddings (dim={len(embeddings[0])})")
 # MAGIC 4. **Insert image metadata** — stores vision LLM captions for provenance.
 # MAGIC 5. **Advance watermark** — updates `sync_state` so the next run skips
 # MAGIC    already-processed revisions.
-# MAGIC
+# MAGIC 
 # MAGIC If anything fails, the entire transaction is rolled back — no partial state.
 
 # COMMAND ----------
@@ -366,7 +371,7 @@ except Exception:
 
 # MAGIC %md
 # MAGIC ## 6. Summary
-# MAGIC
+# MAGIC 
 # MAGIC Prints final counts from the `wiki_rag` schema to confirm the pipeline run
 # MAGIC succeeded. These numbers reflect the full dataset, not just this run.
 

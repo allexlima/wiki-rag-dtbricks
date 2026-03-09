@@ -4,7 +4,7 @@ MediaWiki ingestion — reads wikitext from native PostgreSQL tables on Lakebase
 Table relationships (MediaWiki 1.42 Multi-Content Revisions):
     page.page_latest → revision.rev_id
     → slots.slot_revision_id → content.content_id
-    → SUBSTRING(content_address, 4) → pagecontent.old_id
+    → SUBSTRING(content_address, 4) → text.old_id
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ SELECT
     REPLACE(p.page_title, '_', ' ') AS page_title,
     p.page_namespace AS page_ns,
     r.rev_id,
-    pc.old_text AS wikitext
+    t.old_text AS wikitext
 FROM mediawiki.page p
 JOIN mediawiki.revision r
     ON r.rev_id = p.page_latest
@@ -40,8 +40,8 @@ JOIN mediawiki.slots s
     ON s.slot_revision_id = r.rev_id
 JOIN mediawiki.content c
     ON c.content_id = s.slot_content_id
-JOIN mediawiki.pagecontent pc
-    ON SUBSTRING(c.content_address FROM 4)::BIGINT = pc.old_id
+JOIN mediawiki."text" t
+    ON SUBSTRING(c.content_address FROM 4)::BIGINT = t.old_id
 WHERE p.page_namespace = 0
   AND r.rev_id > %(watermark)s
 ORDER BY r.rev_id ASC;
