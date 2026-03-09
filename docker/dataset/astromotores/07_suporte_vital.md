@@ -12,7 +12,7 @@
 
 O Módulo de Suporte Vital do Veículo Espacial Série Databricks Galáctica é responsável por manter condições atmosféricas habitáveis dentro da cabine pressurizada durante operações em vácuo espacial, atmosferas hostis e trânsito interplanetário. O sistema opera em ciclo fechado com capacidade de regeneração parcial, processando continuamente o ar da cabine através de quatro subsistemas integrados: filtragem de CO₂, geração de O₂, regulação térmica e controle de pressão.
 
-![Diagrama de blocos do sistema de suporte vital](images/07_suporte_vital_section1.svg)
+![Diagrama de blocos do sistema de suporte vital](images/07_suporte_vital_section1.png)
 
 ### 1.1 Ciclo Atmosférico Primário
 
@@ -63,7 +63,7 @@ O MSV possui três modos de emergência ativados automaticamente pelo CESV ou ma
 
 Esta seção detalha todas as especificações técnicas dos componentes do Módulo de Suporte Vital, incluindo dimensões, capacidades, materiais e números de peça para referência em pedidos de reposição.
 
-![Desenho dimensional do módulo de filtro](images/07_suporte_vital_section2.svg)
+![Desenho dimensional do módulo de filtro](images/07_suporte_vital_section2.png)
 
 ### 2.1 Componentes Principais e Números de Peça
 
@@ -149,7 +149,7 @@ Esta seção detalha todas as especificações técnicas dos componentes do Mód
 
 Esta seção descreve os procedimentos de diagnóstico para as falhas mais comuns do Módulo de Suporte Vital. Todos os diagnósticos devem ser realizados com o sistema energizado e em modo de operação normal, salvo indicação contrária.
 
-![Fluxograma de diagnóstico de falhas](images/07_suporte_vital_section3.svg)
+![Fluxograma de diagnóstico de falhas](images/07_suporte_vital_section3.png)
 
 ### 3.1 Ferramentas Necessárias para Diagnóstico
 
@@ -258,7 +258,7 @@ O Controlador CESV registra códigos de falha no formato `LSS-XXXX`. Os códigos
 
 Esta seção contém os procedimentos detalhados para os reparos e substituições mais comuns no Módulo de Suporte Vital. Cada procedimento inclui tempo estimado, nível de qualificação requerido e lista de peças e ferramentas.
 
-![Vista explodida do módulo de suporte vital](images/07_suporte_vital_section4.svg)
+![Vista explodida do módulo de suporte vital](images/07_suporte_vital_section4.png)
 
 > **AVISO DE SEGURANÇA:** Antes de iniciar qualquer procedimento de reparo, certifique-se de que:
 > - O suprimento de O₂ de emergência (NE-LSS-7750) está conectado e funcional
@@ -365,7 +365,7 @@ Esta seção contém os procedimentos detalhados para os reparos e substituiçõ
 
 A manutenção preventiva adequada do Módulo de Suporte Vital é essencial para garantir a confiabilidade e a segurança do sistema ao longo de toda a vida útil do veículo. Os intervalos especificados nesta seção são baseados em horas de operação e devem ser seguidos rigorosamente.
 
-![Cronograma de manutenção preventiva](images/07_suporte_vital_section5.svg)
+![Cronograma de manutenção preventiva](images/07_suporte_vital_section5.png)
 
 ### 5.1 Cronograma de Manutenção por Intervalo
 

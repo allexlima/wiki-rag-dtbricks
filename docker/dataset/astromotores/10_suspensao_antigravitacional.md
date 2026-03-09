@@ -15,7 +15,7 @@ O sistema de Suspensao Antigravitacional (SAG) do Veiculo Espacial Serie Databri
 
 O SAG opera por meio da geracao de um campo repulsivo polarizado que interage com o campo gravitacional local, criando uma zona de sustentacao estavel a uma altura programavel entre 15 cm e 250 cm da superficie. O sistema e composto por quatro modulos repulsores independentes (um em cada vertice do chassi), um controlador central de estabilizacao, sensores de altura distribuidos e amortecedores de campo fluido.
 
-![Diagrama de blocos do sistema de suspensao antigravitacional](images/10_suspensao_antigravitacional_section1.svg)
+![Diagrama de blocos do sistema de suspensao antigravitacional](images/10_suspensao_antigravitacional_section1.png)
 
 ### 1.2 Teoria de Campo Antigravitacional
 
@@ -70,7 +70,7 @@ O modulo de Adaptacao Inteligente ao Terreno (AIT) utiliza um array de sensores 
 
 Cada modulo repulsor e uma unidade selada, substituivel em campo, que contem a bobina repulsora, sensor de proximidade integrado, amortecedor de campo fluido e eletronica de potencia local. O veiculo Serie Databricks Galáctica utiliza quatro modulos identicos, designados por posicao: Dianteiro Esquerdo (DE), Dianteiro Direito (DD), Traseiro Esquerdo (TE) e Traseiro Direito (TD).
 
-![Desenho dimensional do modulo repulsor](images/10_suspensao_antigravitacional_section2.svg)
+![Desenho dimensional do modulo repulsor](images/10_suspensao_antigravitacional_section2.png)
 
 ### 2.2 Dimensoes e Peso do Modulo Repulsor
 
@@ -158,7 +158,7 @@ O sistema de amortecimento utiliza fluido magneto-reologico NE-FMR-220, cuja vis
 
 O diagnostico do sistema SAG deve ser realizado sempre que o veiculo apresentar qualquer anomalia de levitacao, incluindo oscilacoes perceptiveis, inclinacao involuntaria, variacao de altura nao comandada ou alarmes no painel de instrumentos. O procedimento a seguir cobre os cenarios mais comuns de falha e deve ser executado por tecnicos com certificacao Nivel II ou superior.
 
-![Fluxograma de diagnostico de problemas](images/10_suspensao_antigravitacional_section3.svg)
+![Fluxograma de diagnostico de problemas](images/10_suspensao_antigravitacional_section3.png)
 
 ### 3.2 Equipamentos Necessarios para Diagnostico
 
@@ -243,7 +243,7 @@ A sustentacao assimetrica ocorre quando a forca de levitacao gerada por um ou ma
 
 Todos os procedimentos de reparo do sistema SAG devem ser realizados com o veiculo apoiado em cavaletes antigravitacionais certificados (NE-TOOL-8000, capacidade minima 4.000 kg) e com o sistema de propulsao completamente desligado. O capacitor de campo principal deve ser descarregado antes de qualquer intervencao — aguarde no minimo 120 segundos apos o desligamento e confirme tensao zero no terminal de monitoramento.
 
-![Vista explodida do modulo repulsor](images/10_suspensao_antigravitacional_section4.svg)
+![Vista explodida do modulo repulsor](images/10_suspensao_antigravitacional_section4.png)
 
 ### 4.2 Ferramentas Necessarias para Reparo
 
@@ -341,7 +341,7 @@ O fluido magneto-reologico NE-FMR-220 e essencial para o amortecimento do sistem
 
 A manutencao preventiva do sistema SAG e organizada em intervalos baseados em horas de operacao de hover (horas em que o sistema esta efetivamente gerando campo repulsivo). O horímetro do SAG e independente do hodometro do veiculo e pode ser consultado no painel de instrumentos em **Configuracoes > SAG > Informacoes do Sistema** ou via scanner NE-DIAG-7000.
 
-![Cronograma de manutencao preventiva](images/10_suspensao_antigravitacional_section5.svg)
+![Cronograma de manutencao preventiva](images/10_suspensao_antigravitacional_section5.png)
 
 ### 5.2 Tabela de Intervalos de Manutencao
 

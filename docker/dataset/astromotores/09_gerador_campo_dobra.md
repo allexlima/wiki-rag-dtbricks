@@ -12,7 +12,7 @@
 
 O Gerador de Campo de Dobra do Veículo Espacial Série Databricks Galáctica é o sistema responsável por criar e manter uma bolha de distorção espaço-temporal controlada ao redor da nave, permitindo deslocamento a velocidades superiores à da luz sem violar as leis da relatividade local. O sistema opera com base no princípio de Alcubierre-Yamamoto modificado, onde o espaço-tempo à frente da nave é comprimido enquanto o espaço-tempo atrás é expandido, criando uma "onda" que transporta a nave sem que ela se mova localmente.
 
-![Diagrama de blocos do sistema gerador de campo de dobra](images/09_gerador_campo_dobra_section1.svg)
+![Diagrama de blocos do sistema gerador de campo de dobra](images/09_gerador_campo_dobra_section1.png)
 
 ### 1.1 Teoria da Curvatura Espaço-Temporal
 
@@ -70,7 +70,7 @@ A vida útil dos cristais de dilítio é limitada pela degradação progressiva 
 
 Esta seção detalha as especificações técnicas completas de todos os componentes principais do sistema gerador de campo de dobra do Veículo Espacial Série Databricks Galáctica. Todas as medidas seguem o Sistema Internacional de Unidades (SI), com extensões para unidades subespaciais onde aplicável.
 
-![Desenho dimensional da nacele com seção transversal](images/09_gerador_campo_dobra_section2.svg)
+![Desenho dimensional da nacele com seção transversal](images/09_gerador_campo_dobra_section2.png)
 
 ### 2.1 Especificações das Naceles
 
@@ -166,7 +166,7 @@ Os condutos de transferência de energia conectam a câmara de reação central 
 
 Esta seção descreve os procedimentos de diagnóstico para identificar e caracterizar falhas no sistema gerador de campo de dobra. Todos os diagnósticos devem ser realizados com o veículo em repouso total (velocidade de dobra zero) e com o sistema de campo desligado, salvo indicação explícita em contrário.
 
-![Fluxograma de diagnóstico de campo de dobra instável](images/09_gerador_campo_dobra_section3.svg)
+![Fluxograma de diagnóstico de campo de dobra instável](images/09_gerador_campo_dobra_section3.png)
 
 > **AVISO DE SEGURANÇA:** Antes de iniciar qualquer procedimento de diagnóstico, verifique que o campo de dobra foi completamente desativado há pelo menos 120 segundos. Campos residuais podem causar interferência nos instrumentos de medição e representar risco à integridade física do técnico.
 
@@ -270,7 +270,7 @@ Problemas no sistema de refrigeração criogênica afetam diretamente o desempen
 
 Esta seção fornece instruções detalhadas para os procedimentos de reparo e substituição dos componentes principais do sistema gerador de campo de dobra. Todos os procedimentos devem ser realizados por técnicos certificados Nível 4 ou superior, com o veículo em repouso total e todos os sistemas de campo completamente desativados.
 
-![Vista explodida da nacele com identificação dos componentes](images/09_gerador_campo_dobra_section4.svg)
+![Vista explodida da nacele com identificação dos componentes](images/09_gerador_campo_dobra_section4.png)
 
 > **AVISO DE SEGURANÇA:** Antes de iniciar qualquer procedimento de reparo, execute o protocolo completo de desenergização NE-PROC-8800. Verifique a ausência de campos residuais com o detector portátil NE-SAFE-100. Aguarde a liberação do oficial de segurança subespacial antes de abrir qualquer carcaça ou desconectar qualquer componente.
 
@@ -381,7 +381,7 @@ Danos nos condutos de transferência de energia (ETC) podem ser reparados em cam
 
 A manutenção preventiva do sistema gerador de campo de dobra é essencial para garantir a confiabilidade, segurança e longevidade de todos os componentes. O cumprimento rigoroso dos intervalos de manutenção especificados nesta seção é obrigatório e deve ser documentado no livro de manutenção do veículo.
 
-![Cronograma de manutenção preventiva do gerador de campo de dobra](images/09_gerador_campo_dobra_section5.svg)
+![Cronograma de manutenção preventiva do gerador de campo de dobra](images/09_gerador_campo_dobra_section5.png)
 
 ### 5.1 Cronograma de Ciclo de Cristal de Dilítio
 

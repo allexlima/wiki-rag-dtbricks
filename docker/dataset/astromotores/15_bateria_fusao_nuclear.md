@@ -28,7 +28,7 @@ Cada evento de fusão libera aproximadamente 17,6 MeV de energia cinética, dist
 
 O sistema de energia por fusão do Série Databricks Galáctica é composto por cinco subsistemas principais interconectados em série, conforme ilustrado no diagrama de blocos abaixo:
 
-![Diagrama de blocos do sistema de fusão nuclear](images/15_bateria_fusao_nuclear_section1.svg)
+![Diagrama de blocos do sistema de fusão nuclear](images/15_bateria_fusao_nuclear_section1.png)
 
 **Fluxo de Energia:**
 
@@ -74,7 +74,7 @@ O deutério é armazenado em reservatório separado (NE-FUS-1502) e reabastecido
 
 A Bateria de Fusão Nuclear do Série Databricks Galáctica é projetada para fornecer energia confiável durante toda a vida útil do veículo, com intervalos de manutenção previsíveis e desempenho consistente dentro dos parâmetros especificados.
 
-![Desenho dimensional e corte transversal da célula de fusão](images/15_bateria_fusao_nuclear_section2.svg)
+![Desenho dimensional e corte transversal da célula de fusão](images/15_bateria_fusao_nuclear_section2.png)
 
 | Parâmetro | Valor Nominal | Tolerância | Unidade |
 |-----------|--------------|------------|---------|
@@ -149,7 +149,7 @@ A Bateria de Fusão Nuclear do Série Databricks Galáctica é projetada para fo
 
 O diagnóstico da Bateria de Fusão Nuclear deve ser realizado sempre que houver indicação de anomalia nos parâmetros de operação, alertas do sistema de monitoramento embarcado ou como parte do programa de inspeção periódica. O fluxograma abaixo apresenta a árvore de decisão principal para identificação de falhas.
 
-![Fluxograma de diagnóstico e solução de problemas](images/15_bateria_fusao_nuclear_section3.svg)
+![Fluxograma de diagnóstico e solução de problemas](images/15_bateria_fusao_nuclear_section3.png)
 
 **AVISO:** Antes de iniciar qualquer procedimento de diagnóstico, verifique que a bateria está em modo de espera (standby) ou desligada. NUNCA realize medições intrusivas com o sistema em operação de fusão ativa. O campo magnético de 12 T e a temperatura do plasma podem causar danos fatais instantâneos.
 
@@ -275,7 +275,7 @@ Este é o sintoma mais comum e pode ter múltiplas causas raiz. Siga o procedime
 
 Antes de iniciar qualquer procedimento de reparo ou substituição na Bateria de Fusão Nuclear, os seguintes requisitos DEVEM ser atendidos sem exceção:
 
-![Vista explodida da Bateria de Fusão Nuclear](images/15_bateria_fusao_nuclear_section4.svg)
+![Vista explodida da Bateria de Fusão Nuclear](images/15_bateria_fusao_nuclear_section4.png)
 
 **Pré-requisitos obrigatórios:**
 
@@ -400,7 +400,7 @@ Conectores individuais podem ser substituídos sem remoção da célula completa
 
 A estratégia de manutenção da Bateria de Fusão Nuclear segue o conceito de Manutenção Centrada em Confiabilidade (RCM — Reliability Centered Maintenance), combinando inspeções periódicas baseadas em tempo (horas de operação) com monitoramento contínuo de condição (condition-based monitoring). O objetivo é maximizar a disponibilidade do sistema enquanto se mantém o risco radiológico ALARP (As Low As Reasonably Practicable).
 
-![Cronograma de manutenção preventiva](images/15_bateria_fusao_nuclear_section5.svg)
+![Cronograma de manutenção preventiva](images/15_bateria_fusao_nuclear_section5.png)
 
 ### 5.2 Intervalos de Manutenção Programada
 

@@ -44,7 +44,7 @@ Uma das características mais avançadas do sistema NE-BRK é o subsistema de ca
 
 O diagrama a seguir ilustra o fluxo funcional completo do sistema, desde o comando do piloto até a recuperação de energia:
 
-![Diagrama de blocos do sistema de freios magnéticos](images/08_freios_magneticos_section1.svg)
+![Diagrama de blocos do sistema de freios magnéticos](images/08_freios_magneticos_section1.png)
 
 ### 1.4 Componentes Principais do Sistema
 
@@ -160,7 +160,7 @@ O arranjo hexapolar consiste em seis bobinas idênticas montadas em uma carcaça
 
 A ilustração a seguir apresenta o desenho dimensional do conjunto de frenagem com todas as cotas principais:
 
-![Desenho dimensional do conjunto de frenagem](images/08_freios_magneticos_section2.svg)
+![Desenho dimensional do conjunto de frenagem](images/08_freios_magneticos_section2.png)
 
 > **AVISO:** Todas as dimensões críticas marcadas com asterisco (*) na ilustração acima devem ser verificadas com instrumentos calibrados (certificado válido dentro de 12 meses) durante qualquer procedimento de montagem ou inspeção. O não atendimento das tolerâncias especificadas compromete a segurança do sistema e invalida a garantia do fabricante.
 
@@ -288,7 +288,7 @@ Este teste verifica a integridade elétrica de cada bobina individual do arranjo
 
 O fluxograma a seguir resume o processo de diagnóstico e triagem de falhas:
 
-![Fluxograma de diagnóstico e solução de problemas](images/08_freios_magneticos_section3.svg)
+![Fluxograma de diagnóstico e solução de problemas](images/08_freios_magneticos_section3.png)
 
 > **ATENÇÃO:** Nunca energize o circuito de potência de frenagem com o conector J7 desconectado. O controlador detectará circuito aberto e registrará falha permanente que requer reset de fábrica (procedimento ERA-RST-CTL-001, somente com autorização do fabricante).
 
@@ -395,7 +395,7 @@ Se o batimento axial estiver entre 0,015 mm e 0,030 mm e a espessura for superio
 
 A ilustração a seguir apresenta a vista explodida do conjunto de frenagem para referência durante os procedimentos de montagem e desmontagem:
 
-![Vista explodida do conjunto de frenagem](images/08_freios_magneticos_section4.svg)
+![Vista explodida do conjunto de frenagem](images/08_freios_magneticos_section4.png)
 
 > **AVISO CRÍTICO:** Durante a reinstalação do arranjo de bobinas, é imperativo respeitar o gap de ar de 1,2 mm entre as bobinas e o disco. Um gap insuficiente pode resultar em contato físico durante operação (vibração), causando danos catastróficos ao disco e às bobinas. Um gap excessivo reduz drasticamente a eficiência de frenagem. Utilize os espaçadores calibrados fornecidos no kit NE-BRK-SPACER-SET para garantir o gap correto.
 
@@ -512,7 +512,7 @@ Todos os serviços de manutenção preventiva devem ser registrados no sistema d
 
 O cronograma visual de manutenção a seguir apresenta os intervalos de serviço em formato de linha do tempo:
 
-![Cronograma de manutenção preventiva](images/08_freios_magneticos_section5.svg)
+![Cronograma de manutenção preventiva](images/08_freios_magneticos_section5.png)
 
 > **LEMBRETE FINAL:** O sistema de freios magnéticos é a última linha de defesa contra colisão em operações espaciais. A manutenção rigorosa e o cumprimento dos intervalos especificados neste manual não são apenas recomendações — são requisitos obrigatórios de segurança de voo conforme regulamentação ERA-SAF-001. Qualquer desvio dos procedimentos aqui descritos deve ser documentado, justificado e aprovado pelo engenheiro-chefe de manutenção antes da liberação do veículo para operação.
 

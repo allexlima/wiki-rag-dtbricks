@@ -43,7 +43,7 @@ A energia para a turbina gravitacional é fornecida pelo Reator de Fusão Compac
 
 O **Regulador de Potência de Acoplamento** (peça NE-GRV-6640) garante que a transferência de energia para o cristal de Neutronita-7 ocorra de forma suave e sem transientes. Este componente possui um circuito de proteção contra sobrecarga que desliga automaticamente a turbina caso a potência exceda 3,5 PW, prevenindo danos ao cristal.
 
-![Diagrama de blocos do sistema de propulsão gravitacional](images/06_turbina_gravitacional_section1.svg)
+![Diagrama de blocos do sistema de propulsão gravitacional](images/06_turbina_gravitacional_section1.png)
 
 ### 1.4 Cadeia Funcional Completa
 
@@ -135,7 +135,7 @@ O rotor é suportado por dois mancais magneto-gravitacionais (superior e inferio
 | Intensidade do campo no bocal | 2,8 × 10⁴ g | Medida no centro do defletor de saída |
 | Temperatura operacional do estator | 287 K ±5 K | Mantida pelo sistema criogênico |
 
-![Desenho dimensional da turbina gravitacional em corte transversal](images/06_turbina_gravitacional_section2.svg)
+![Desenho dimensional da turbina gravitacional em corte transversal](images/06_turbina_gravitacional_section2.png)
 
 ---
 
@@ -224,7 +224,7 @@ Os mancais magneto-gravitacionais possuem vida útil virtualmente ilimitada em c
 | Classe D | Desgaste severo (15–30% da superfície) | Substituir em até 500 horas de operação |
 | Classe E | Desgaste crítico (> 30%) ou trincas | **Substituição imediata obrigatória** |
 
-![Fluxograma de diagnóstico de vibração excessiva](images/06_turbina_gravitacional_section3.svg)
+![Fluxograma de diagnóstico de vibração excessiva](images/06_turbina_gravitacional_section3.png)
 
 ### 3.5 Diagnóstico Integrado via Sistema de Bordo
 
@@ -335,7 +335,7 @@ Se o diagnóstico indicar bobinas degradadas (desvio de uniformidade de campo > 
 | Indutância da bobina | 4,72 mH ±2% | Medidor LCR gravitônico NE-DIAG-6055 |
 | Teste de uniformidade pós-reparo | Desvio < 2,5% | Medidor de Uniformidade NE-DIAG-6030 |
 
-![Vista explodida da montagem da turbina gravitacional](images/06_turbina_gravitacional_section4.svg)
+![Vista explodida da montagem da turbina gravitacional](images/06_turbina_gravitacional_section4.png)
 
 ---
 
@@ -425,7 +425,7 @@ A calibração do campo é realizada utilizando o procedimento de Verificação 
 
 O cronograma abaixo apresenta a distribuição dos serviços preventivos ao longo da vida operacional da turbina, desde a instalação até a primeira revisão geral (overhaul) às 10.000 horas.
 
-![Cronograma de manutenção preventiva da turbina gravitacional](images/06_turbina_gravitacional_section5.svg)
+![Cronograma de manutenção preventiva da turbina gravitacional](images/06_turbina_gravitacional_section5.png)
 
 ### 5.6 Registros Obrigatórios
 

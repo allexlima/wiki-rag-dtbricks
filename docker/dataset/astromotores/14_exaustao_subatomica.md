@@ -22,7 +22,7 @@ O princípio fundamental que governa o SEA baseia-se na Dinâmica de Ventilaçã
 
 O fluxo de partículas segue o caminho principal descrito no diagrama abaixo, passando por cinco estágios críticos de processamento antes da ejeção ao espaço exterior. Cada estágio possui sensores de monitoramento dedicados que alimentam a Unidade de Controle de Exaustão (UCE), módulo NE-EXH-1401.
 
-![Diagrama de blocos do sistema de exaustão subatômica](images/14_exaustao_subatomica_section1.svg)
+![Diagrama de blocos do sistema de exaustão subatômica](images/14_exaustao_subatomica_section1.png)
 
 ### 1.2 Controle de Emissões Subatômicas
 
@@ -68,7 +68,7 @@ Esta seção apresenta as especificações técnicas detalhadas de todos os comp
 
 O bocal é fabricado em liga de carbeto de háfnio-tântalo (HfC-TaC) reforçada com fibras de nanotubos de carbono entrelaçados, proporcionando resistência térmica superior a 4.200 K e resistência à erosão por partículas de alta energia. O revestimento interno é composto por uma camada de 2,3 mm de óxido de zircônio estabilizado com ítrio (YSZ) depositada por plasma spray.
 
-![Desenho dimensional do bocal convergente-divergente](images/14_exaustao_subatomica_section2.svg)
+![Desenho dimensional do bocal convergente-divergente](images/14_exaustao_subatomica_section2.png)
 
 | Dimensão | Valor | Tolerância | Unidade |
 |---|---|---|---|
@@ -157,7 +157,7 @@ Antes de iniciar qualquer procedimento de diagnóstico, certifique-se de dispor 
 
 A contrapressão elevada é a anomalia mais frequente do SEA, responsável por aproximadamente 47% de todas as ordens de serviço relacionadas ao sistema de exaustão. O fluxograma de diagnóstico abaixo deve ser seguido sistematicamente.
 
-![Fluxograma de diagnóstico de contrapressão](images/14_exaustao_subatomica_section3.svg)
+![Fluxograma de diagnóstico de contrapressão](images/14_exaustao_subatomica_section3.png)
 
 **Procedimento de diagnóstico — Contrapressão Elevada:**
 
@@ -226,7 +226,7 @@ Antes de iniciar qualquer reparo no SEA, execute os seguintes passos preparatór
 5. Instale as blindagens de trabalho temporárias nos pontos de acesso A1, A2 e A3.
 6. Documente o estado inicial do sistema com fotografias e leituras do Scanner UCE.
 
-![Vista explodida do sistema de exaustão](images/14_exaustao_subatomica_section4.svg)
+![Vista explodida do sistema de exaustão](images/14_exaustao_subatomica_section4.png)
 
 ### 4.2 Substituição do Bocal Convergente-Divergente (NE-EXH-1410)
 
@@ -314,7 +314,7 @@ A manutenção preventiva do Sistema de Exaustão Subatômica é essencial para 
 
 O cronograma abaixo apresenta todos os intervalos de manutenção preventiva do SEA. As atividades são classificadas em inspeções, medições, trocas programadas e substituições maiores.
 
-![Cronograma de manutenção preventiva](images/14_exaustao_subatomica_section5.svg)
+![Cronograma de manutenção preventiva](images/14_exaustao_subatomica_section5.png)
 
 | Atividade | Intervalo (horas) | Tipo | Técnico Mín. | Tempo Est. | Referência |
 |---|---|---|---|---|---|

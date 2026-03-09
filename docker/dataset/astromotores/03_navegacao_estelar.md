@@ -42,7 +42,7 @@ A transformação entre SCG e SCE é realizada pela **Matriz de Rotação Estela
 
 O sistema emprega arquitetura de **redundância tripla modular** (RTM): três conjuntos independentes de sensores alimentam três processadores de navegação que votam entre si para produzir a saída final. Caso um processador apresente divergência superior a 0,01 segundo de arco em relação aos demais, ele é automaticamente isolado e o sistema emite o código de alerta **NAV-WARN-101**.
 
-![Diagrama de blocos do Sistema de Navegação Estelar](images/03_navegacao_estelar_section1.svg)
+![Diagrama de blocos do Sistema de Navegação Estelar](images/03_navegacao_estelar_section1.png)
 
 ### 1.4 Fluxo de Dados
 
@@ -136,7 +136,7 @@ A antena principal é uma parabólica de alta ganância utilizada tanto para rec
 | Massa total (com atuadores) | 8,7 kg | ±0,2 kg |
 | Torque de fixação da base | 12 N·m | ±0,5 N·m |
 
-![Desenho dimensional do conjunto de navegação](images/03_navegacao_estelar_section2.svg)
+![Desenho dimensional do conjunto de navegação](images/03_navegacao_estelar_section2.png)
 
 ### 2.5 Lista Consolidada de Peças
 
@@ -228,7 +228,7 @@ A calibração GPS-estelar sincroniza o referencial do SNE com o sistema de posi
 
 > **ATENÇÃO:** Nunca interrompa o procedimento de calibração após o início. Uma calibração parcialmente gravada pode causar erros de posicionamento graves. Caso seja necessário abortar, execute `NAV CALIBRATE GPS-STELLAR ABORT` e reinicie o processador de navegação.
 
-![Fluxograma de diagnóstico de falhas de navegação](images/03_navegacao_estelar_section3.svg)
+![Fluxograma de diagnóstico de falhas de navegação](images/03_navegacao_estelar_section3.png)
 
 ### 3.4 Verificação de Integridade do Catálogo Estelar
 
@@ -351,7 +351,7 @@ O firmware do processador de navegação (NE-NAVOS) deve ser mantido atualizado 
 
 > **ATENÇÃO CRÍTICA:** Nunca desligue o veículo durante uma atualização de firmware. Perda de energia durante a gravação pode inutilizar permanentemente o processador de navegação, requerendo substituição completa da unidade NE-NAV-4400.
 
-![Vista explodida do conjunto de navegação estelar](images/03_navegacao_estelar_section4.svg)
+![Vista explodida do conjunto de navegação estelar](images/03_navegacao_estelar_section4.png)
 
 ---
 
@@ -462,7 +462,7 @@ NAV MAINT LOG <TIPO> <RESULTADO> <OBSERVAÇÕES>
 
 O histórico completo de manutenção pode ser consultado com: `NAV MAINT HISTORY`
 
-![Cronograma de manutenção preventiva do SNE](images/03_navegacao_estelar_section5.svg)
+![Cronograma de manutenção preventiva do SNE](images/03_navegacao_estelar_section5.png)
 
 ### 5.7 Dicas de Longevidade
 

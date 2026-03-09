@@ -24,7 +24,7 @@ A arquitetura dual-loop foi selecionada para o Databricks Galáctica por três r
 
 O fluxo térmico segue o caminho descrito no diagrama abaixo, passando sequencialmente pelo reator, bomba criogênica primária, trocador de calor intermediário, bomba criogênica secundária e finalmente o radiador espacial.
 
-![Diagrama de blocos do sistema de refrigeração criogênica dual-loop](images/11_refrigeracao_criogenica_section1.svg)
+![Diagrama de blocos do sistema de refrigeração criogênica dual-loop](images/11_refrigeracao_criogenica_section1.png)
 
 ### 1.3 Componentes Principais do Sistema
 
@@ -84,7 +84,7 @@ O CryoFlex-7 é um fluido refrigerante sintético de base perfluorocarbônica mo
 
 O trocador de calor intermediário é do tipo placas brasadas em liga de titânio-zircônio (TiZr-40), com configuração de contrafluxo para maximizar a eficiência de transferência térmica. A unidade é projetada para operação contínua sem manutenção por períodos de até 2.000 horas.
 
-![Desenho dimensional do trocador de calor intermediário](images/11_refrigeracao_criogenica_section2.svg)
+![Desenho dimensional do trocador de calor intermediário](images/11_refrigeracao_criogenica_section2.png)
 
 | Especificação | Valor | Unidade |
 |---|---|---|
@@ -166,7 +166,7 @@ O diagnóstico do Sistema de Refrigeração Criogênica deve ser realizado de fo
 
 O superaquecimento é a anomalia mais frequente e potencialmente mais danosa ao sistema. O fluxograma abaixo deve ser seguido sempre que o DTC CRY-P0101 ou CRY-P0102 for registrado, ou quando a temperatura do loop primário exceder +70°C em regime contínuo.
 
-![Fluxograma de diagnóstico de superaquecimento](images/11_refrigeracao_criogenica_section3.svg)
+![Fluxograma de diagnóstico de superaquecimento](images/11_refrigeracao_criogenica_section3.png)
 
 ### 3.3 Procedimento de Verificação de Temperaturas
 
@@ -248,7 +248,7 @@ Quando o DTC CRY-P0201 ou CRY-P0202 for registrado, é necessário verificar a v
 | Pasta vedante criogênica CF7-SEAL | NE-TOOL-0160 | Compatível com CryoFlex-7 |
 | Jogo de chaves Allen criogênicas | NE-TOOL-0170 | 3 a 12 mm |
 
-![Vista explodida do conjunto do trocador de calor e bomba criogênica](images/11_refrigeracao_criogenica_section4.svg)
+![Vista explodida do conjunto do trocador de calor e bomba criogênica](images/11_refrigeracao_criogenica_section4.png)
 
 ### 4.2 Substituição da Bomba Criogênica
 
@@ -349,7 +349,7 @@ A manutenção preventiva do Sistema de Refrigeração Criogênica é essencial 
 
 ### 5.1 Cronograma de Manutenção
 
-![Linha do tempo de manutenção preventiva](images/11_refrigeracao_criogenica_section5.svg)
+![Linha do tempo de manutenção preventiva](images/11_refrigeracao_criogenica_section5.png)
 
 | Intervalo (horas) | Serviço | Procedimento | Duração Estimada | Nível do Técnico |
 |---|---|---|---|---|

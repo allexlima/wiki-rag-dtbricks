@@ -63,7 +63,7 @@ O ciclo operacional do conversor segue uma sequência precisa de eventos:
 
 O Campo de Contenção Magnético é gerado por **oito bobinas supercondutoras** de Nb₃Sn dispostas em configuração toroidal, refrigeradas a 4,2 K por hélio líquido. O campo toroidal com componente poloidal cria uma "garrafa magnética" que impede o contato do plasma com as paredes da câmara. O sistema possui **tripla redundância** com chaveamento automático em menos de 0,3 μs.
 
-![Diagrama de blocos do sistema de conversão de antimatéria](images/02_conversor_antimateria_section1.svg)
+![Diagrama de blocos do sistema de conversão de antimatéria](images/02_conversor_antimateria_section1.png)
 
 > **NOTA TÉCNICA:** A eficiência teórica é de 100%, porém perdas por neutrinos e espalhamento de píons neutros reduzem a eficiência prática para 72–82%. A meta de projeto é manter a eficiência acima de 75% durante toda a vida útil (25.000 horas).
 
@@ -159,7 +159,7 @@ Para qualquer intervenção no Conversor de Antimatéria, as seguintes ferrament
 - **Analisador de Vácuo NE-FER-0910** — faixa de 10⁻³ a 10⁻¹² Pa.
 - **Traje de Contenção Classe Gama NE-SEG-7700** — proteção contra radiação e campo magnético.
 
-![Desenho dimensional da câmara de contenção em corte transversal](images/02_conversor_antimateria_section2.svg)
+![Desenho dimensional da câmara de contenção em corte transversal](images/02_conversor_antimateria_section2.png)
 
 > **ATENÇÃO:** Jamais utilize ferramentas ferromagnéticas comuns nas proximidades das bobinas magnéticas energizadas. A atração magnética pode projetar a ferramenta a velocidades letais. Utilize **exclusivamente** ferramentas do kit não magnético NE-FER-NM-100.
 
@@ -246,7 +246,7 @@ Quando o alarme ATM-A007 é acionado (eficiência abaixo de 72%), execute o segu
    - Se a queda é mais acentuada em alta potência → provável **degradação das superfícies de conversão térmica**. Programe inspeção interna.
    - Se há oscilação na curva → provável **instabilidade no campo de contenção** que afeta a distribuição dos píons. Execute o procedimento 3.2.
 
-![Fluxograma de diagnóstico de falhas do conversor de antimatéria](images/02_conversor_antimateria_section3.svg)
+![Fluxograma de diagnóstico de falhas do conversor de antimatéria](images/02_conversor_antimateria_section3.png)
 
 > **IMPORTANTE:** Nunca tente diagnosticar problemas de contenção magnética com o conversor operando acima de 50% de potência. O risco de aniquilação descontrolada aumenta exponencialmente quando a contenção está comprometida e a taxa de aniquilação é elevada.
 
@@ -350,7 +350,7 @@ Caso a verificação de radiação (Seção 3.3) indique contaminação residual
 5. Colete materiais em contêineres blindados NE-SEG-8850.
 6. Repita a verificação de radiação até conformidade.
 
-![Vista explodida dos componentes do conversor de antimatéria](images/02_conversor_antimateria_section4.svg)
+![Vista explodida dos componentes do conversor de antimatéria](images/02_conversor_antimateria_section4.png)
 
 > **LEMBRETE CRÍTICO:** Todo material removido do conversor que apresente nível de radiação acima de 0,001 mSv/h deve ser descartado como **resíduo radioativo** conforme o Regulamento Espacial de Resíduos Perigosos (RERP) — nunca descarte em lixo comum ou recicle componentes contaminados.
 
@@ -447,7 +447,7 @@ Monitore os seguintes indicadores para planejar substituições antes de falhas:
 | Vedações criogênicas | Taxa de vazamento de He | > 1 × 10⁻⁶ Pa·L/s | Detector de vazamento |
 | Reservatório de antiprótons | Taxa de perda por aniquilação residual | > 0,5% por 100 h | Registro automático SCC |
 
-![Cronograma de manutenção preventiva do conversor de antimatéria](images/02_conversor_antimateria_section5.svg)
+![Cronograma de manutenção preventiva do conversor de antimatéria](images/02_conversor_antimateria_section5.png)
 
 ---
 

@@ -46,7 +46,7 @@ O sistema de transmissão quântica é composto pelos seguintes módulos princip
 
 O diagrama abaixo ilustra o fluxo de torque desde o motor principal até os propulsores, passando pelos componentes críticos da transmissão quântica:
 
-![Diagrama de blocos do sistema de transmissão quântica mostrando o fluxo do Motor Principal até os Propulsores](images/13_transmissao_quantica_section1.svg)
+![Diagrama de blocos do sistema de transmissão quântica mostrando o fluxo do Motor Principal até os Propulsores](images/13_transmissao_quantica_section1.png)
 
 ### 1.5 Princípio do Acoplamento sem Perdas
 
@@ -127,7 +127,7 @@ O fluido quântico (designação comercial **QuantaLub QF-9**) é o meio que pre
 
 O desenho abaixo apresenta as dimensões principais do conjunto acoplador quântico, incluindo a câmara de entrelaçamento, pares quânticos e eixo de saída:
 
-![Desenho dimensional do acoplador quântico com dimensões da câmara, pinos de alinhamento e parafusos de montagem](images/13_transmissao_quantica_section2.svg)
+![Desenho dimensional do acoplador quântico com dimensões da câmara, pinos de alinhamento e parafusos de montagem](images/13_transmissao_quantica_section2.png)
 
 ### 2.5 Torques de Aperto
 
@@ -226,7 +226,7 @@ Se qualquer quadrante apresentar ICQ abaixo do mínimo, o problema está localiz
 
 O fluxograma abaixo orienta o técnico na investigação sistemática de problemas de perda de torque:
 
-![Fluxograma de diagnóstico para perda de torque na transmissão quântica](images/13_transmissao_quantica_section3.svg)
+![Fluxograma de diagnóstico para perda de torque na transmissão quântica](images/13_transmissao_quantica_section3.png)
 
 ### 3.6 Procedimento de Diagnóstico Nível 3 — Análise de Vibração
 
@@ -356,7 +356,7 @@ Após qualquer substituição de componentes internos, é obrigatória a execuç
 
 A ilustração abaixo apresenta a vista explodida do conjunto da transmissão quântica, mostrando a ordem de montagem dos componentes:
 
-![Vista explodida do conjunto da transmissão quântica mostrando carcaça, câmara, células e distribuidor](images/13_transmissao_quantica_section4.svg)
+![Vista explodida do conjunto da transmissão quântica mostrando carcaça, câmara, células e distribuidor](images/13_transmissao_quantica_section4.png)
 
 > **IMPORTANTE:** Na remontagem, respeite rigorosamente a sequência de empilhamento conforme a vista explodida. A inversão da orientação das células quânticas (setas) resulta em **torque reverso**, podendo causar danos catastróficos aos propulsores.
 
@@ -427,7 +427,7 @@ O módulo CMQ (NE-CMQ-0455) realiza monitoramento contínuo do ICQ durante a ope
 
 O diagrama abaixo apresenta a linha do tempo consolidada das principais tarefas de manutenção preventiva e seus intervalos em horas de operação:
 
-![Linha do tempo de manutenção preventiva mostrando intervalos para teste de coerência, troca de fluido, alinhamento e substituição de células](images/13_transmissao_quantica_section5.svg)
+![Linha do tempo de manutenção preventiva mostrando intervalos para teste de coerência, troca de fluido, alinhamento e substituição de células](images/13_transmissao_quantica_section5.png)
 
 ### 5.6 Registro de Manutenção e Rastreabilidade
 

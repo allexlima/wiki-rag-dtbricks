@@ -22,7 +22,7 @@ O princípio fundamental do EDP baseia-se na geração de um campo de Lorentz mo
 - **Anel Central (Médio):** 20 emissores distribuídos em banda equatorial, cobrindo 35% da área lateral do veículo. Operam em frequência de 1,8 GHz com modulação adaptativa baseada em sensores de proximidade.
 - **Anel Terciário (Popa):** 12 emissores em configuração cônica, protegendo a região traseira e os bocais de propulsão. Frequência operacional de 1,2 GHz, com potência reduzida devido à menor exposição estatística.
 
-![Diagrama de blocos do sistema de escudo deflector](images/04_escudo_deflector_section1.svg)
+![Diagrama de blocos do sistema de escudo deflector](images/04_escudo_deflector_section1.png)
 
 ### 1.2 Camadas do Escudo
 
@@ -78,7 +78,7 @@ Esta seção detalha as especificações completas de todos os componentes do si
 
 Cada emissor de campo (Peça NE-DEF-4400) é uma unidade selada contendo bobina primária, bobina secundária, núcleo magnético de ferrite composto e dissipador térmico integrado. Os emissores são montados no casco externo através de flanges padronizadas com vedação hermética classe IP69K-S (padrão espacial).
 
-![Desenho dimensional do conjunto emissor](images/04_escudo_deflector_section2.svg)
+![Desenho dimensional do conjunto emissor](images/04_escudo_deflector_section2.png)
 
 | Especificação do Emissor | Valor | Tolerância |
 |--------------------------|-------|------------|
@@ -178,7 +178,7 @@ Esta seção descreve os procedimentos sistemáticos para identificação e diag
 
 > **ATENÇÃO:** Alguns testes requerem que o escudo esteja parcialmente energizado. Utilize SEMPRE o equipamento de proteção individual (EPI) completo: luvas isolantes classe 4, óculos de proteção contra radiação EM, e dosímetro pessoal. Mantenha distância mínima de 3 metros dos emissores energizados.
 
-![Fluxograma de diagnóstico de falhas](images/04_escudo_deflector_section3.svg)
+![Fluxograma de diagnóstico de falhas](images/04_escudo_deflector_section3.png)
 
 ### 3.1 Teste de Integridade do Escudo (TIE)
 
@@ -298,7 +298,7 @@ Esta seção detalha os procedimentos de reparo e substituição dos componentes
 
 > **AVISO CRÍTICO:** Todos os reparos no sistema de escudo devem ser realizados com o veículo em ambiente pressurizado (hangar ou doca espacial). Reparos em ambiente de vácuo (EVA) requerem autorização especial Nível 3 e equipe mínima de dois técnicos certificados NE-CERT-DEF.
 
-![Vista explodida do conjunto emissor](images/04_escudo_deflector_section4.svg)
+![Vista explodida do conjunto emissor](images/04_escudo_deflector_section4.png)
 
 ### 4.1 Substituição de Emissor de Campo Completo
 
@@ -420,7 +420,7 @@ A manutenção preventiva do sistema de Escudo Deflector de Partículas é essen
 
 > **NOTA IMPORTANTE:** Os intervalos de manutenção são expressos em horas de operação do escudo (horas em que o escudo está energizado, independentemente do modo de operação). O contador de horas é mantido automaticamente pelo computador de bordo e pode ser consultado em **Sistema > Escudo Deflector > Horas de Operação**.
 
-![Linha do tempo de manutenção preventiva](images/04_escudo_deflector_section5.svg)
+![Linha do tempo de manutenção preventiva](images/04_escudo_deflector_section5.png)
 
 ### 5.1 Cronograma de Manutenção
 

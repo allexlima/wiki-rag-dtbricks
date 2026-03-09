@@ -11,7 +11,7 @@
 
 A câmara de combustão plasmática é o coração do sistema propulsivo do Veículo Espacial Série Databricks Galáctica. Este componente é responsável por converter hidrogênio molecular (H₂) em plasma de alta energia através de um processo de ionização controlada, gerando o empuxo necessário para manobras orbitais, transferências interplanetárias e operações de pouso/decolagem em corpos celestes com gravidade de até 2,4 g.
 
-![Diagrama de blocos do sistema de combustão plasmática](images/05_combustao_plasmatica_section1.svg)
+![Diagrama de blocos do sistema de combustão plasmática](images/05_combustao_plasmatica_section1.png)
 
 ### 1.1 Geração de Plasma
 
@@ -69,7 +69,7 @@ O Bocal de Exaustão (NE-PLS-5590) direciona o fluxo plasmático e incorpora um 
 
 Esta seção detalha as especificações dimensionais, térmicas, mecânicas e elétricas de todos os componentes principais da câmara de combustão plasmática. Todas as medidas seguem o padrão metrológico interplanetário (PMI-2187) e devem ser verificadas com instrumentos calibrados segundo a norma NE-CAL-0012.
 
-![Desenho dimensional da câmara de combustão](images/05_combustao_plasmatica_section2.svg)
+![Desenho dimensional da câmara de combustão](images/05_combustao_plasmatica_section2.png)
 
 ### 2.1 Dimensões da Câmara Principal
 
@@ -145,7 +145,7 @@ O sistema conta com 8 injetores de plasma dispostos radialmente com espaçamento
 
 O diagnóstico de falhas na câmara de combustão plasmática requer o uso do Terminal de Diagnóstico Databricks Galáctica (TDNE, peça NE-DGN-8000) conectado à porta de serviço SpaceCAN-FD localizada no painel lateral esquerdo do compartimento de propulsão. O TDNE executa rotinas automatizadas de teste e reporta códigos de falha padronizados.
 
-![Fluxograma de diagnóstico de falhas](images/05_combustao_plasmatica_section3.svg)
+![Fluxograma de diagnóstico de falhas](images/05_combustao_plasmatica_section3.png)
 
 ### 3.1 Códigos de Falha — Referência Rápida
 
@@ -266,7 +266,7 @@ A falha de ignição é uma das ocorrências mais comuns e pode ter múltiplas c
 > - O compartimento de propulsão está ventilado e a concentração de H₂ é inferior a 0,1% (verificar com detector NE-FER-7200).
 > - Todo o pessoal presente utiliza EPI classe Gamma-4.
 
-![Vista explodida do conjunto da câmara de combustão](images/05_combustao_plasmatica_section4.svg)
+![Vista explodida do conjunto da câmara de combustão](images/05_combustao_plasmatica_section4.png)
 
 ### 4.1 Substituição de Injetor de Plasma (NE-PLS-5520)
 
@@ -377,7 +377,7 @@ O revestimento cerâmico interno é composto de zircônia estabilizada com ítri
 
 A manutenção preventiva da câmara de combustão plasmática segue um cronograma baseado em horas de operação acumuladas, registradas automaticamente pelo MCP (Módulo de Controle de Propulsão). A adesão rigorosa a este cronograma é fundamental para garantir a segurança, confiabilidade e desempenho do sistema propulsivo.
 
-![Cronograma de manutenção preventiva](images/05_combustao_plasmatica_section5.svg)
+![Cronograma de manutenção preventiva](images/05_combustao_plasmatica_section5.png)
 
 ### 5.1 Cronograma de Inspeções e Serviços
 

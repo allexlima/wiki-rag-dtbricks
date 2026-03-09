@@ -26,7 +26,7 @@ O funcionamento do motor iônico baseia-se em três etapas fundamentais:
 
 O diagrama abaixo ilustra a arquitetura funcional completa do sistema de propulsão iônica do Databricks Galáctica:
 
-![Diagrama de blocos do sistema de propulsão iônica](images/01_motor_propulsao_ionica_section1.svg)
+![Diagrama de blocos do sistema de propulsão iônica](images/01_motor_propulsao_ionica_section1.png)
 
 ### 1.3 Subsistemas Integrados
 
@@ -66,7 +66,7 @@ Esta seção detalha as especificações dimensionais, materiais, tolerâncias d
 
 O diagrama abaixo apresenta uma vista em corte transversal simplificada do motor, com cotas dimensionais principais:
 
-![Desenho dimensional em corte transversal do motor iônico](images/01_motor_propulsao_ionica_section2.svg)
+![Desenho dimensional em corte transversal do motor iônico](images/01_motor_propulsao_ionica_section2.png)
 
 ### 2.2 Dimensões Gerais do Conjunto
 
@@ -149,7 +149,7 @@ Antes de iniciar o diagnóstico, certifique-se de ter os seguintes instrumentos 
 
 O fluxograma abaixo apresenta a árvore de decisão principal para diagnóstico de falhas do motor iônico:
 
-![Fluxograma de diagnóstico de falhas do motor iônico](images/01_motor_propulsao_ionica_section3.svg)
+![Fluxograma de diagnóstico de falhas do motor iônico](images/01_motor_propulsao_ionica_section3.png)
 
 ### 3.3 Códigos de Erro do Sistema
 
@@ -219,7 +219,7 @@ Esta seção descreve os procedimentos detalhados para desmontagem, reparo e rem
 
 O diagrama abaixo apresenta a vista explodida do motor com todos os componentes principais identificados:
 
-![Vista explodida do motor de propulsão iônica](images/01_motor_propulsao_ionica_section4.svg)
+![Vista explodida do motor de propulsão iônica](images/01_motor_propulsao_ionica_section4.png)
 
 ### 4.2 Ferramentas Necessárias
 
@@ -319,7 +319,7 @@ A manutenção preventiva regular é essencial para garantir a confiabilidade e 
 
 O diagrama abaixo apresenta uma visão temporal dos intervalos de manutenção programada:
 
-![Diagrama de intervalos de manutenção preventiva](images/01_motor_propulsao_ionica_section5.svg)
+![Diagrama de intervalos de manutenção preventiva](images/01_motor_propulsao_ionica_section5.png)
 
 ### 5.2 Tabela de Manutenção Programada
 

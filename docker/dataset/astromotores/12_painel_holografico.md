@@ -37,7 +37,7 @@ O retorno háptico é gerado por **transdutores ultrassônicos focalizados** (**
 
 O diagrama abaixo ilustra a arquitetura funcional completa do Painel de Controle Holográfico e o fluxo de dados entre seus componentes principais.
 
-![Diagrama de blocos do sistema PCH mostrando o fluxo entre processador gráfico, projetor, campo de exibição, sensores e atuadores](images/12_painel_holografico_section1.svg)
+![Diagrama de blocos do sistema PCH mostrando o fluxo entre processador gráfico, projetor, campo de exibição, sensores e atuadores](images/12_painel_holografico_section1.png)
 
 | Componente | Número de Peça | Função Principal | Tensão de Operação | Consumo Máximo |
 |---|---|---|---|---|
@@ -126,7 +126,7 @@ Especificações completas de cada módulo, incluindo dimensões, parâmetros el
 
 Dimensões do conjunto montado e posições dos componentes.
 
-![Desenho dimensional do módulo de exibição holográfica com posições dos componentes](images/12_painel_holografico_section2.svg)
+![Desenho dimensional do módulo de exibição holográfica com posições dos componentes](images/12_painel_holografico_section2.png)
 
 ### 2.6 Peças de Reposição e Consumíveis
 
@@ -190,7 +190,7 @@ Códigos no formato **HUD-XXXX** (primeiros 2 dígitos = subsistema, últimos 2 
 
 Artefatos visuais (cintilação, pixels fantasma, distorção, perda de cor) são a queixa mais comum. Siga o fluxograma abaixo.
 
-![Fluxograma de diagnóstico para artefatos visuais no display holográfico](images/12_painel_holografico_section3.svg)
+![Fluxograma de diagnóstico para artefatos visuais no display holográfico](images/12_painel_holografico_section3.png)
 
 **Passos detalhados:**
 
@@ -353,7 +353,7 @@ Procedimentos de substituição dos módulos principais. Requer técnico Nível 
 
 Vista explodida do conjunto completo.
 
-![Vista explodida do conjunto PCH mostrando todos os módulos e sua ordem de montagem](images/12_painel_holografico_section4.svg)
+![Vista explodida do conjunto PCH mostrando todos os módulos e sua ordem de montagem](images/12_painel_holografico_section4.png)
 
 | Posição na Vista Explodida | Componente | Número de Peça | Quantidade |
 |---|---|---|---|
@@ -380,7 +380,7 @@ Manutenção preventiva essencial para confiabilidade do sistema. Intervalos em 
 
 Cronograma visual dos intervalos recomendados.
 
-![Linha do tempo de manutenção preventiva do PCH com intervalos em horas de operação](images/12_painel_holografico_section5.svg)
+![Linha do tempo de manutenção preventiva do PCH com intervalos em horas de operação](images/12_painel_holografico_section5.png)
 
 ### 5.2 Tabela de Intervalos de Manutenção
 
