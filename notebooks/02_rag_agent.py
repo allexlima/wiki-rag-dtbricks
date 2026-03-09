@@ -35,7 +35,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary pgvector databricks-openai databricks-sdk langchain-text-splitters langgraph langchain-core mlflow tenacity --upgrade -q
+# MAGIC %pip install databricks-langchain langgraph psycopg2-binary pgvector mwparserfromhell tenacity -q
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -50,7 +50,10 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
+from src.config import load_bundle_defaults
+_defaults = load_bundle_defaults()
+
+dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
 dbutils.widgets.text("question", "Quais são os sistemas principais do veículo Databricks Galáctica?", "Question")
 dbutils.widgets.text("top_k", "3", "Top K Results")
 
@@ -59,6 +62,11 @@ dbutils.widgets.text("top_k", "3", "Top K Results")
 import os
 import sys
 from contextlib import closing
+
+try:
+    dbutils  # noqa: F821
+except NameError:
+    dbutils = None  # type: ignore[assignment]
 
 # ─── Defensive path handling ────────────────────────────────────────────
 _cwd = os.getcwd()

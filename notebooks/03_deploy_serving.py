@@ -47,7 +47,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install -r ../src/requirements.txt databricks-agents --upgrade -q
+# MAGIC %pip install databricks-langchain langgraph psycopg2-binary pgvector mwparserfromhell tenacity databricks-agents
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -80,15 +80,24 @@ os.chdir(BUNDLE_ROOT)
 import mlflow
 from databricks.sdk import WorkspaceClient
 from mlflow.models.resources import DatabricksLakebase, DatabricksServingEndpoint
+from src.config import load_bundle_defaults
 
-# ─── Widget parameters ───────────────────────────────────────────────
+# ─── Widget parameters (defaults from databricks.yml) ────────────────
 
-dbutils.widgets.text("model_name", "main.wiki_rag.wiki_rag_agent", "UC Model Name")
-dbutils.widgets.text("endpoint_name", "wiki-rag-endpoint", "Serving Endpoint Name")
-dbutils.widgets.text("embedding_model", "databricks-gte-large-en", "Embedding Model")
-dbutils.widgets.text("llm_model", "databricks-meta-llama-3-3-70b-instruct", "LLM Model")
-dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
-dbutils.widgets.text("lakebase_instance_name", "wiki-rag-lakebase", "Lakebase Instance")
+_defaults = load_bundle_defaults()
+
+dbutils.widgets.text("model_name", _defaults["model_name"], "UC Model Name")
+dbutils.widgets.text(
+    "endpoint_name", _defaults["endpoint_name"], "Serving Endpoint Name"
+)
+dbutils.widgets.text("embedding_model", _defaults["embedding_model"], "Embedding Model")
+dbutils.widgets.text("llm_model", _defaults["llm_model"], "LLM Model")
+dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
+dbutils.widgets.text(
+    "lakebase_instance_name", _defaults["lakebase_instance_name"], "Lakebase Instance"
+)
+
+# COMMAND ----------
 
 MODEL_NAME = dbutils.widgets.get("model_name")
 ENDPOINT_NAME = dbutils.widgets.get("endpoint_name")
@@ -113,6 +122,21 @@ for _name, _val in _params.items():
 mlflow.set_registry_uri("databricks-uc")
 w = WorkspaceClient()
 CURRENT_USER = w.current_user.me().user_name
+
+# Ensure the UC catalog + schema exist for model registration.
+# MODEL_NAME format: "catalog.schema.model_name"
+_catalog, _schema, _ = MODEL_NAME.split(".")
+w.catalogs.get(_catalog)  # raises if catalog doesn't exist
+try:
+    w.schemas.get(f"{_catalog}.{_schema}")
+except Exception:
+    w.schemas.create(name=_schema, catalog_name=_catalog)
+    print(f"Created UC schema: {_catalog}.{_schema}")
+
+# Ensure DATABRICKS_HOST is set so ChatDatabricks can resolve the API URL
+# during log_model validation. On serving, this is auto-injected.
+if "DATABRICKS_HOST" not in os.environ:
+    os.environ["DATABRICKS_HOST"] = w.config.host
 
 print(f"User: {CURRENT_USER}")
 print(f"Model: {MODEL_NAME}")
@@ -146,7 +170,9 @@ print(f"Lakebase: {LAKEBASE_INSTANCE}  |  Scope: {SECRET_SCOPE}")
 resources = [
     DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
     DatabricksServingEndpoint(endpoint_name=EMBEDDING_ENDPOINT),
-    DatabricksLakebase(database_instance_name=LAKEBASE_INSTANCE),
+    # Note: DatabricksLakebase is not used here because our agent connects to
+    # Lakebase Autoscaling via direct PostgreSQL (host/port/password from secrets),
+    # not through Databricks-managed network passthrough.
 ]
 
 input_example = {
@@ -272,24 +298,63 @@ print(f"Version:    {registered.version}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Smoke Test
+# MAGIC ## 5. Wait for Endpoint Ready + Smoke Test
 # MAGIC 
-# MAGIC End-to-end validation: sends a chat completions request to the live endpoint
-# MAGIC and prints the response. This confirms that the model loaded correctly, can
-# MAGIC reach Lakebase for retrieval, and returns a well-formed response.
+# MAGIC `agents.deploy()` returns quickly — the endpoint may still be provisioning.
+# MAGIC This cell polls until the endpoint is `READY`, then sends a test query
+# MAGIC using the **Responses API** format (`input`, not `messages`).
 
 # COMMAND ----------
 
+import json
 import time
 
-# Brief pause to ensure endpoint routing is fully propagated
-time.sleep(10)
+from databricks.sdk.service.serving import EndpointStateReady
 
+MAX_WAIT = 900  # 15 min
+POLL_INTERVAL = 30
+
+elapsed = 0
+print(f"Waiting for '{ENDPOINT_NAME}' to become ready ...")
+
+while elapsed < MAX_WAIT:
+    ep = w.serving_endpoints.get(ENDPOINT_NAME)
+    state = ep.state.ready if ep.state else None
+
+    if state == EndpointStateReady.READY:
+        break
+
+    mins, secs = divmod(elapsed, 60)
+    state_str = state.value if state else "UNKNOWN"
+    print(f"  {state_str}  ({mins}m{secs:02d}s elapsed)")
+    time.sleep(POLL_INTERVAL)
+    elapsed += POLL_INTERVAL
+else:
+    raise TimeoutError(
+        f"Endpoint '{ENDPOINT_NAME}' not ready after {MAX_WAIT}s. "
+        f"Check the Serving UI for details."
+    )
+
+mins, secs = divmod(elapsed, 60)
+print(f"Endpoint READY ({mins}m{secs:02d}s)")
+
+# COMMAND ----------
+
+# ResponsesAgent uses the Responses API format: `input` (not `messages`)
 response = w.serving_endpoints.query(
     name=ENDPOINT_NAME,
-    messages=[{"role": "user", "content": "What is the main topic of the wiki?"}],
-    max_tokens=500,
+    input=[{"role": "user", "content": "What is the main topic of the wiki?"}],
 )
 
-answer = response.choices[0].message.content
+# Parse response — structure depends on ResponsesAgent output format
+resp_dict = response.as_dict()
+try:
+    answer = resp_dict["output"][0]["content"][0]["text"]
+except (KeyError, IndexError, TypeError):
+    answer = json.dumps(resp_dict, indent=2, ensure_ascii=False)[:2000]
+
 print(f"Smoke test passed\n\n{answer}")
+
+# COMMAND ----------
+
+

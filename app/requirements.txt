@@ -1,2 +1,5 @@
-streamlit>=1.39.0,<2.0.0
-databricks-sdk>=0.40.0,<0.50.0
+# Streamlit app runtime dependencies (Databricks App container).
+# Pinned to exact versions for deterministic builds.
+
+streamlit==1.55.0
+databricks-sdk==0.49.0

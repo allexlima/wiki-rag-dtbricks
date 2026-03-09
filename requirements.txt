@@ -1,14 +1,8 @@
-databricks-sdk>=0.40.0,<0.50.0
-databricks-openai>=0.2.0,<0.3.0
-psycopg2-binary>=2.9.0,<3.0.0
-psycopg[binary]>=3.2.0
-pgvector>=0.3.0,<0.4.0
-mwparserfromhell>=0.6.0,<0.7.0
-langchain-text-splitters>=0.3.0,<0.4.0
-langchain-core>=0.3.0,<0.4.0
-databricks-langchain>=0.5.0,<0.6.0
-langgraph>=0.3.0,<0.4.0
-langgraph-checkpoint-postgres>=2.0.0
-mlflow>=3.0.0,<4.0.0
-tenacity>=8.0.0,<10.0.0
-Pillow>=10.0.0,<11.0.0
+# Root project dependencies (local development).
+# Includes src/ runtime deps + extras for notebooks.
+# Pinned to exact versions for deterministic builds.
+#
+# Install: uv pip install -r requirements.txt
+
+-r src/requirements.txt
+Pillow==12.1.1

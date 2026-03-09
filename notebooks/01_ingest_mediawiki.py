@@ -29,7 +29,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install psycopg2-binary pgvector mwparserfromhell langchain-text-splitters databricks-openai databricks-sdk tenacity Pillow --upgrade -q
+# MAGIC %pip install databricks-langchain psycopg2-binary pgvector mwparserfromhell tenacity Pillow -q
 # MAGIC %restart_python
 
 # COMMAND ----------
@@ -46,6 +46,11 @@ import logging
 import os
 import sys
 
+try:
+    dbutils  # noqa: F821
+except NameError:
+    dbutils = None  # type: ignore[assignment]
+
 # ─── Path handling ────────────────────────────────────────────────────
 # DAB deploys notebooks/ and src/ as siblings under .bundle/.../files/
 # Notebook CWD may point to notebooks/, so go up one level to reach the
@@ -57,10 +62,13 @@ else:
     BUNDLE_ROOT = _cwd
 sys.path.insert(0, BUNDLE_ROOT)
 
-# ─── Widgets (DAB parameterization) ──────────────────────────────────
-dbutils.widgets.text("secret_scope", "wiki-rag", "Secret Scope")
-dbutils.widgets.text("embedding_model", "databricks-gte-large-en", "Embedding Model")
-dbutils.widgets.text("llm_model", "databricks-meta-llama-3-3-70b-instruct", "Vision LLM")
+# ─── Widgets (defaults from databricks.yml) ──────────────────────────
+from src.config import load_bundle_defaults
+_defaults = load_bundle_defaults()
+
+dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
+dbutils.widgets.text("embedding_model", _defaults["embedding_model"], "Embedding Model")
+dbutils.widgets.text("llm_model", _defaults["llm_model"], "Vision LLM")
 
 # ─── Read parameters ─────────────────────────────────────────────────
 SECRET_SCOPE = dbutils.widgets.get("secret_scope")
