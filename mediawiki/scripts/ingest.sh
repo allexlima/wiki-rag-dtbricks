@@ -13,7 +13,7 @@
 #
 # Prerequisites:
 #   - MediaWiki container running (run setup.sh first)
-#   - docker/.env with MW_ADMIN_USER and MW_ADMIN_PASSWORD
+#   - mediawiki/.env with MW_ADMIN_USER and MW_ADMIN_PASSWORD
 #   - jq, curl, sed installed
 # ============================================================
 set -euo pipefail
@@ -34,7 +34,7 @@ fi
 DATASET_DIR="$DATASET_BASE/$1"
 DATASET_NAME="$1"
 IMAGES_DIR="$DATASET_DIR/images"
-API_URL="http://localhost:8080/api.php"
+API_URL="${MEDIAWIKI_URL:-http://localhost:8080}/api.php"
 COOKIE_JAR=$(mktemp)
 trap 'rm -f "$COOKIE_JAR"' EXIT
 
@@ -55,7 +55,7 @@ fi
 # -------------------------------------------------------
 ENV_FILE="$DOCKER_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ docker/.env not found — need MW_ADMIN_USER and MW_ADMIN_PASSWORD"
+    echo "❌ mediawiki/.env not found — need MW_ADMIN_USER and MW_ADMIN_PASSWORD"
     exit 1
 fi
 
@@ -323,5 +323,5 @@ echo ""
 echo "========================================="
 echo "  ✅ Ingested ${TOTAL_PAGES} pages + ${IMAGE_COUNT} images"
 echo "  📂 Dataset: ${DATASET_NAME}"
-echo "  🌐 View at http://localhost:8080"
+echo "  🌐 View at ${MEDIAWIKI_URL:-http://localhost:8080}"
 echo "========================================="

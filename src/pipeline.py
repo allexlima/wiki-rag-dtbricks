@@ -399,6 +399,7 @@ class WikiPipeline:
         image_bytes: bytes,
         alt_text: str = "",
         page_title: str = "",
+        filename: str = "",
         model: str | None = None,
     ) -> str:
         """Generate a text description of an image using a vision-capable LLM.
@@ -420,7 +421,7 @@ class WikiPipeline:
         model = model or cls.VISION_MODEL
         resized = _resize_image(image_bytes)
         b64_data = base64.b64encode(resized).decode("utf-8")
-        mime = _guess_mime(page_title)
+        mime = _guess_mime(filename or page_title)
 
         vision_llm = ChatDatabricks(endpoint=model)
 

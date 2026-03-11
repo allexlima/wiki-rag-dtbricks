@@ -10,14 +10,14 @@
 #
 # Prerequisites:
 #   - MediaWiki container running
-#   - docker/.env with MW_ADMIN_USER and MW_ADMIN_PASSWORD
+#   - mediawiki/.env with MW_ADMIN_USER and MW_ADMIN_PASSWORD
 #   - jq, curl installed
 # ============================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOCKER_DIR="$SCRIPT_DIR/.."
-API_URL="http://localhost:8080/api.php"
+API_URL="${MEDIAWIKI_URL:-http://localhost:8080}/api.php"
 COOKIE_JAR=$(mktemp)
 trap 'rm -f "$COOKIE_JAR"' EXIT
 
@@ -33,7 +33,7 @@ done
 # -------------------------------------------------------
 ENV_FILE="$DOCKER_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ docker/.env not found"
+    echo "❌ mediawiki/.env not found"
     exit 1
 fi
 

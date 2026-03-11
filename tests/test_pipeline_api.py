@@ -22,7 +22,7 @@ from src.pipeline import WikiPipeline  # noqa: E402
 # ---------------------------------------------------------------------------
 
 
-def _fake_embed_batch(_client, _model, batch: list[str]) -> list[list[float]]:
+def _fake_embed_batch(_embeddings_model, batch: list[str]) -> list[list[float]]:
     """Return a deterministic embedding per text (index-based) so order is verifiable."""
     return [[float(hash(t) % 1000)] * 1024 for t in batch]
 
@@ -60,7 +60,7 @@ def test_embed_texts_preserves_order(mock_embed):
     texts = ["alpha", "beta", "gamma"]
     result = WikiPipeline.embed_texts(texts)
 
-    expected = _fake_embed_batch(None, None, texts)
+    expected = _fake_embed_batch(None, texts)
     assert result == expected
 
 
@@ -144,40 +144,32 @@ def test_fetch_image_network_error():
 
 
 @patch("src.pipeline._resize_image", side_effect=lambda b, **kw: b)
-@patch("src.pipeline.DatabricksOpenAI")
-def test_caption_image_returns_description(mock_oai_cls, _mock_resize):
+@patch("src.pipeline.ChatDatabricks")
+def test_caption_image_returns_description(mock_chat_cls, _mock_resize):
     """Vision model response is returned as the caption string."""
-    mock_client = MagicMock()
-    mock_oai_cls.return_value = mock_client
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
 
-    message = MagicMock()
-    message.content = "A diagram showing data flow between services."
-    choice = MagicMock()
-    choice.message = message
-    response = MagicMock()
-    response.choices = [choice]
-    mock_client.chat.completions.create.return_value = response
+    mock_response = MagicMock()
+    mock_response.content = "A diagram showing data flow between services."
+    mock_llm.invoke.return_value = mock_response
 
     caption = WikiPipeline.caption_image(b"fake-png", alt_text="data flow", page_title="Arch.png")
 
     assert caption == "A diagram showing data flow between services."
-    mock_client.chat.completions.create.assert_called_once()
+    mock_llm.invoke.assert_called_once()
 
 
 @patch("src.pipeline._resize_image", side_effect=lambda b, **kw: b)
-@patch("src.pipeline.DatabricksOpenAI")
-def test_caption_image_fallback_on_empty(mock_oai_cls, _mock_resize):
+@patch("src.pipeline.ChatDatabricks")
+def test_caption_image_fallback_on_empty(mock_chat_cls, _mock_resize):
     """When the vision model returns empty content, fall back to '[Image: alt_text]'."""
-    mock_client = MagicMock()
-    mock_oai_cls.return_value = mock_client
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
 
-    message = MagicMock()
-    message.content = ""
-    choice = MagicMock()
-    choice.message = message
-    response = MagicMock()
-    response.choices = [choice]
-    mock_client.chat.completions.create.return_value = response
+    mock_response = MagicMock()
+    mock_response.content = ""
+    mock_llm.invoke.return_value = mock_response
 
     caption = WikiPipeline.caption_image(b"fake-png", alt_text="logo")
 

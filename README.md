@@ -52,7 +52,7 @@ make setup-wiki         # Auto-generates .env from secrets, starts MediaWiki
 > ```bash
 > make demo-load   # Interactive dataset selector → loads pages + images into MediaWiki
 > ```
-> This presents an arrow-key menu listing all datasets under `docker/dataset/`. The project ships with **astromotores** — a 15-page PT-BR space car repair manual with 75 SVG technical diagrams. You can also add your own: create a folder in `docker/dataset/` with `*.md` files and an `images/` subdirectory, and it will appear automatically.
+> This presents an arrow-key menu listing all datasets under `mediawiki/dataset/`. The project ships with **astromotores** — a 15-page PT-BR space car repair manual with 75 SVG technical diagrams. You can also add your own: create a folder in `mediawiki/dataset/` with `*.md` files and an `images/` subdirectory, and it will appear automatically.
 >
 > To wipe all wiki content and re-ingest a different dataset:
 > ```bash
@@ -85,33 +85,36 @@ make destroy                       # Removes everything: bundle + Docker + Lakeb
 
 Run `make help` to see all available targets.
 
+> [!TIP]
+> **Need a public MediaWiki endpoint?** If your Databricks jobs or apps need to reach MediaWiki over the internet (instead of `localhost`), you can deploy it to **AWS ECS Fargate** with a single command. See [`mediawiki/README.md`](mediawiki/README.md) for the full guide.
+
 ---
 
 ## Architecture
 
 | Layer                | Technology                               | Description                                                  |
 | -------------------- | ---------------------------------------- | ------------------------------------------------------------ |
-| **Knowledge source** | MediaWiki 1.42 (Docker)                  | Self-hosted wiki writing to Lakebase PostgreSQL              |
+| **Knowledge source** | MediaWiki 1.42 (Docker / ECS Fargate)    | Self-hosted wiki writing to Lakebase PostgreSQL              |
 | **Database**         | Lakebase Autoscaling (PG 16)             | Hosts MediaWiki tables, RAG tables, and conversation memory  |
-| **Embeddings**       | `databricks-gte-large-en`                | Foundation Model API, 1024-dim vectors                       |
+| **Embeddings**       | `databricks-qwen3-embedding-0-6b`        | Foundation Model API, 1024-dim vectors (PT-BR optimized)     |
 | **Vector search**    | pgvector + HNSW index                    | Cosine similarity retrieval (m=16, ef=64)                    |
 | **Multimodal**       | `databricks-claude-sonnet-4-6`           | Vision LLM captions images at pipeline time                  |
 | **RAG agent**        | LangGraph + ResponsesAgent (MLflow 3)    | retrieve &rarr; grade &rarr; rewrite &rarr; generate         |
 | **Conversation**     | Lakebase PostgreSQL                      | Multi-turn history in `wiki_rag.conversations` / `.messages` |
-| **LLM**              | `databricks-meta-llama-3-3-70b-instruct` | Answer generation with source citations                      |
+| **LLM**              | `databricks-claude-sonnet-4-6`           | Answer generation with source citations                      |
 | **Serving**          | MLflow Model Serving                     | Real-time endpoint, scale-to-zero                            |
 | **Chat UI**          | Streamlit (Databricks App)               | Web interface with streaming responses                       |
 
 ### Data Flow
 
 ```
-MediaWiki (Docker)
+MediaWiki (Docker or ECS)
     |  writes to
     v
 Lakebase [mediawiki schema]
     |  read by ingestion pipeline
     v
-Clean wikitext + Extract images --> Vision LLM (captions) --> Chunk --> Embed (GTE)
+Clean wikitext + Extract images --> Vision LLM (captions) --> Chunk --> Embed (Qwen3)
     |                                                                      |
     v                                                                      v
 Lakebase [wiki_rag schema]  <--  pgvector embeddings (HNSW cosine)
@@ -121,7 +124,7 @@ Lakebase [wiki_rag schema]  <--  pgvector embeddings (HNSW cosine)
 LangGraph RAG Agent (retrieve -> grade -> rewrite? -> generate)
     |                              |
     v                              v
-Llama 3.3 70B (LLM)     Conversation Memory (Lakebase)
+Claude Sonnet 4.6 (LLM)   Conversation Memory (Lakebase)
     |
     v
 MLflow Model Serving --> Streamlit Chat UI
@@ -158,16 +161,22 @@ wiki-rag-dtbricks/
 │   ├── app.yaml                  # Databricks App runtime config
 │   └── requirements.txt          # App-only dependencies
 │
-├── docker/
+├── mediawiki/
 │   ├── Makefile                  # Docker targets: make up/down/ingest/clean
-│   ├── docker-compose.yml        # MediaWiki container definition
+│   ├── Dockerfile                # MediaWiki 1.42 + PostgreSQL + ECS entrypoint
+│   ├── docker-compose.yml        # Local container definition
 │   ├── LocalSettings.php.template
 │   ├── .env.example              # Credential template
+│   ├── README.md                 # Local Docker + AWS ECS Fargate deployment guide
 │   ├── scripts/
 │   │   ├── setup.sh              # Bootstrap (auto-generates .env from Databricks secrets)
-│   │   ├── ingest.sh             # Shared dataset → MediaWiki ingestion
+│   │   ├── ingest.sh             # Dataset → MediaWiki ingestion (supports MEDIAWIKI_URL)
 │   │   ├── select_dataset.sh     # Interactive arrow-key dataset picker
 │   │   └── clean.sh              # Wipe all wiki pages + uploaded files
+│   ├── cdk/                      # AWS CDK stack (optional — ECS Fargate deployment)
+│   │   ├── app.py                # CDK app entry point
+│   │   ├── mediawiki_stack.py    # ECS Fargate + ALB stack
+│   │   └── deploy.sh             # One-command deploy (reads .env, syncs secrets, runs CDK)
 │   └── dataset/
 │       ├── astromotores/         # 15 PT-BR space car repair manual pages + 75 SVG diagrams
 │       └── customer/             # Your own dataset (gitignored)
@@ -200,8 +209,8 @@ All deployment configuration is centralized in `databricks.yml`:
 | `catalog`                | `main`                                   | Unity Catalog name           |
 | `schema`                 | `wiki_rag`                               | Schema for RAG tables        |
 | `db_name`                | `wikidb`                                 | Lakebase database name       |
-| `embedding_model`        | `databricks-gte-large-en`                | Embedding model endpoint     |
-| `llm_model`              | `databricks-meta-llama-3-3-70b-instruct` | LLM endpoint                 |
+| `embedding_model`        | `databricks-qwen3-embedding-0-6b`        | Embedding model endpoint     |
+| `llm_model`              | `databricks-claude-sonnet-4-6`           | LLM endpoint                 |
 
 Runtime environment variables (read by `src/pipeline.py`):
 

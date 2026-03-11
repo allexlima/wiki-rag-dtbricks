@@ -346,7 +346,7 @@ print("\n✅ DDL complete")
 # MAGIC ## 5. Store credentials in secret scope
 # MAGIC 
 # MAGIC Persists Lakebase connection details into the Databricks secret scope so that
-# MAGIC other notebooks, the serving endpoint, and `docker/setup.sh` can read them.
+# MAGIC other notebooks, the serving endpoint, and `mediawiki/scripts/setup.sh` can read them.
 # MAGIC 
 # MAGIC > `mw_password` is NOT written here — it was already stored by `make setup-secrets`.
 

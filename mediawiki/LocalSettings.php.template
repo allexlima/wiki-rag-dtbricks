@@ -6,7 +6,7 @@
 $wgSitename = "Wiki RAG Demo";
 $wgMetaNamespace = "Wiki_RAG";
 $wgScriptPath = "";
-$wgServer = "http://localhost:8080";
+$wgServer = "${MW_SERVER_URL}";
 
 # ---------- Database — Lakebase PostgreSQL ----------
 $wgDBtype     = "postgres";

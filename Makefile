@@ -96,19 +96,19 @@ setup-lakebase: _require-secrets  ## 🗄️  Provision Lakebase instance + crea
 
 .PHONY: setup-wiki
 setup-wiki: _require-secrets  ## 📖 Start MediaWiki container (auto-generates .env if missing)
-	@$(if $(PROFILE),export DATABRICKS_CONFIG_PROFILE=$(PROFILE) && ,)cd docker && $(MAKE) --no-print-directory up
+	@$(if $(PROFILE),export DATABRICKS_CONFIG_PROFILE=$(PROFILE) && ,)cd mediawiki && $(MAKE) --no-print-directory up
 
 .PHONY: wiki-destroy
 wiki-destroy:  ## 📖 Stop and remove MediaWiki container + volumes
-	@cd docker && $(MAKE) --no-print-directory down
+	@cd mediawiki && $(MAKE) --no-print-directory down
 
 .PHONY: demo-load
 demo-load:  ## 📖 Ingest demo dataset into MediaWiki (interactive selector)
-	@cd docker && $(MAKE) --no-print-directory ingest
+	@cd mediawiki && $(MAKE) --no-print-directory ingest
 
 .PHONY: demo-cleanup
 demo-cleanup:  ## 📖 Delete all wiki pages and uploaded files
-	@cd docker && $(MAKE) --no-print-directory clean
+	@cd mediawiki && $(MAKE) --no-print-directory clean
 
 # ─────────────────────────────────────────────────────────────
 # 🤖 Model + Endpoint
@@ -155,7 +155,7 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 	@databricks bundle destroy $(CLI_FLAGS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  📖 MediaWiki containers..."
-	@cd docker && docker compose down -v 2>&1 | sed 's/^/     /' || true
+	@cd mediawiki && docker compose down -v 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."
 	@if databricks postgres delete-project projects/$(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \

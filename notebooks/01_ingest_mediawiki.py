@@ -200,6 +200,7 @@ for page in ingestion.fetch_pages(conn, watermark):
                 image_bytes=image_bytes,
                 alt_text=ref.alt_text,
                 page_title=page.page_title,
+                filename=ref.filename,
             )
 
             # Track for DB insert into wiki_rag.wiki_images
@@ -216,7 +217,7 @@ for page in ingestion.fetch_pages(conn, watermark):
                 rev_id=page.rev_id,
                 filename=ref.filename,
                 caption=caption,
-                chunk_index_offset=len(text_chunks) + len(all_chunks),
+                chunk_index_offset=len(text_chunks),
             )
             all_chunks.extend(img_chunks)
             print(f"  📷 {ref.filename}: captioned ({len(caption)} chars)")
@@ -229,11 +230,6 @@ for page in ingestion.fetch_pages(conn, watermark):
     page_count += 1
 
 print(f"✓ {page_count} pages → {len(all_chunks)} chunks ({len(image_records)} images)")
-
-# COMMAND ----------
-
-image_bytes
-
 
 # COMMAND ----------
 

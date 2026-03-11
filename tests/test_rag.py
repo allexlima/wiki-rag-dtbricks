@@ -15,9 +15,9 @@ from src.rag import RetrievedDoc, WikiRAGAgent, _llm_call, run_agent
 
 
 def test_agent_init():
-    """_client and _conn start as None."""
+    """_llm and _conn start as None."""
     agent = WikiRAGAgent()
-    assert agent._client is None
+    assert agent._llm is None
     assert agent._conn is None
 
 
@@ -26,21 +26,25 @@ def test_agent_init():
 # ---------------------------------------------------------------------------
 
 
-def test_llm_call_returns_content(mock_openai_client):
-    """_llm_call returns stripped content from the first choice."""
-    mock_openai_client.chat.completions.create.return_value.choices[
-        0
-    ].message.content = "  hello world  "
-    result = _llm_call(mock_openai_client, model="m", messages=[])
+def test_llm_call_returns_content():
+    """_llm_call returns stripped content from the LangChain response."""
+    mock_llm = MagicMock()
+    mock_response = MagicMock()
+    mock_response.content = "  hello world  "
+    mock_llm.invoke.return_value = mock_response
+
+    result = _llm_call(mock_llm, messages=[])
     assert result == "hello world"
 
 
-def test_llm_call_handles_none_content(mock_openai_client):
+def test_llm_call_handles_none_content():
     """When the model returns None content, _llm_call returns empty string."""
-    mock_openai_client.chat.completions.create.return_value.choices[
-        0
-    ].message.content = None
-    result = _llm_call(mock_openai_client, model="m", messages=[])
+    mock_llm = MagicMock()
+    mock_response = MagicMock()
+    mock_response.content = None
+    mock_llm.invoke.return_value = mock_response
+
+    result = _llm_call(mock_llm, messages=[])
     assert result == ""
 
 

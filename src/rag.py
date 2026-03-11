@@ -133,6 +133,7 @@ class WikiRAGAgent(ResponsesAgent):
         """Initialise with lazy clients (created on first use)."""
         self._llm: ChatDatabricks | None = None
         self._conn = None
+        self._graph = None
 
     @property
     def llm(self) -> ChatDatabricks:
@@ -519,7 +520,9 @@ class WikiRAGAgent(ResponsesAgent):
 
         history = self._load_history(conv_id)
 
-        graph = self._build_graph()
+        if self._graph is None:
+            self._graph = self._build_graph()
+        graph = self._graph
         final_result: dict = {}
         for event in graph.stream(
             {

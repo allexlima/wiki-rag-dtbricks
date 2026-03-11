@@ -1,7 +1,10 @@
 # Project-specific
-docker/.env
-docker/LocalSettings.php
-docker/dataset/customer/
+mediawiki/.env
+mediawiki/LocalSettings.php
+mediawiki/dataset/customer/
+mediawiki/cdk/cdk.out/
+mediawiki/cdk/.venv/
+mediawiki/cdk/cdk.context.json
 __builtins__.pyi
 mlflow.db
 .coverage

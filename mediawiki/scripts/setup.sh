@@ -150,7 +150,9 @@ docker exec "$CONTAINER_NAME" php maintenance/run.php install \
 # 4. Generate LocalSettings.php from template
 # -------------------------------------------------------
 echo "📝 Generating LocalSettings.php..."
-ENVSUBST_VARS='${LAKEBASE_HOST} ${LAKEBASE_PORT} ${LAKEBASE_DB} ${LAKEBASE_USER} ${LAKEBASE_PASSWORD} ${MW_SECRET_KEY} ${MW_UPGRADE_KEY}'
+: "${MW_SERVER_URL:=http://localhost:8080}"
+export MW_SERVER_URL
+ENVSUBST_VARS='${LAKEBASE_HOST} ${LAKEBASE_PORT} ${LAKEBASE_DB} ${LAKEBASE_USER} ${LAKEBASE_PASSWORD} ${MW_SECRET_KEY} ${MW_UPGRADE_KEY} ${MW_SERVER_URL}'
 envsubst "$ENVSUBST_VARS" < LocalSettings.php.template > LocalSettings.php
 echo "  ✅ LocalSettings.php created"
 

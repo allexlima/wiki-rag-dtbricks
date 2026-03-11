@@ -1,9 +1,10 @@
 """
 WikiRAG Streamlit Chat UI — Databricks App.
 
-Talks to the WikiRAG ResponsesAgent serving endpoint using chat completions format.
-Supports multi-turn conversation via conversation_id.
+Talks to the WikiRAG ResponsesAgent serving endpoint using Responses API format.
+Supports multi-turn conversation via conversation_id passed in request context.
 """
+import json
 import logging
 import os
 import uuid
@@ -23,15 +24,23 @@ def get_client() -> WorkspaceClient:
     return WorkspaceClient()
 
 
-def query_rag(messages: list[dict]) -> str:
-    """Call the WikiRAG serving endpoint with chat completions format."""
+def query_rag(messages: list[dict], conversation_id: str) -> str:
+    """Call the WikiRAG serving endpoint using Responses API format."""
     w = get_client()
-    response = w.serving_endpoints.query(
-        name=ENDPOINT_NAME,
-        messages=messages,
-        max_tokens=1024,
+    body = {
+        "input": messages,
+        "context": {"conversation_id": conversation_id},
+    }
+    resp = w.serving_endpoints._api.do(
+        "POST",
+        f"/serving-endpoints/{ENDPOINT_NAME}/invocations",
+        body=body,
+        headers={"Accept": "application/json", "Content-Type": "application/json"},
     )
-    return response.choices[0].message.content
+    try:
+        return resp["output"][0]["content"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        return json.dumps(resp, indent=2, ensure_ascii=False)[:2000]
 
 
 # ---------- Session state ----------
@@ -57,7 +66,7 @@ if prompt := st.chat_input("Ask a question about the wiki..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Build messages for the endpoint (include history for context)
+    # Build input for the Responses API endpoint (include history)
     api_messages = [
         {"role": m["role"], "content": m["content"]}
         for m in st.session_state.messages
@@ -67,7 +76,7 @@ if prompt := st.chat_input("Ask a question about the wiki..."):
     with st.chat_message("assistant"):
         with st.spinner("Searching the wiki..."):
             try:
-                answer = query_rag(api_messages)
+                answer = query_rag(api_messages, st.session_state.conversation_id)
             except Exception:
                 log.exception("RAG query failed for endpoint '%s'", ENDPOINT_NAME)
                 answer = "Sorry, something went wrong. Please try again later."

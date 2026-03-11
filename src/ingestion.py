@@ -64,8 +64,8 @@ class MediaWikiIngestion:
     ) -> Generator[WikiPage, None, None]:
         """Yield WikiPage objects for all pages updated after *watermark_rev_id*.
 
-        Uses a server-side cursor to stream results without loading
-        the entire result set into memory.
+        Streams results via a standard cursor.  For very large wikis,
+        consider adding ``name='fetch_pages'`` to enable a server-side cursor.
 
         Args:
             conn: A psycopg2 connection to the Lakebase database.
