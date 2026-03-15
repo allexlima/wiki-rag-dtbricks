@@ -183,6 +183,36 @@ def test_get_secrets_raises_when_no_credentials(mock_dbutils, monkeypatch):
         _get_secrets()
 
 
+@patch("src.config._get_dbutils")
+def test_get_secrets_secret_or_catches_exception(mock_dbutils, monkeypatch):
+    """secret_or returns default when dbutils.secrets.get raises for optional keys."""
+    from src.config import _get_secrets
+
+    for key in ["LAKEBASE_HOST", "LAKEBASE_USER", "LAKEBASE_PASSWORD",
+                "LAKEBASE_INSTANCE", "LAKEBASE_DB", "LAKEBASE_PORT"]:
+        monkeypatch.delenv(key, raising=False)
+
+    def mock_get(scope, key):
+        # Required keys succeed
+        if key in ("lakebase_instance_name", "lakebase_user"):
+            return {"lakebase_instance_name": "inst", "lakebase_user": "usr"}[key]
+        # Optional keys (called via secret_or) raise
+        raise RuntimeError("Py4J: secret not found")
+
+    mock_dbu = MagicMock()
+    mock_dbu.secrets.get.side_effect = mock_get
+    mock_dbutils.return_value = mock_dbu
+
+    config = _get_secrets()
+
+    assert config["instance_name"] == "inst"
+    assert config["db_user"] == "usr"
+    # secret_or should have caught the exception and returned defaults
+    assert config["db_name"] == "wikidb"
+    assert config["port"] == "5432"
+    assert config["password"] == ""
+
+
 @patch("src.config._get_secrets")
 def test_get_lakebase_conn_string_missing_host_raises(mock_secrets):
     """ValueError raised when host is empty."""

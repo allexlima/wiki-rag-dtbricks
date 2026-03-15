@@ -21,6 +21,41 @@ def test_agent_init():
     assert agent._conn is None
 
 
+@patch("src.rag.ChatDatabricks")
+def test_llm_property_lazy_init(mock_chat_cls):
+    """llm property creates ChatDatabricks on first access."""
+    mock_instance = MagicMock()
+    mock_chat_cls.return_value = mock_instance
+
+    agent = WikiRAGAgent()
+    assert agent._llm is None
+
+    llm = agent.llm
+    assert llm is mock_instance
+    mock_chat_cls.assert_called_once()
+
+    # Second access should reuse the same instance
+    assert agent.llm is mock_instance
+    assert mock_chat_cls.call_count == 1
+
+
+@patch("src.config.get_lakebase_conn")
+def test_get_conn_reconnects_when_closed(mock_get_conn):
+    """_get_conn() reconnects when existing connection is closed."""
+    new_conn = MagicMock()
+    mock_get_conn.return_value = new_conn
+
+    agent = WikiRAGAgent()
+    old_conn = MagicMock()
+    old_conn.closed = True
+    agent._conn = old_conn
+
+    result = agent._get_conn()
+
+    assert result is new_conn
+    mock_get_conn.assert_called_once()
+
+
 # ---------------------------------------------------------------------------
 # 2–3. _llm_call
 # ---------------------------------------------------------------------------
@@ -46,6 +81,29 @@ def test_llm_call_handles_none_content():
 
     result = _llm_call(mock_llm, messages=[])
     assert result == ""
+
+
+def test_llm_call_converts_message_roles():
+    """_llm_call converts system/user roles to the correct LangChain types."""
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    mock_llm = MagicMock()
+    mock_response = MagicMock()
+    mock_response.content = "ok"
+    mock_llm.invoke.return_value = mock_response
+
+    result = _llm_call(
+        mock_llm,
+        messages=[
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "Hi"},
+        ],
+    )
+
+    assert result == "ok"
+    lc_messages = mock_llm.invoke.call_args[0][0]
+    assert isinstance(lc_messages[0], SystemMessage)
+    assert isinstance(lc_messages[1], HumanMessage)
 
 
 # ---------------------------------------------------------------------------
