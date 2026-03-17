@@ -13,7 +13,7 @@ Architecture:
 
 from pathlib import Path
 
-from aws_cdk import Aspects, CfnOutput, CfnResource, Duration, RemovalPolicy, Stack, Tags
+from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack, Tags
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets as ecr_assets
 from aws_cdk import aws_ecs as ecs
@@ -35,13 +35,6 @@ DEFAULTS = {
     "secret_name": "wiki-rag/mediawiki",
 }
 
-
-class _DestroyPolicy:
-    """CDK Aspect that sets RemovalPolicy.DESTROY on every CfnResource."""
-
-    def visit(self, node: Construct) -> None:
-        if isinstance(node, CfnResource):
-            node.apply_removal_policy(RemovalPolicy.DESTROY)
 
 
 class MediaWikiStack(Stack):
@@ -109,9 +102,10 @@ class MediaWikiStack(Stack):
             min_healthy_percent=100,
             # Fargate needs public IP to pull images (no NAT gateway)
             assign_public_ip=True,
-            # ALB: internet-facing with listener open to 0.0.0.0/0
+            # ALB: internet-facing; ingress rule added separately via
+            # CfnSecurityGroupIngress (inline rules get silently dropped)
             public_load_balancer=True,
-            open_listener=True,
+            open_listener=False,
             # Grace period: MediaWiki bootstrap (install + update.php) can
             # take up to ~90s on first boot; prevent premature task kills
             health_check_grace_period=Duration.seconds(180),
@@ -150,11 +144,21 @@ class MediaWikiStack(Stack):
             ),
         )
 
-        # -- ALB security group: ensure HTTP is open from anywhere.
-        #    open_listener=True should handle this, but we add it explicitly
-        #    as a safety net (CDK versions have been inconsistent here). --
-        service.load_balancer.connections.allow_from_any_ipv4(
-            ec2.Port.tcp(80), "HTTP public access",
+        # -- ALB security group: allow inbound HTTP from the internet.
+        #    Both open_listener=True and add_ingress_rule() produce inline
+        #    SecurityGroupIngress which CloudFormation silently drops when
+        #    the same SG also has standalone Egress resources.  Using a
+        #    standalone CfnSecurityGroupIngress resource guarantees the rule
+        #    is created as its own CloudFormation resource. --
+        ec2.CfnSecurityGroupIngress(
+            self,
+            "AlbPublicIngress",
+            group_id=service.load_balancer.connections.security_groups[0].security_group_id,
+            ip_protocol="tcp",
+            from_port=80,
+            to_port=80,
+            cidr_ip="0.0.0.0/0",
+            description="HTTP public access",
         )
 
         # -- MW_SERVER_URL: MediaWiki needs to know its own public URL
@@ -186,10 +190,6 @@ class MediaWikiStack(Stack):
         }
         for key, value in tags.items():
             Tags.of(self).add(key, value)
-
-        # -- Removal policy: destroy all resources on cdk destroy
-        #    (demo stack — no data worth retaining) --
-        Aspects.of(self).add(_DestroyPolicy())
 
         # -- Output: stable ALB DNS for MEDIAWIKI_URL --
         CfnOutput(

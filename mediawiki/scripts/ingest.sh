@@ -188,7 +188,7 @@ for attempt in $(seq 1 $max_retries); do
         -F "token=${csrf_token}" \
         -F "ignorewarnings=true" \
         -F "format=json")
-    status=$(echo "$result" | jq -r '.upload.result // .error.code // "unknown"')
+    status=$(echo "$result" | perl -pe 's/[^\x20-\x7E\x0A\x0D]//g' | jq -r '.upload.result // .error.code // "unknown"')
     if [ "$status" = "Success" ] || [ "$status" = "Warning" ]; then
         break
     fi
