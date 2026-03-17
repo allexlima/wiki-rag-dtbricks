@@ -56,5 +56,6 @@ resources:
               secret_scope: ${var.secret_scope}
               embedding_model: ${var.embedding_model}
               llm_model: ${var.llm_model}
+              mediawiki_url: ${var.mediawiki_url}
             source: WORKSPACE
       max_concurrent_runs: 1

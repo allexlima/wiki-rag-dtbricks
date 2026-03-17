@@ -23,6 +23,12 @@ CLI_FLAGS    += --profile $(PROFILE)
 PROFILE_FLAG := --profile $(PROFILE)
 endif
 
+# Pass MEDIAWIKI_URL to databricks.yml variable when exported
+BUNDLE_VARS :=
+ifdef MEDIAWIKI_URL
+BUNDLE_VARS += --var mediawiki_url=$(MEDIAWIKI_URL)
+endif
+
 # ─── Internal helpers ─────────────────────────────────────────
 
 .PHONY: _check-cli _check-auth _require-secrets
@@ -86,8 +92,8 @@ setup-secrets: _check-auth  ## 🔑 Create secret scope + store Lakebase passwor
 .PHONY: setup-lakebase
 setup-lakebase: _require-secrets  ## 🗄️  Provision Lakebase instance + create DB, role, DDL
 	@echo "🗄️  Deploying bundle and running Lakebase setup..."
-	@databricks bundle deploy $(CLI_FLAGS)
-	@databricks bundle run setup_lakebase $(CLI_FLAGS)
+	@databricks bundle deploy $(CLI_FLAGS) $(BUNDLE_VARS)
+	@databricks bundle run setup_lakebase $(CLI_FLAGS) $(BUNDLE_VARS)
 	@echo "✅ Lakebase setup complete"
 
 # ─────────────────────────────────────────────────────────────
@@ -118,8 +124,8 @@ demo-cleanup:  ## 📖 Delete all wiki pages and uploaded files
 .PHONY: deploy-agent
 deploy-agent: _require-secrets  ## 🤖 Log model to MLflow, register in UC, deploy serving endpoint
 	@echo "🤖 Deploying RAG agent..."
-	@databricks bundle deploy $(CLI_FLAGS)
-	@databricks bundle run deploy_agent $(CLI_FLAGS)
+	@databricks bundle deploy $(CLI_FLAGS) $(BUNDLE_VARS)
+	@databricks bundle run deploy_agent $(CLI_FLAGS) $(BUNDLE_VARS)
 	@echo "✅ Agent deployed"
 
 # ─────────────────────────────────────────────────────────────
@@ -129,8 +135,8 @@ deploy-agent: _require-secrets  ## 🤖 Log model to MLflow, register in UC, dep
 .PHONY: ingest
 ingest: _require-secrets  ## 📊 Run ingestion pipeline (reads MW → chunks → embeds)
 	@echo "📊 Running ingestion pipeline..."
-	@databricks bundle deploy $(CLI_FLAGS)
-	@databricks bundle run wiki_rag_ingestion $(CLI_FLAGS)
+	@databricks bundle deploy $(CLI_FLAGS) $(BUNDLE_VARS)
+	@databricks bundle run wiki_rag_ingestion $(CLI_FLAGS) $(BUNDLE_VARS)
 
 # ─────────────────────────────────────────────────────────────
 # 🚀 Full Stack
@@ -153,7 +159,7 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 	@echo "💥 Tearing down Wiki RAG..."
 	@echo ""
 	@echo "  📦 Bundle resources..."
-	@databricks bundle destroy $(CLI_FLAGS) --auto-approve 2>&1 | sed 's/^/     /' || true
+	@databricks bundle destroy $(CLI_FLAGS) $(BUNDLE_VARS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  📖 MediaWiki containers..."
 	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true

@@ -130,7 +130,7 @@ class WikiPipeline:
     EMBEDDING_DIMS: int = 1024
     EMBEDDING_BATCH_SIZE: int = 64
     VISION_MODEL: str = os.environ.get("VISION_MODEL", "databricks-claude-sonnet-4-6")
-    MEDIAWIKI_URL: str = os.environ.get("MEDIAWIKI_URL", "http://localhost:8080")
+    MEDIAWIKI_URL: str = "http://localhost:8080"
 
     # --- Cleaning ---------------------------------------------------------
 

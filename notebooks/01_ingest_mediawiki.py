@@ -69,11 +69,13 @@ _defaults = load_bundle_defaults()
 dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
 dbutils.widgets.text("embedding_model", _defaults["embedding_model"], "Embedding Model")
 dbutils.widgets.text("llm_model", _defaults["llm_model"], "Vision LLM")
+dbutils.widgets.text("mediawiki_url", _defaults.get("mediawiki_url", "http://localhost:8080"), "MediaWiki URL")
 
 # ─── Read parameters ─────────────────────────────────────────────────
 SECRET_SCOPE = dbutils.widgets.get("secret_scope")
 EMBEDDING_MODEL = dbutils.widgets.get("embedding_model")
 LLM_MODEL = dbutils.widgets.get("llm_model")
+MEDIAWIKI_URL = dbutils.widgets.get("mediawiki_url")
 
 # ─── Validate parameters ─────────────────────────────────────────────
 assert SECRET_SCOPE and SECRET_SCOPE.strip(), (
@@ -93,6 +95,7 @@ os.environ["VISION_MODEL"] = LLM_MODEL
 print(f"Secret scope:    {SECRET_SCOPE}")
 print(f"Embedding model: {EMBEDDING_MODEL}")
 print(f"Vision LLM:      {LLM_MODEL}")
+print(f"MediaWiki URL:   {MEDIAWIKI_URL}")
 
 # COMMAND ----------
 
@@ -191,7 +194,7 @@ for page in ingestion.fetch_pages(conn, watermark):
     for ref in image_refs:
         try:
             # Fetch image bytes from MediaWiki's API (imageinfo endpoint)
-            image_bytes = pipeline.fetch_image_from_mediawiki(ref.filename)
+            image_bytes = pipeline.fetch_image_from_mediawiki(ref.filename, base_url=MEDIAWIKI_URL)
             if image_bytes is None:
                 continue
 

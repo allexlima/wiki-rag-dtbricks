@@ -33,6 +33,9 @@ variables:
   llm_model:
     description: "Foundation Model API LLM endpoint"
     default: databricks-claude-sonnet-4-6
+  mediawiki_url:
+    description: "MediaWiki base URL for image fetching during ingestion"
+    default: http://localhost:8080
 
 include:
   - resources/*.yml
