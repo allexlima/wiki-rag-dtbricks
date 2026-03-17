@@ -8,7 +8,8 @@ Architecture:
     Internet → ALB (:80) → Fargate task (MediaWiki :80) → Lakebase PostgreSQL
     Secrets:   AWS Secrets Manager (synced from Databricks by deploy.sh)
     Compute:   ARM64 Graviton (cheaper than x86)
-    Network:   Public subnets only, no NAT gateway (lowest cost)
+    Network:   Public subnets (ALB) + private subnets (Fargate) + 1 NAT gateway
+               NAT gives Fargate a stable Elastic IP for Lakebase IP ACL allowlisting
 """
 
 from pathlib import Path
@@ -41,10 +42,11 @@ class MediaWikiStack(Stack):
     """MediaWiki on ECS Fargate backed by Lakebase PostgreSQL.
 
     Resources created:
-        - VPC with public subnets (2 AZs, no NAT)
-        - ECS cluster + Fargate service (1 task, ARM64)
+        - VPC with public + private subnets (2 AZs, 1 NAT gateway)
+        - ECS cluster + Fargate service (1 task, ARM64, private subnet)
         - Application Load Balancer (internet-facing, port 80)
         - CloudWatch log group (7-day retention, auto-deleted on teardown)
+        - NAT gateway with Elastic IP (stable outbound IP for Lakebase ACL)
     """
 
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
@@ -63,17 +65,22 @@ class MediaWikiStack(Stack):
             self, "MwSecret", ctx["secret_name"],
         )
 
-        # -- Network: public subnets only, no NAT (Fargate uses public IP
-        #    for ECR image pulls; ALB handles inbound traffic) --
+        # -- Network: public subnets (ALB) + private subnets (Fargate).
+        #    Single NAT gateway gives Fargate a stable Elastic IP so we can
+        #    allowlist it in Databricks workspace IP ACLs for Lakebase access. --
         vpc = ec2.Vpc(
             self,
             "Vpc",
             max_azs=2,  # ALB requires at least 2 AZs
-            nat_gateways=0,
+            nat_gateways=1,  # 1 NAT = 1 stable Elastic IP (~$30/mo)
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="Public",
                     subnet_type=ec2.SubnetType.PUBLIC,
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private",
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
                 ),
             ],
         )
@@ -100,8 +107,9 @@ class MediaWikiStack(Stack):
             desired_count=1,
             # Zero-downtime deploy: new task starts before old one stops
             min_healthy_percent=100,
-            # Fargate needs public IP to pull images (no NAT gateway)
-            assign_public_ip=True,
+            # Fargate in private subnets — outbound via NAT (stable IP)
+            task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            assign_public_ip=False,
             # ALB: internet-facing; ingress rule added separately via
             # CfnSecurityGroupIngress (inline rules get silently dropped)
             public_load_balancer=True,
@@ -197,4 +205,13 @@ class MediaWikiStack(Stack):
             "MediaWikiUrl",
             value=f"http://{service.load_balancer.load_balancer_dns_name}",
             description="MediaWiki public URL — export as MEDIAWIKI_URL",
+        )
+
+        # -- Output: NAT gateway Elastic IP (add to Databricks IP ACL) --
+        nat_eip = vpc.public_subnets[0].node.find_child("EIP")
+        CfnOutput(
+            self,
+            "NatElasticIp",
+            value=nat_eip.ref,
+            description="NAT Elastic IP — add to Databricks workspace IP ACL",
         )

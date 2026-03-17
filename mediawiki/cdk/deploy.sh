@@ -154,6 +154,8 @@ cdk deploy \
 # -------------------------------------------------------
 MW_URL=$(aws cloudformation describe-stacks --stack-name WikiRagMediaWiki \
     --query "Stacks[0].Outputs[?OutputKey=='MediaWikiUrl'].OutputValue" --output text 2>/dev/null)
+NAT_IP=$(aws cloudformation describe-stacks --stack-name WikiRagMediaWiki \
+    --query "Stacks[0].Outputs[?OutputKey=='NatElasticIp'].OutputValue" --output text 2>/dev/null)
 
 echo ""
 echo "========================================="
@@ -166,4 +168,10 @@ echo "     export MEDIAWIKI_URL=${MW_URL}"
 echo ""
 echo "  Then ingest data:"
 echo "     make demo-load"
+if [ -n "$NAT_IP" ]; then
+echo ""
+echo "  🔒 NAT Elastic IP: ${NAT_IP}"
+echo "     Add ${NAT_IP}/32 to Databricks workspace IP ACL"
+echo "     for Lakebase connectivity."
+fi
 echo "========================================="
