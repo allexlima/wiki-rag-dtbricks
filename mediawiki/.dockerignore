@@ -1,0 +1,10 @@
+# Only LocalSettings.php.template and docker-entrypoint.sh are needed
+cdk/
+dataset/
+scripts/
+.env
+.env.example
+Makefile
+README.md
+docker-compose.yml
+LocalSettings.php

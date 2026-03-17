@@ -34,8 +34,18 @@ for cmd in aws cdk python3 databricks; do
     fi
 done
 
-[ -n "${AWS_PROFILE:-}" ]                  && echo "☁️  AWS Profile:        $AWS_PROFILE"
-[ -n "${DATABRICKS_CONFIG_PROFILE:-}" ]    && echo "🔷 Databricks Profile: $DATABRICKS_CONFIG_PROFILE"
+# Resolve Databricks profile: PROFILE (Makefile convention) or DATABRICKS_CONFIG_PROFILE
+DB_PROFILE="${DATABRICKS_CONFIG_PROFILE:-${PROFILE:-}}"
+[ -n "$DB_PROFILE" ] && export DATABRICKS_CONFIG_PROFILE="$DB_PROFILE"
+DB_PROFILE_FLAG="${DB_PROFILE:+--profile $DB_PROFILE}"
+
+# Default AWS region to us-east-1 if not configured
+if [ -z "${AWS_DEFAULT_REGION:-}" ] && [ -z "${AWS_REGION:-}" ] && ! aws configure get region >/dev/null 2>&1; then
+    export AWS_DEFAULT_REGION="us-east-1"
+fi
+
+[ -n "${AWS_PROFILE:-}" ] && echo "☁️  AWS Profile:        $AWS_PROFILE"
+[ -n "$DB_PROFILE" ]      && echo "🔷 Databricks Profile: $DB_PROFILE"
 
 aws sts get-caller-identity > /dev/null 2>&1 \
     || { echo "❌ AWS not authenticated. Run: aws configure"; exit 1; }
@@ -47,7 +57,7 @@ echo ""
 echo "🔷 Reading credentials from Databricks secret scope '${SCOPE}'..."
 
 get_secret() {
-    databricks secrets get-secret "${SCOPE}" "$1" -o json 2>/dev/null \
+    databricks secrets get-secret "${SCOPE}" "$1" $DB_PROFILE_FLAG -o json 2>/dev/null \
         | python3 -c "import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)['value']).decode())" 2>/dev/null \
         || echo ""
 }
@@ -110,10 +120,23 @@ if [ ! -d .venv ]; then
 fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
+pip install -q --upgrade pip
 pip install -q -r requirements.txt
+npm install -g aws-cdk@latest --silent 2>/dev/null
 
 # -------------------------------------------------------
-# 4. Deploy CDK stack
+# 4. Bootstrap CDK (skip if already bootstrapped)
+# -------------------------------------------------------
+echo ""
+if aws cloudformation describe-stacks --stack-name CDKToolkit >/dev/null 2>&1; then
+    echo "🏗️  CDK already bootstrapped — skipping"
+else
+    echo "🏗️  Bootstrapping CDK..."
+    cdk bootstrap --require-approval never
+fi
+
+# -------------------------------------------------------
+# 5. Deploy CDK stack
 # -------------------------------------------------------
 echo ""
 echo "🚀 Deploying CDK stack..."
@@ -127,21 +150,20 @@ cdk deploy \
     --require-approval never
 
 # -------------------------------------------------------
-# 5. Print result
+# 6. Read ALB URL from CDK outputs
 # -------------------------------------------------------
+MW_URL=$(aws cloudformation describe-stacks --stack-name WikiRagMediaWiki \
+    --query "Stacks[0].Outputs[?OutputKey=='MediaWikiUrl'].OutputValue" --output text 2>/dev/null)
+
 echo ""
 echo "========================================="
 echo "  ✅ MediaWiki deployed to ECS Fargate!"
 echo ""
-echo "  Copy the MediaWikiUrl from the output above and:"
+echo "  🌐 ${MW_URL}"
 echo ""
-echo "  1. Set MEDIAWIKI_URL in your shell:"
-echo "     export MEDIAWIKI_URL=http://<alb-dns-name>"
-echo ""
-echo "  2. Or add to databricks.yml variables:"
-echo "     mediawiki_url:"
-echo "       default: \"http://<alb-dns-name>\""
+echo "  Export for this session:"
+echo "     export MEDIAWIKI_URL=${MW_URL}"
 echo ""
 echo "  Then ingest data:"
-echo "     MEDIAWIKI_URL=\$MEDIAWIKI_URL make demo-load"
+echo "     make demo-load"
 echo "========================================="

@@ -179,9 +179,10 @@ wiki-rag-dtbricks/
 │   │   └── deploy.sh             # One-command deploy (reads .env, syncs secrets, runs CDK)
 │   └── dataset/
 │       ├── astromotores/         # 15 PT-BR space car repair manual pages + 75 SVG diagrams
+│       ├── documentos-br/        # PT-BR document collection
 │       └── customer/             # Your own dataset (gitignored)
 │
-├── tests/                        # 55 tests, 82% coverage
+├── tests/                        # 59 tests, 82% coverage
 │   ├── conftest.py               # Shared fixtures
 │   ├── test_pipeline_cleaning.py
 │   ├── test_pipeline_chunking.py
@@ -272,14 +273,14 @@ pytest --cov=src --cov-report=term-missing -v
 pytest -q
 ```
 
-**55 tests** across 6 files, **82% coverage** (threshold: 80%). CI enforced via GitHub Actions on every push/PR to `main`.
+**59 tests** across 6 files, **82% coverage** (threshold: 80%). CI enforced via GitHub Actions on every push/PR to `main`.
 
 | Module             | Coverage | Key tests                                                            |
 | ------------------ | -------- | -------------------------------------------------------------------- |
 | `src/ingestion.py` | 100%     | WikiPage dataclass, fetch_pages generator, bytea handling            |
 | `src/pipeline.py`  | 92%      | Wikitext cleaning, image extraction, chunking, embedding, captioning |
-| `src/config.py`    | 82%      | URI formatting, dual-auth, dbutils fallback, secret resolution       |
-| `src/rag.py`       | 72%      | Retrieve, memory load/save, predict, stream, graph structure         |
+| `src/rag.py`       | 76%      | Retrieve, memory load/save, predict, stream, LLM init, reconnection |
+| `src/config.py`    | 69%      | URI formatting, dual-auth, dbutils fallback, secret_or exception     |
 
 ---
 

@@ -100,6 +100,7 @@ setup-wiki: _require-secrets  ## 📖 Start MediaWiki container (auto-generates 
 
 .PHONY: wiki-destroy
 wiki-destroy:  ## 📖 Stop and remove MediaWiki container + volumes
+	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
 	@cd mediawiki && $(MAKE) --no-print-directory down
 
 .PHONY: demo-load
@@ -155,6 +156,7 @@ destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + s
 	@databricks bundle destroy $(CLI_FLAGS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  📖 MediaWiki containers..."
+	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
 	@cd mediawiki && docker compose down -v 2>&1 | sed 's/^/     /' || true
 	@echo ""
 	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."

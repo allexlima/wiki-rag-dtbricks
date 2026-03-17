@@ -11,6 +11,7 @@ up:  ## 🏗️  Bootstrap MediaWiki container (build, install, configure)
 .PHONY: down
 down:  ## 🛑 Stop and remove MediaWiki container + volumes
 	@echo "🛑 Stopping MediaWiki..."
+	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
 	@docker compose down -v
 	@echo "✅ MediaWiki stopped"
 

@@ -76,28 +76,19 @@ make setup-secrets      # One-time: prompts for password
 make setup-lakebase     # Provisions Lakebase + stores host/port/db secrets
 ```
 
-### Step 2: Bootstrap CDK (One-Time per Account/Region)
-
-```bash
-cd mediawiki/cdk
-cdk bootstrap
-```
-
-### Step 3: Deploy
+### Step 2: Deploy
 
 ```bash
 cd mediawiki/cdk
 ./deploy.sh
-
-# With explicit profiles:
-DATABRICKS_CONFIG_PROFILE=my-db AWS_PROFILE=my-aws ./deploy.sh
 ```
 
 The script will:
 1. Read Lakebase credentials from **Databricks Secrets** (`wiki-rag` scope)
 2. Sync them to **AWS Secrets Manager** (`wiki-rag/mediawiki`)
 3. Set up a Python venv and install CDK dependencies
-4. Run `cdk deploy` to create the ECS Fargate service + ALB
+4. Bootstrap CDK (idempotent — only provisions if needed)
+5. Run `cdk deploy` to create the ECS Fargate service + ALB
 
 > [!IMPORTANT]
 > **After deployment, the CDK output will display `MediaWikiUrl`.**
@@ -118,17 +109,18 @@ The script will:
 >
 > This is how the ingestion pipeline (`src/pipeline.py`) and shell scripts know where to find MediaWiki.
 
-### Step 4: Ingest Data into ECS MediaWiki
+### Step 3: Load Content into ECS MediaWiki
+
+`make demo-load` uploads pages and images to MediaWiki via its API. Since the ECS instance isn't on `localhost`, you need to point it at the ALB URL exported in Step 2:
 
 ```bash
-# From project root
-MEDIAWIKI_URL=http://<alb-dns-name> make demo-load
+# From project root — uses the MEDIAWIKI_URL exported in Step 2
+make demo-load
 ```
 
 ### Destroy
 
 ```bash
-cd mediawiki/cdk
 cdk destroy
 ```
 

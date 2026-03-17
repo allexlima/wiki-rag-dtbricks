@@ -1,8 +1,19 @@
-# Root project dependencies (local development).
-# Includes src/ runtime deps + extras for notebooks.
+# Local development: all deps (src runtime + test + extras).
 # Pinned to exact versions for deterministic builds.
 #
-# Install: uv pip install -r requirements.txt
+# Install with uv (recommended):
+#   uv venv .venv --python 3.11
+#   uv pip install -r requirements.txt
 
+# --- Runtime (src/) ---
 -r src/requirements.txt
 Pillow==12.1.1
+
+# --- Test ---
+pytest==9.0.2
+pytest-cov==7.0.0
+pytest-mock==3.15.1
+responses==0.26.0
+
+# --- Deploy tools ---
+databricks-agents==1.9.3
