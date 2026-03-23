@@ -4,17 +4,47 @@
 
 # MAGIC %md
 # MAGIC # 02 — Ingest MediaWiki
-# MAGIC
-# MAGIC Incremental, multimodal ingestion: reads wikitext from MediaWiki's Lakebase tables,
-# MAGIC cleans/chunks text, captions images via vision LLM, embeds everything, and writes
-# MAGIC back to the `wiki_rag` schema. Only processes revisions past the stored watermark.
-# MAGIC
-# MAGIC > **Prerequisites:** Run `00_setup_lakebase` first.
+# MAGIC 
+# MAGIC Incremental multimodal ingestion pipeline:
+# MAGIC 1. Fetch new pages from MediaWiki (via Lakebase native tables)
+# MAGIC 2. Caption images via vision LLM (parallel) and inline them into the text
+# MAGIC 3. Chunk the enriched text and generate embeddings
+# MAGIC 4. Write everything to `wiki_rag` schema in a single transaction
+# MAGIC 
+# MAGIC > **Prerequisites:** `00_setup_lakebase` + MediaWiki with content loaded.
 
 # COMMAND ----------
 
-# MAGIC %pip install databricks-langchain psycopg2-binary pgvector mwparserfromhell tenacity Pillow -q
+# MAGIC %pip install databricks-langchain psycopg2-binary pgvector mwparserfromhell tenacity Pillow tqdm -q
 # MAGIC %restart_python
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Setup: imports, config, and constants
+
+# COMMAND ----------
+
+import logging
+import os
+import re
+import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
+from psycopg2.extras import execute_values
+from tqdm import tqdm
+
+# Bundle root resolution (notebooks/ and src/ are siblings under .bundle/.../files/)
+_cwd = os.getcwd()
+BUNDLE_ROOT = os.path.dirname(_cwd) if os.path.basename(_cwd) == "notebooks" else _cwd
+sys.path.insert(0, BUNDLE_ROOT)
+
+from src.config import get_lakebase_conn, load_bundle_defaults
+from src.ingestion import MediaWikiIngestion
+from src.pipeline import TextChunk, WikiPipeline
+
+log = logging.getLogger(__name__)
 
 # COMMAND ----------
 
@@ -23,221 +53,310 @@
 
 # COMMAND ----------
 
-import logging
-import os
-import sys
-
-try:
-    dbutils  # noqa: F821
-except NameError:
-    dbutils = None  # type: ignore[assignment]
-
-# ─── Path handling ────────────────────────────────────────────────────
-# DAB deploys notebooks/ and src/ as siblings under .bundle/.../files/
-# Notebook CWD may point to notebooks/, so go up one level to reach the
-# bundle root where src/ lives alongside notebooks/
-_cwd = os.getcwd()
-if os.path.basename(_cwd) == "notebooks":
-    BUNDLE_ROOT = os.path.dirname(_cwd)
-else:
-    BUNDLE_ROOT = _cwd
-sys.path.insert(0, BUNDLE_ROOT)
-
-# ─── Widgets (defaults from databricks.yml) ──────────────────────────
-from src.config import load_bundle_defaults
 _defaults = load_bundle_defaults()
 
 dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
 dbutils.widgets.text("embedding_model", _defaults["embedding_model"], "Embedding Model")
 dbutils.widgets.text("llm_model", _defaults["llm_model"], "Vision LLM")
-dbutils.widgets.text("mediawiki_url", _defaults.get("mediawiki_url", "http://localhost:8080"), "MediaWiki URL")
+dbutils.widgets.text(
+    "mediawiki_url",
+    _defaults.get("mediawiki_url", "http://localhost:8080"),
+    "MediaWiki URL",
+)
 
-# ─── Read parameters ─────────────────────────────────────────────────
+# COMMAND ----------
+
 SECRET_SCOPE = dbutils.widgets.get("secret_scope")
 EMBEDDING_MODEL = dbutils.widgets.get("embedding_model")
 LLM_MODEL = dbutils.widgets.get("llm_model")
 MEDIAWIKI_URL = dbutils.widgets.get("mediawiki_url")
 
-# ─── Validate parameters ─────────────────────────────────────────────
-assert SECRET_SCOPE and SECRET_SCOPE.strip(), (
-    "Widget 'secret_scope' is required — set it via the widget bar or DAB job parameters."
-)
-assert EMBEDDING_MODEL and EMBEDDING_MODEL.strip(), (
-    "Widget 'embedding_model' is required — provide a Foundation Model API endpoint name."
-)
-assert LLM_MODEL and LLM_MODEL.strip(), (
-    "Widget 'llm_model' is required — provide a vision-capable LLM endpoint name."
-)
+MAX_WORKERS = 10  # parallel threads for captioning + embedding
 
-# Propagate models to environment so WikiPipeline picks them up via os.environ
 os.environ["EMBEDDING_MODEL"] = EMBEDDING_MODEL
 os.environ["VISION_MODEL"] = LLM_MODEL
 
-print(f"Secret scope:    {SECRET_SCOPE}")
-print(f"Embedding model: {EMBEDDING_MODEL}")
-print(f"Vision LLM:      {LLM_MODEL}")
-print(f"MediaWiki URL:   {MEDIAWIKI_URL}")
+print(f"Scope: {SECRET_SCOPE}  |  Embed: {EMBEDDING_MODEL}  |  Vision: {LLM_MODEL}")
+print(
+    f"MediaWiki: {MEDIAWIKI_URL}  | Workers for captioning + embedding: {MAX_WORKERS}"
+)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Connect to Lakebase
+# MAGIC ## 1. Pre-flight: connectivity check
+# MAGIC 
+# MAGIC Fails fast if this compute can't reach MediaWiki (images won't be captioned).
+# MAGIC If blocked, check [Databricks IP ranges](https://www.databricks.com/networking/v1/ip-ranges.json)
+# MAGIC and add the relevant CIDR blocks to the MediaWiki ALB security group or firewall.
 
 # COMMAND ----------
 
-from contextlib import closing
+try:
+    _resp = requests.get(
+        f"{MEDIAWIKI_URL}/api.php?action=query&meta=siteinfo&format=json", timeout=10
+    )
+    _site = _resp.json().get("query", {}).get("general", {}).get("sitename", "?")
+    print(f"✅ MediaWiki reachable: {_site}")
+    MW_REACHABLE = True
+except Exception:
+    MW_REACHABLE = False
+    try:
+        _my_ip = requests.get("https://checkip.amazonaws.com", timeout=5).text.strip()
+    except Exception:
+        _my_ip = "unknown"
+    print(f"⚠️  Cannot reach MediaWiki at {MEDIAWIKI_URL}")
+    print(f"   This compute's outbound IP: {_my_ip}")
+    print(f"   → Add {_my_ip}/32 to the MediaWiki ALB security group.")
+    print(
+        "   → Find Databricks IP ranges: https://www.databricks.com/networking/v1/ip-ranges.json"
+    )
+    print("   Text ingestion will proceed; image captioning will be skipped.")
 
-from psycopg2.extras import execute_values
+# COMMAND ----------
 
-from src.config import get_lakebase_conn
-from src.ingestion import MediaWikiIngestion
-from src.pipeline import TextChunk, WikiPipeline
+# MAGIC %md
+# MAGIC ## 2. Connect to Lakebase + read watermark
+# MAGIC 
+# MAGIC Incremental processing: `sync_state.last_processed_rev_id` tracks the highest
+# MAGIC revision already ingested. Only pages with `rev_id > watermark` are fetched,
+# MAGIC so re-running this notebook is safe and skips already-processed content.
 
-log = logging.getLogger(__name__)
+# COMMAND ----------
 
 ingestion = MediaWikiIngestion()
 pipeline = WikiPipeline()
 
 conn = get_lakebase_conn()
-print(f"Connected to Lakebase (server={conn.info.host})")
+print(f"Connected to Lakebase ({conn.info.host})")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 2. Read watermark
-
-# COMMAND ----------
-
+# Watermark = highest rev_id already ingested. Pages with rev_id > watermark are new.
 with conn.cursor() as cur:
-    cur.execute("SELECT value FROM wiki_rag.sync_state WHERE key = 'last_processed_rev_id'")
-    row = cur.fetchone()
-    assert row is not None, (
-        "Watermark row not found in wiki_rag.sync_state. "
-        "Run 00_setup_lakebase first to seed the sync_state table."
+    cur.execute(
+        "SELECT value FROM wiki_rag.sync_state WHERE key = 'last_processed_rev_id'"
     )
+    row = cur.fetchone()
+    assert row, "Watermark not found — run 00_setup_lakebase first."
     watermark = int(row[0])
 
-print(f"Current watermark: rev_id = {watermark}")
+print(
+    f"Watermark: rev_id = {watermark} (pages with rev_id > {watermark} will be processed)"
+)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Fetch pages, clean, chunk, and process images
-# MAGIC
-# MAGIC Processes each new page: clean wikitext, chunk text, extract and caption images.
+# MAGIC ## 3. Fetch pages and extract image refs
 
 # COMMAND ----------
 
-all_chunks: list[TextChunk] = []
-image_records: list[tuple] = []  # (page_id, page_title, filename, alt_text, caption)
-max_rev_id = watermark
-page_count = 0
+pages = list(ingestion.fetch_pages(conn, watermark))
 
-for page in ingestion.fetch_pages(conn, watermark):
-    clean_text = pipeline.clean_wikitext(page.wikitext)
+# Build image task list per page for parallel captioning
+image_tasks_by_page = {}  # page_id → [(page, ref), ...]
+for page in pages:
+    refs = pipeline.extract_image_refs(page.wikitext)
+    if refs:
+        image_tasks_by_page[page.page_id] = [(page, ref) for ref in refs]
 
-    text_chunks = pipeline.chunk_page(
-        page_id=page.page_id,
-        page_title=page.page_title,
-        page_ns=page.page_ns,
-        rev_id=page.rev_id,
-        clean_text=clean_text,
-    ) if clean_text.strip() else []
-    all_chunks.extend(text_chunks)
+total_images = sum(len(v) for v in image_tasks_by_page.values())
+print(f"Found {len(pages)} pages, {total_images} images")
 
-    # Extract image refs from raw wikitext (before cleaning strips them)
-    image_refs = pipeline.extract_image_refs(page.wikitext)
-    for ref in image_refs:
-        try:
-            image_bytes = pipeline.fetch_image_from_mediawiki(ref.filename, base_url=MEDIAWIKI_URL)
-            if image_bytes is None:
-                continue
-
-            caption = pipeline.caption_image(
-                image_bytes=image_bytes,
-                alt_text=ref.alt_text,
-                page_title=page.page_title,
-                filename=ref.filename,
-            )
-
-            image_records.append((
-                page.page_id, page.page_title, ref.filename, ref.alt_text, caption,
-            ))
-
-            # Offset avoids index collisions with text chunks from the same page
-            img_chunks = pipeline.chunk_image_caption(
-                page_id=page.page_id,
-                page_title=page.page_title,
-                page_ns=page.page_ns,
-                rev_id=page.rev_id,
-                filename=ref.filename,
-                caption=caption,
-                chunk_index_offset=len(text_chunks),
-            )
-            all_chunks.extend(img_chunks)
-            print(f"  📷 {ref.filename}: captioned ({len(caption)} chars)")
-
-        except Exception:
-            log.warning("Failed to process image '%s' on page '%s'", ref.filename, page.page_title, exc_info=True)
-
-    max_rev_id = max(max_rev_id, page.rev_id)
-    page_count += 1
-
-print(f"✓ {page_count} pages → {len(all_chunks)} chunks ({len(image_records)} images)")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Early exit — no new pages
-
-# COMMAND ----------
-
-if not all_chunks:
+if not pages:
     print("No new pages to process.")
     dbutils.notebook.exit("No new pages")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Generate embeddings
+# MAGIC ## 4. Caption images
+# MAGIC 
+# MAGIC Fetches images from MediaWiki and generates captions via vision LLM.
+# MAGIC Runs in `MAX_WORKERS` threads. Results are keyed by `(page_id, filename)`
+# MAGIC so they can be inlined into the wikitext before chunking.
 
 # COMMAND ----------
 
-chunk_texts = [c.text for c in all_chunks]
-print(f"⏳ Embedding {len(chunk_texts)} chunks via '{EMBEDDING_MODEL}'...")
+captions: dict[tuple[int, str], str] = {}  # (page_id, filename) → caption
+image_records: list[tuple] = []
 
-embeddings = pipeline.embed_texts(chunk_texts)
-print(f"✓ {len(embeddings)} embeddings (dim={len(embeddings[0])})")
+
+def _caption_one(page, ref) -> tuple[int, str, str, str, str] | None:
+    """Fetch + caption a single image. Returns (page_id, title, filename, alt, caption) or None."""
+    image_bytes = pipeline.fetch_image_from_mediawiki(
+        ref.filename, base_url=MEDIAWIKI_URL
+    )
+    if image_bytes is None:
+        return None
+    caption = pipeline.caption_image(
+        image_bytes=image_bytes,
+        alt_text=ref.alt_text,
+        page_title=page.page_title,
+        filename=ref.filename,
+    )
+    return (page.page_id, page.page_title, ref.filename, ref.alt_text, caption)
+
+
+all_tasks = [(p, r) for tasks in image_tasks_by_page.values() for p, r in tasks]
+
+if MW_REACHABLE and all_tasks:
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = {pool.submit(_caption_one, p, r): (p, r) for p, r in all_tasks}
+        for future in tqdm(
+            as_completed(futures), total=len(futures), desc="🖼️  Captioning", unit="img"
+        ):
+            page, ref = futures[future]
+            try:
+                result = future.result()
+                if result:
+                    pid, title, fname, alt, cap = result
+                    captions[(pid, fname)] = cap
+                    image_records.append(result)
+            except Exception:
+                log.warning(
+                    "Image '%s' on '%s' failed",
+                    ref.filename,
+                    page.page_title,
+                    exc_info=True,
+                )
+
+    print(f"✅ {len(captions)} images captioned")
+elif not MW_REACHABLE:
+    print("⏭️  Skipping image captioning (MediaWiki unreachable)")
+else:
+    print("⏭️  No images to caption")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Write to Lakebase
-# MAGIC
-# MAGIC Single transaction: delete stale data, insert chunks + embeddings + images, advance watermark.
+# MAGIC ## 5. Enrich text with captions, then chunk
+# MAGIC 
+# MAGIC Replaces `[[File:...]]` references with `Image(source="...", caption="...")` blocks
+# MAGIC at their original position, preserving document structure. The enriched text is
+# MAGIC then chunked — so image descriptions live alongside their surrounding context.
+
+# COMMAND ----------
+
+all_chunks: list[TextChunk] = []
+max_rev_id = watermark
+
+for page in tqdm(pages, desc="📄 Chunking", unit="page"):
+    # Replace [[File:...]] wikilinks with Image() placeholders in the RAW wikitext
+    # BEFORE cleaning — because clean_wikitext() strips all [[File:...]] links entirely.
+    enriched_wikitext = page.wikitext
+    for ref in pipeline.extract_image_refs(page.wikitext):
+        caption = captions.get((page.page_id, ref.filename))
+        if caption:
+            placeholder = f'Image(source="{ref.filename}", caption="{caption}")'
+        else:
+            placeholder = ""
+        # Replace the full [[File:name|...]] wikilink with our plain-text placeholder
+        pattern = r"\[\[(File|Image):" + re.escape(ref.filename) + r"[^\]]*\]\]"
+        enriched_wikitext = re.sub(
+            pattern, placeholder, enriched_wikitext, flags=re.IGNORECASE
+        )
+
+    clean_text = pipeline.clean_wikitext(enriched_wikitext)
+
+    chunks = (
+        pipeline.chunk_page(
+            page_id=page.page_id,
+            page_title=page.page_title,
+            page_ns=page.page_ns,
+            rev_id=page.rev_id,
+            clean_text=clean_text,
+        )
+        if clean_text.strip()
+        else []
+    )
+
+    # Mark chunks containing image captions for metadata tracking
+    for c in chunks:
+        if "Image(source=" in c.text:
+            c.chunk_source = "image"
+
+    all_chunks.extend(chunks)
+    max_rev_id = max(max_rev_id, page.rev_id)
+
+image_chunk_count = sum(1 for c in all_chunks if c.chunk_source == "image")
+print(f"✅ {len(all_chunks)} chunks ({image_chunk_count} contain image captions)")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 6. Generate embeddings
+
+# COMMAND ----------
+
+if not all_chunks:
+    print("No chunks to embed.")
+    dbutils.notebook.exit("No chunks")
+
+chunk_texts = [c.text for c in all_chunks]
+batch_size = pipeline.EMBEDDING_BATCH_SIZE
+batches = [
+    chunk_texts[i : i + batch_size] for i in range(0, len(chunk_texts), batch_size)
+]
+
+print(
+    f"Embedding {len(chunk_texts)} chunks in {len(batches)} batches ({MAX_WORKERS} workers)..."
+)
+
+# Parallel embedding: each batch is an independent API call
+embeddings_by_batch: dict[int, list] = {}
+with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+    futures = {
+        pool.submit(pipeline.embed_texts, batch): idx
+        for idx, batch in enumerate(batches)
+    }
+    for future in tqdm(
+        as_completed(futures), total=len(futures), desc="🧮 Embedding", unit="batch"
+    ):
+        idx = futures[future]
+        embeddings_by_batch[idx] = future.result()
+
+# Reassemble in original order
+embeddings = []
+for idx in range(len(batches)):
+    embeddings.extend(embeddings_by_batch[idx])
+
+print(f"✅ {len(embeddings)} embeddings (dim={len(embeddings[0])})")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 7. Write to Lakebase
+# MAGIC 
+# MAGIC Single atomic transaction: delete stale data → insert chunks + embeddings + images → advance watermark.
 
 # COMMAND ----------
 
 page_ids = list({c.page_id for c in all_chunks})
 
+if conn.info.transaction_status != 0:
+    conn.commit()
 conn.autocommit = False
+
 try:
     with conn.cursor() as cur:
-        # FK cascade deletes associated embeddings automatically
+        # FK cascade deletes associated embeddings
         cur.execute(
-            "DELETE FROM wiki_rag.wiki_chunks WHERE page_id = ANY(%s)",
-            (page_ids,),
+            "DELETE FROM wiki_rag.wiki_chunks WHERE page_id = ANY(%s)", (page_ids,)
         )
-        print(f"  Deleted {cur.rowcount} old chunks for {len(page_ids)} pages")
-
         cur.execute(
-            "DELETE FROM wiki_rag.wiki_images WHERE page_id = ANY(%s)",
-            (page_ids,),
+            "DELETE FROM wiki_rag.wiki_images WHERE page_id = ANY(%s)", (page_ids,)
         )
-        print(f"  Deleted {cur.rowcount} old image records")
 
         chunk_rows = [
-            (c.page_id, c.page_title, c.page_ns, c.rev_id, c.chunk_index, c.text, c.chunk_source)
+            (
+                c.page_id,
+                c.page_title,
+                c.page_ns,
+                c.rev_id,
+                c.chunk_index,
+                c.text,
+                c.chunk_source,
+            )
             for c in all_chunks
         ]
         chunk_ids = execute_values(
@@ -249,16 +368,13 @@ try:
             fetch=True,
         )
         chunk_ids = [row[0] for row in chunk_ids]
-        print(f"  Inserted {len(chunk_ids)} chunks")
 
-        emb_rows = list(zip(chunk_ids, embeddings))
         execute_values(
             cur,
             "INSERT INTO wiki_rag.wiki_embeddings (chunk_id, embedding) VALUES %s",
-            emb_rows,
+            list(zip(chunk_ids, embeddings)),
             template="(%s, %s::vector)",
         )
-        print(f"  Inserted {len(emb_rows)} embeddings")
 
         if image_records:
             execute_values(
@@ -268,16 +384,17 @@ try:
                    VALUES %s""",
                 image_records,
             )
-            print(f"  Inserted {len(image_records)} image records")
 
         cur.execute(
-            "UPDATE wiki_rag.sync_state SET value = %s, updated_at = now() "
-            "WHERE key = 'last_processed_rev_id'",
+            "UPDATE wiki_rag.sync_state SET value = %s, updated_at = now() WHERE key = 'last_processed_rev_id'",
             (str(max_rev_id),),
         )
 
     conn.commit()
-    print(f"\n✓ Watermark advanced to rev_id = {max_rev_id}")
+    print(
+        f"✅ Written {len(chunk_ids)} chunks + {len(embeddings)} embeddings + {len(image_records)} images"
+    )
+    print(f"   Watermark → rev_id = {max_rev_id}")
 
 except Exception:
     conn.rollback()
@@ -286,32 +403,30 @@ except Exception:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 6. Summary
+# MAGIC ## 8. Summary
 
 # COMMAND ----------
 
 with conn.cursor() as cur:
     cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_chunks")
     total_chunks = cur.fetchone()[0]
-
-    cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_chunks WHERE chunk_source = 'image'")
-    image_chunks = cur.fetchone()[0]
-
+    cur.execute(
+        "SELECT COUNT(*) FROM wiki_rag.wiki_chunks WHERE chunk_source = 'image'"
+    )
+    img_chunks = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_embeddings")
-    total_embeddings = cur.fetchone()[0]
-
+    total_emb = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM wiki_rag.wiki_images")
-    total_images = cur.fetchone()[0]
-
-    cur.execute("SELECT value FROM wiki_rag.sync_state WHERE key = 'last_processed_rev_id'")
-    current_wm = cur.fetchone()[0]
-
-print(f"Total chunks:     {total_chunks} ({image_chunks} from images)")
-print(f"Total embeddings: {total_embeddings}")
-print(f"Total images:     {total_images}")
-print(f"Watermark:        rev_id = {current_wm}")
-
-# COMMAND ----------
+    total_img = cur.fetchone()[0]
+    cur.execute(
+        "SELECT value FROM wiki_rag.sync_state WHERE key = 'last_processed_rev_id'"
+    )
+    wm = cur.fetchone()[0]
 
 conn.close()
+
+print(f"Chunks:     {total_chunks} ({img_chunks} with image captions)")
+print(f"Embeddings: {total_emb}")
+print(f"Images:     {total_img}")
+print(f"Watermark:  rev_id = {wm}")
 print("✓ Done")

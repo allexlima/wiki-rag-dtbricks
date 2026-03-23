@@ -14,6 +14,8 @@ from databricks_langchain import ChatDatabricks, DatabricksEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from src.prompts import CAPTION_SYSTEM, CAPTION_USER_TEMPLATE
+
 log = logging.getLogger(__name__)
 
 
@@ -191,7 +193,7 @@ class WikiPipeline:
         chunk_index_offset: int = 0,
     ) -> list[TextChunk]:
         """Create image-sourced chunks from a vision LLM caption."""
-        text = f'[Image from "{page_title}": {filename}]\n{caption}'
+        text = f'Image(source="{filename}", caption="{caption}")'
         if not text.strip():
             return []
 
@@ -284,30 +286,20 @@ class WikiPipeline:
 
         vision_llm = ChatDatabricks(endpoint=model)
 
-        context_hint = f' This image appears on the wiki page "{page_title}".' if page_title else ""
-        alt_hint = f" The image alt text is: {alt_text}." if alt_text else ""
+        context_hint = f' Imagem da página wiki "{page_title}".' if page_title else ""
+        alt_hint = f" Texto alternativo: {alt_text}." if alt_text else ""
+        user_msg = CAPTION_USER_TEMPLATE.format(context_hint=context_hint, alt_hint=alt_hint)
 
         from langchain_core.messages import HumanMessage, SystemMessage
 
         response = vision_llm.invoke([
-                SystemMessage(content=(
-                        "You are an image description assistant for a wiki knowledge base. "
-                        "Produce a factual, information-dense description (2-4 sentences) "
-                        "that captures key visual details: diagrams, charts, organizational "
-                        "structures, labels, text overlays, and relationships shown."
-                    )),
+                SystemMessage(content=CAPTION_SYSTEM),
                 HumanMessage(content=[
-                        {
-                            "type": "text",
-                            "text": f"Describe this image in detail.{context_hint}{alt_hint}",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:{mime};base64,{b64_data}"},
-                        },
+                        {"type": "text", "text": user_msg},
+                        {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64_data}"}},
                     ]),
             ],
-            max_tokens=256,
+            max_tokens=200,
             temperature=0,
         )
         caption = response.content

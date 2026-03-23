@@ -22,6 +22,7 @@ from pgvector.psycopg2 import register_vector
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.pipeline import WikiPipeline
+from src.prompts import GENERATOR_SYSTEM, GRADER_SYSTEM, REWRITER_SYSTEM
 
 log = logging.getLogger(__name__)
 
@@ -229,18 +230,8 @@ class WikiRAGAgent(ResponsesAgent):
                 grade = _llm_call(
                     llm,
                     messages=[
-                        {
-                            "role": "system",
-                            "content": (
-                                "You are a relevance grader. Given a question and a document, "
-                                "respond with ONLY 'yes' if the document is relevant to answering "
-                                "the question, or 'no' if it is not."
-                            ),
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Question: {question}\n\nDocument: {doc['text']}",
-                        },
+                        {"role": "system", "content": GRADER_SYSTEM},
+                        {"role": "user", "content": f"Question: {question}\n\nDocument: {doc['text']}"},
                     ],
                     max_tokens=3,
                     temperature=0,
@@ -255,14 +246,7 @@ class WikiRAGAgent(ResponsesAgent):
             new_question = _llm_call(
                 llm,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a query rewriter. Rewrite the following question to be more "
-                            "specific and likely to retrieve relevant wiki documents. "
-                            "Return ONLY the rewritten question."
-                        ),
-                    },
+                    {"role": "system", "content": REWRITER_SYSTEM},
                     {"role": "user", "content": state["question"]},
                 ],
                 max_tokens=128,
@@ -293,18 +277,8 @@ class WikiRAGAgent(ResponsesAgent):
             answer = _llm_call(
                 llm,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a helpful wiki assistant. Answer the question using ONLY "
-                            "the provided context. Cite the source page titles in your answer. "
-                            "If the context doesn't contain enough information, say so."
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Context:\n{context}{history_block}\n\nQuestion: {state['question']}",
-                    },
+                    {"role": "system", "content": GENERATOR_SYSTEM},
+                    {"role": "user", "content": f"Context:\n{context}{history_block}\n\nQuestion: {state['question']}"},
                 ],
                 max_tokens=1024,
                 temperature=0.1,
