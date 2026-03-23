@@ -107,27 +107,56 @@ Run `make help` to see all available targets.
 
 ### Data Flow
 
-```
-MediaWiki (Docker or ECS)
-    |  writes to
-    v
-Lakebase [mediawiki schema]
-    |  read by ingestion pipeline
-    v
-Clean wikitext + Extract images --> Vision LLM (captions) --> Chunk --> Embed (Qwen3)
-    |                                                                      |
-    v                                                                      v
-Lakebase [wiki_rag schema]  <--  pgvector embeddings (HNSW cosine)
-    |
-    |  context retrieval
-    v
-LangGraph RAG Agent (retrieve -> grade -> rewrite? -> generate)
-    |                              |
-    v                              v
-Claude Sonnet 4.6 (LLM)   Conversation Memory (Lakebase)
-    |
-    v
-MLflow Model Serving --> Streamlit Chat UI
+```mermaid
+flowchart TB
+    subgraph Sources["Knowledge Source"]
+        MW["MediaWiki\n(Docker / ECS Fargate)"]
+    end
+
+    subgraph Lakebase["Lakebase PostgreSQL"]
+        MW_SCHEMA[("mediawiki schema\n(native tables)")]
+        RAG_SCHEMA[("wiki_rag schema\n(chunks, embeddings,\nconversation memory)")]
+    end
+
+    subgraph Pipeline["Ingestion Pipeline (Notebook)"]
+        CLEAN["Clean wikitext"]
+        IMAGES["Extract images"]
+        CAPTION["Vision LLM\n(Claude Sonnet 4.6)"]
+        CHUNK["Chunk"]
+        EMBED["Embed\n(Qwen3 1024-dim)"]
+    end
+
+    subgraph Agent["RAG Agent (LangGraph)"]
+        RETRIEVE["Retrieve\n(pgvector HNSW)"]
+        GRADE["Grade documents"]
+        REWRITE["Rewrite query"]
+        GENERATE["Generate answer\n(Claude Sonnet 4.6)"]
+    end
+
+    subgraph Serving["Serving"]
+        ENDPOINT["MLflow Model Serving\n(ResponsesAgent)"]
+        APP["Streamlit Chat UI\n(Databricks App)"]
+    end
+
+    MW -->|writes to| MW_SCHEMA
+    MW_SCHEMA -->|read by pipeline| CLEAN
+    MW_SCHEMA --> IMAGES
+    IMAGES --> CAPTION
+    CLEAN --> CHUNK
+    CAPTION --> CHUNK
+    CHUNK --> EMBED
+    EMBED -->|vector + metadata| RAG_SCHEMA
+
+    APP -->|user question| ENDPOINT
+    ENDPOINT --> RETRIEVE
+    RETRIEVE -->|similarity search| RAG_SCHEMA
+    RETRIEVE --> GRADE
+    GRADE -->|relevant docs| GENERATE
+    GRADE -->|no relevant docs| REWRITE
+    REWRITE -->|refined query| RETRIEVE
+    GENERATE -->|save exchange| RAG_SCHEMA
+    GENERATE --> ENDPOINT
+    ENDPOINT -->|answer + sources| APP
 ```
 
 ---
