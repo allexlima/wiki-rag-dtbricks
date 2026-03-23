@@ -421,6 +421,36 @@ fi
 rm -rf "$PROGRESS_DIR" "$PAGE_SCRIPT" "$UPLOAD_SCRIPT"
 
 # -------------------------------------------------------
+# 7. Flush caches so images render correctly
+# -------------------------------------------------------
+# Pages are created before images (steps 5 → 6). MediaWiki's APCu
+# in-process cache stores the "file not found" state from when pages
+# were first parsed. A simple API purge doesn't clear APCu — we need
+# to restart Apache (for local Docker) or force a full re-parse.
+if [ "$IMAGE_COUNT" -gt 0 ] && [ "$TOTAL_PAGES" -gt 0 ]; then
+    echo "  🔄 Flushing image caches..."
+
+    # Local Docker: restart Apache to clear APCu
+    if [ "$MW_TARGET" = "$LOCAL_URL" ] || [ "$ALSO_LOCAL" -eq 1 ]; then
+        docker exec wiki-rag-mediawiki apache2ctl graceful > /dev/null 2>&1 || true
+    fi
+
+    # Remote (ECS): force restart the Fargate task to clear APCu.
+    # For now, use API purge + forcelinkupdate as best-effort — ECS
+    # tasks will pick up the images on next container recycle.
+    TITLES=$(printf '%s\n' "${MD_FILES[@]}" \
+        | xargs -I{} sh -c 'head -1 "{}" | sed "s/^# //"' \
+        | paste -sd '|' -)
+    curl -s -b "$COOKIE_JAR" -X POST "$API_URL" \
+        --data-urlencode "action=purge" \
+        --data-urlencode "titles=${TITLES}" \
+        --data-urlencode "forcelinkupdate=1" \
+        --data-urlencode "format=json" > /dev/null 2>&1
+
+    echo "  ✅ Caches flushed"
+fi
+
+# -------------------------------------------------------
 # Done
 # -------------------------------------------------------
 echo ""
