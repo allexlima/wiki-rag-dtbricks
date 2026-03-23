@@ -1,13 +1,4 @@
-"""
-Shared Lakebase connection helper.
-
-Works in both:
-  - Notebook context (reads secrets via dbutils)
-  - Serving/App context (reads environment variables)
-
-Prefers password auth (static `mediawiki` role) when available.
-Falls back to OAuth token generation via the Databricks SDK.
-"""
+"""Lakebase connection helpers and bundle config reader."""
 from __future__ import annotations
 
 import logging
@@ -27,13 +18,11 @@ DEFAULT_PORT = "5432"
 
 def _get_dbutils():
     """Resolve the notebook dbutils global, or None outside notebooks."""
-    # Prefer the notebook-injected global (works on serverless without cluster_id).
     try:
         return get_ipython().user_ns.get("dbutils")  # type: ignore[name-defined]
     except NameError:
         pass
 
-    # Fallback: construct via PySpark (classic compute only).
     try:
         from pyspark.dbutils import DBUtils
         from pyspark.sql import SparkSession
@@ -54,11 +43,9 @@ def _get_secrets() -> dict[str, str]:
         "password": os.environ.get("LAKEBASE_PASSWORD", ""),
     }
 
-    # If we have host + user + password from env, that's enough for direct auth
     if config["endpoint_host"] and config["db_user"] and config["password"]:
         return config
 
-    # If we have instance + user from env, that's enough for OAuth
     if config["instance_name"] and config["db_user"]:
         return config
 
@@ -86,8 +73,7 @@ def _get_secrets() -> dict[str, str]:
     config["port"] = secret_or("lakebase_port", config["port"])
     config["password"] = config["password"] or secret_or("mw_password", "")
 
-    # mw_role is the native PG role that owns the password — use it instead of
-    # the workspace user (lakebase_user) when password auth is active.
+    # Use mw_role instead of workspace user for password auth
     if config["password"]:
         config["db_user"] = secret_or("mw_role", config["db_user"])
 
@@ -97,16 +83,12 @@ def _get_secrets() -> dict[str, str]:
 def get_lakebase_conn(
     w: WorkspaceClient | None = None,
 ) -> psycopg2.extensions.connection:
-    """Open a psycopg2 connection to Lakebase.
-
-    Uses password auth when LAKEBASE_PASSWORD (or the mw_password secret) is
-    available.  Falls back to OAuth token generation via the SDK otherwise.
-    """
+    """Open a psycopg2 connection to Lakebase (password or OAuth)."""
     config = _get_secrets()
     host = config["endpoint_host"]
     port = config["port"]
 
-    # Password auth — simpler, no token expiration
+    # Password auth
     if config["password"] and host:
         return psycopg2.connect(
             host=host,
@@ -118,7 +100,7 @@ def get_lakebase_conn(
             connect_timeout=CONNECT_TIMEOUT_SECONDS,
         )
 
-    # OAuth token auth — requires SDK calls
+    # OAuth token auth
     if w is None:
         w = WorkspaceClient()
 
@@ -141,12 +123,7 @@ def get_lakebase_conn(
 
 
 def get_lakebase_conn_string() -> str:
-    """Build a PostgreSQL connection URI for libraries that need a string (e.g.
-    langgraph-checkpoint-postgres).
-
-    Requires password auth (host + user + password).  OAuth tokens are
-    short-lived and unsuitable for connection-string-based libraries.
-    """
+    """Build a PostgreSQL connection URI (password auth only)."""
     config = _get_secrets()
     host = config["endpoint_host"]
     port = config["port"]
@@ -166,19 +143,8 @@ def get_lakebase_conn_string() -> str:
     )
 
 
-# ---------------------------------------------------------------------------
-# Bundle configuration reader
-# ---------------------------------------------------------------------------
-
 def load_bundle_defaults() -> dict[str, str]:
-    """Read variable defaults from ``databricks.yml``.
-
-    Resolves ``${var.X}`` references within default values.
-    Searches for ``databricks.yml`` in the current directory and one level up.
-
-    Returns:
-        Dict mapping variable names to their default values.
-    """
+    """Read variable defaults from databricks.yml, resolving ${var.X} refs."""
     import yaml
 
     for candidate in ("databricks.yml", "../databricks.yml"):
@@ -193,7 +159,6 @@ def load_bundle_defaults() -> dict[str, str]:
 
     raw = {k: v.get("default", "") for k, v in cfg.get("variables", {}).items()}
 
-    # Resolve ${var.X} references (single pass — no nested refs)
     import re
     resolved = {}
     for k, v in raw.items():

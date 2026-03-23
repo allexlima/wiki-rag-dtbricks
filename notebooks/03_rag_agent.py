@@ -5,33 +5,10 @@
 # MAGIC %md
 # MAGIC # 02 — RAG Agent Testing
 # MAGIC
-# MAGIC Interactive notebook to test the **LangGraph RAG agent** against Lakebase.
-# MAGIC Use this to explore retrieval quality, agent responses, and multi-turn
-# MAGIC conversation memory — all without deploying to a serving endpoint.
+# MAGIC Interactive notebook to test the LangGraph RAG agent (retrieval, grading,
+# MAGIC generation, and multi-turn memory) without deploying to a serving endpoint.
 # MAGIC
-# MAGIC **Pipeline:**
-# MAGIC ```
-# MAGIC embed query → pgvector retrieval → grade_documents → (rewrite_query loop) → generate
-# MAGIC ```
-# MAGIC
-# MAGIC The agent uses **ResponsesAgent** (MLflow 3) wrapping a LangGraph `StateGraph`.
-# MAGIC Conversation memory is persisted in Lakebase (`wiki_rag.conversations` / `wiki_rag.messages`).
-# MAGIC
-# MAGIC **Prerequisites:**
-# MAGIC - Run `00_setup_lakebase` to provision the database and schema
-# MAGIC - Run `02_ingest_mediawiki` to populate embeddings
-# MAGIC - Secrets stored via `make setup-secrets`
-# MAGIC
-# MAGIC | Step | What it does |
-# MAGIC |------|-------------|
-# MAGIC | 1 | Initialize agent and Lakebase connection |
-# MAGIC | 2 | Test raw vector retrieval (pgvector similarity search) |
-# MAGIC | 3 | Test full RAG agent (single-turn question → answer) |
-# MAGIC | 4 | Test multi-turn conversation (memory persistence) |
-# MAGIC | 5 | Interactive query using the widget bar |
-# MAGIC
-# MAGIC > **Safe to re-run** — each section is independent (except step 4 which
-# MAGIC > depends on step 3 for the conversation ID).
+# MAGIC **Prerequisites:** Run `00_setup_lakebase`, `02_ingest_mediawiki`, and `make setup-secrets`.
 
 # COMMAND ----------
 
@@ -42,11 +19,6 @@
 
 # MAGIC %md
 # MAGIC ## Configuration
-# MAGIC
-# MAGIC Set parameters via the widget bar above when running interactively.
-# MAGIC - **secret_scope** — Databricks secret scope with Lakebase credentials
-# MAGIC - **question** — Default question for the interactive query (step 5)
-# MAGIC - **top_k** — Number of documents to retrieve in the vector search test
 
 # COMMAND ----------
 
@@ -68,7 +40,6 @@ try:
 except NameError:
     dbutils = None  # type: ignore[assignment]
 
-# ─── Defensive path handling ────────────────────────────────────────────
 _cwd = os.getcwd()
 if os.path.basename(_cwd) == "notebooks":
     BUNDLE_ROOT = os.path.dirname(_cwd)
@@ -94,9 +65,6 @@ print(f"Question     : {QUESTION[:80]}{'...' if len(QUESTION) > 80 else ''}")
 
 # MAGIC %md
 # MAGIC ## 1. Initialize Agent
-# MAGIC
-# MAGIC Creates a `WikiRAGAgent` instance and verifies the Lakebase connection.
-# MAGIC The agent lazily initialises its LLM client on first call.
 
 # COMMAND ----------
 
@@ -111,17 +79,12 @@ try:
     print(f"Agent initialised — {embedding_count:,} embeddings in wiki_rag.wiki_embeddings")
 except Exception as e:
     print(f"Failed to connect to Lakebase: {e}")
-    print("Ensure 00_setup_lakebase and 02_ingest_mediawiki have been run.")
     raise
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 2. Test Retrieval
-# MAGIC
-# MAGIC Runs a raw **pgvector similarity search** without the LLM grading/generation steps.
-# MAGIC Useful for debugging embedding quality and checking what documents the agent "sees"
-# MAGIC before generating an answer.
 
 # COMMAND ----------
 
@@ -161,18 +124,11 @@ try:
 
 except Exception as e:
     print(f"Retrieval failed: {e}")
-    print("This usually means embeddings haven't been ingested yet, or the Lakebase connection dropped.")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 3. Test Full Agent (single-turn)
-# MAGIC
-# MAGIC Runs the complete RAG pipeline end-to-end:
-# MAGIC **retrieve** → **grade_documents** → (**rewrite_query** if needed) → **generate**
-# MAGIC
-# MAGIC The agent uses the LLM to grade document relevance, optionally rewrites the query
-# MAGIC (up to 2 times), and then generates a cited answer.
 
 # COMMAND ----------
 
@@ -197,7 +153,6 @@ try:
 
 except Exception as e:
     print(f"Agent call failed: {e}")
-    print("Check that the LLM endpoint is accessible and Lakebase connection is live.")
     raise
 
 # COMMAND ----------
@@ -205,13 +160,7 @@ except Exception as e:
 # MAGIC %md
 # MAGIC ## 4. Test Multi-Turn Conversation
 # MAGIC
-# MAGIC Uses the same `conversation_id` from step 3 to verify that the agent loads
-# MAGIC previous turns from Lakebase and uses them as context. This tests the full
-# MAGIC memory persistence loop:
-# MAGIC
-# MAGIC 1. Step 3 saved the exchange to `wiki_rag.messages`
-# MAGIC 2. This step loads that history and asks a follow-up
-# MAGIC 3. The agent should reference context from the first answer
+# MAGIC Reuses `conversation_id` from step 3 to verify memory persistence.
 
 # COMMAND ----------
 
@@ -270,18 +219,11 @@ try:
 
 except Exception as e:
     print(f"Multi-turn test failed: {e}")
-    print("Ensure step 3 completed successfully (conv_id must exist).")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 5. Interactive Query
-# MAGIC
-# MAGIC Uses the **question** widget from the widget bar at the top of the notebook.
-# MAGIC Change the widget value and re-run this cell to explore different queries.
-# MAGIC
-# MAGIC > **Tip:** Update the `question` widget above and click **Run** on this cell
-# MAGIC > to quickly iterate on different questions without touching the code.
 
 # COMMAND ----------
 
@@ -307,23 +249,14 @@ try:
 
 except Exception as e:
     print(f"Interactive query failed: {e}")
-    print("Check that the question widget is non-empty and that the agent is operational.")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Cleanup
-# MAGIC
-# MAGIC Close the Lakebase connection. This cell is safe to skip if you want to keep
-# MAGIC the connection open for further ad-hoc queries in the notebook.
 
 # COMMAND ----------
 
-try:
-    if conn and not conn.closed:
-        conn.close()
-        print("Lakebase connection closed.")
-    else:
-        print("Connection already closed.")
-except NameError:
-    print("No connection to close.")
+if 'conn' in dir() and not conn.closed:
+    conn.close()
+    print("Lakebase connection closed.")

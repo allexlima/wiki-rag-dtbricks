@@ -4,36 +4,13 @@
 
 # MAGIC %md
 # MAGIC # 00 — Lakebase Setup
-# MAGIC 
-# MAGIC One-time provisioning of the **Lakebase Autoscaling PostgreSQL 16** backend
-# MAGIC for the Wiki RAG pipeline. This notebook sets up everything the project needs
-# MAGIC from a database perspective — a single Lakebase project that hosts both the
-# MAGIC **MediaWiki native tables** (via the `mediawiki` role) and the **RAG pipeline
-# MAGIC tables** (embeddings, chunks, conversation memory) in the `wiki_rag` schema.
-# MAGIC 
-# MAGIC **Architecture:**
-# MAGIC ```
-# MAGIC Lakebase Autoscaling (wiki-rag-lakebase)
-# MAGIC └── production branch
-# MAGIC     └── wikidb
-# MAGIC         ├── public schema     ← MediaWiki's native tables (page, revision, ...)
-# MAGIC         └── wiki_rag schema   ← RAG tables (chunks, embeddings, conversations)
-# MAGIC ```
-# MAGIC 
-# MAGIC **Prerequisites:** Run `make setup-secrets` first — this notebook reads the
-# MAGIC `mw_password` secret from the Databricks secret scope.
-# MAGIC 
-# MAGIC | Step | What it does |
-# MAGIC |------|-------------|
-# MAGIC | 1 | Create Lakebase Autoscaling project (PG 16, scale-to-zero) via `w.postgres` SDK |
-# MAGIC | 2 | Create `wikidb` database |
-# MAGIC | 3 | Create `mediawiki` PostgreSQL role with grants on `public` schema |
-# MAGIC | 4 | Create `wiki_rag` schema, 6 tables, pgvector HNSW index, and role grants |
-# MAGIC | 5 | Store all connection details in the Databricks secret scope |
-# MAGIC | 6 | Verify end-to-end connectivity using password auth |
-# MAGIC 
-# MAGIC > **Idempotent** — safe to re-run at any time. All DDL uses `IF NOT EXISTS`
-# MAGIC > and `ON CONFLICT DO NOTHING`.
+# MAGIC
+# MAGIC Provisions a **Lakebase Autoscaling PG 16** instance hosting both MediaWiki
+# MAGIC native tables (`public` schema) and RAG pipeline tables (`wiki_rag` schema).
+# MAGIC
+# MAGIC **Prerequisites:** Run `make setup-secrets` first.
+# MAGIC
+# MAGIC > **Idempotent** — safe to re-run. All DDL uses `IF NOT EXISTS` / `ON CONFLICT DO NOTHING`.
 
 # COMMAND ----------
 
@@ -44,9 +21,8 @@
 
 # MAGIC %md
 # MAGIC ## Configuration
-# MAGIC 
-# MAGIC Parameters are auto-populated by the DAB job (`resources/jobs.yml`), or you can
-# MAGIC set them manually via the widget bar when running interactively.
+# MAGIC
+# MAGIC Auto-populated by the DAB job, or set manually via widgets.
 
 # COMMAND ----------
 
@@ -110,13 +86,8 @@ print(f"🔧 User: {CURRENT_USER}  Project: {PROJECT_ID}  DB: {DB_NAME}")
 
 # MAGIC %md
 # MAGIC ## 1. Create Lakebase Autoscaling project
-# MAGIC 
-# MAGIC Creates a **Lakebase Autoscaling** project with PG 16. A new project automatically
-# MAGIC creates a `production` branch with a default compute endpoint (`primary`) and
-# MAGIC the `databricks_postgres` database. The compute auto-scales based on load and
-# MAGIC scales to zero when idle (cost-optimized).
-# MAGIC 
-# MAGIC `.wait()` blocks until the project is fully provisioned (~2-3 min).
+# MAGIC
+# MAGIC Creates the PG 16 project with auto-scaling + scale-to-zero. `.wait()` blocks until ready (~2-3 min).
 
 # COMMAND ----------
 
@@ -155,10 +126,8 @@ print(f"✅ Endpoint {endpoint.status.current_state} → {HOST}")
 
 # MAGIC %md
 # MAGIC ## 2. Create database
-# MAGIC 
-# MAGIC Lakebase ships with a default `databricks_postgres` database. We create a dedicated
-# MAGIC `wikidb` database for MediaWiki + RAG data. All admin operations use **short-lived OAuth
-# MAGIC tokens** generated via the SDK (valid ~1 hour).
+# MAGIC
+# MAGIC Creates the `wikidb` database using a short-lived OAuth token.
 
 # COMMAND ----------
 
@@ -192,10 +161,8 @@ with closing(_oauth_conn("databricks_postgres")) as conn:
 
 # MAGIC %md
 # MAGIC ## 3. Create role + grants
-# MAGIC 
-# MAGIC Creates the `mediawiki` PostgreSQL role with the static password from the secret scope.
-# MAGIC This role is used by the MediaWiki Docker container and the model serving endpoint.
-# MAGIC Grants full access to the `public` schema (for MediaWiki's native tables).
+# MAGIC
+# MAGIC Creates the `mediawiki` role (used by MW container + serving endpoint) with full access to `public` schema.
 
 # COMMAND ----------
 
@@ -228,14 +195,8 @@ with closing(_oauth_conn(DB_NAME)) as conn:
 
 # MAGIC %md
 # MAGIC ## 4. Schema, tables & pgvector index
-# MAGIC 
-# MAGIC Creates the `wiki_rag` schema with all tables for the RAG pipeline:
-# MAGIC - **wiki_chunks** / **wiki_embeddings** — text chunks + 1024-dim pgvector embeddings (HNSW cosine index)
-# MAGIC - **wiki_images** — vision LLM captions for multimodal processing
-# MAGIC - **sync_state** — incremental processing watermark
-# MAGIC - **conversations** / **messages** — multi-turn conversation memory
-# MAGIC 
-# MAGIC Also grants the `mediawiki` role full access to this schema (needed by the serving endpoint).
+# MAGIC
+# MAGIC Creates `wiki_rag` schema: chunks, embeddings (HNSW), images, sync_state, conversations, messages. Grants `mediawiki` role access.
 
 # COMMAND ----------
 
@@ -344,11 +305,8 @@ print("\n✅ DDL complete")
 
 # MAGIC %md
 # MAGIC ## 5. Store credentials in secret scope
-# MAGIC 
-# MAGIC Persists Lakebase connection details into the Databricks secret scope so that
-# MAGIC other notebooks, the serving endpoint, and `mediawiki/scripts/setup.sh` can read them.
-# MAGIC 
-# MAGIC > `mw_password` is NOT written here — it was already stored by `make setup-secrets`.
+# MAGIC
+# MAGIC Persists connection details into the secret scope (`mw_password` is already stored by `make setup-secrets`).
 
 # COMMAND ----------
 
@@ -380,9 +338,8 @@ for k, v in secrets.items():
 
 # MAGIC %md
 # MAGIC ## 6. Verify setup (password auth)
-# MAGIC 
-# MAGIC End-to-end smoke test: connects as the `mediawiki` role using the static password
-# MAGIC (not OAuth) to confirm that native PG login, grants, and all DDL are working correctly.
+# MAGIC
+# MAGIC Smoke test: connects as `mediawiki` role with password auth to confirm everything works.
 
 # COMMAND ----------
 

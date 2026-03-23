@@ -1,11 +1,4 @@
-"""
-MediaWiki ingestion — reads wikitext from native PostgreSQL tables on Lakebase.
-
-Table relationships (MediaWiki 1.42 Multi-Content Revisions):
-    page.page_latest → revision.rev_id
-    → slots.slot_revision_id → content.content_id
-    → SUBSTRING(content_address, 4) → text.old_id
-"""
+"""MediaWiki ingestion — reads wikitext from native PostgreSQL tables."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,8 +10,6 @@ from psycopg2.extras import RealDictCursor
 
 @dataclass
 class WikiPage:
-    """A wiki page with its current wikitext content."""
-
     page_id: int
     page_title: str
     page_ns: int
@@ -49,32 +40,14 @@ ORDER BY r.rev_id ASC;
 
 
 class MediaWikiIngestion:
-    """Reads current wikitext from MediaWiki's native PostgreSQL tables.
-
-    MediaWiki stores page content across several normalized tables using
-    the Multi-Content Revisions (MCR) schema introduced in MW 1.32+.
-    This class joins through the chain to extract the latest wikitext
-    for each main-namespace page.
-    """
+    """Reads current wikitext from MediaWiki's native PostgreSQL tables."""
 
     def fetch_pages(
         self,
         conn: psycopg2.extensions.connection,
         watermark_rev_id: int = 0,
     ) -> Generator[WikiPage, None, None]:
-        """Yield WikiPage objects for all pages updated after *watermark_rev_id*.
-
-        Streams results via a standard cursor.  For very large wikis,
-        consider adding ``name='fetch_pages'`` to enable a server-side cursor.
-
-        Args:
-            conn: A psycopg2 connection to the Lakebase database.
-            watermark_rev_id: Only return pages whose ``rev_id`` is greater
-                than this value.  Defaults to ``0`` (all pages).
-
-        Yields:
-            WikiPage: One object per page, in ``rev_id`` ascending order.
-        """
+        """Yield WikiPage objects for pages updated after *watermark_rev_id*."""
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(_FETCH_PAGES_SQL, {"watermark": watermark_rev_id})
             for row in cur:

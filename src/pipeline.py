@@ -1,10 +1,4 @@
-"""
-Wiki pipeline — cleans wikitext, extracts images, chunks text,
-generates embeddings, and captions images via a vision LLM.
-
-Consolidates cleaning, chunking, embedding, and image captioning
-into a single class with static utility methods.
-"""
+"""Wiki pipeline — clean, chunk, embed, and caption wiki content."""
 from __future__ import annotations
 
 import base64
@@ -22,28 +16,15 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Dataclasses (module-level for easy import)
-# ---------------------------------------------------------------------------
-
 
 @dataclass
 class ImageRef:
-    """An image reference extracted from wikitext."""
-
     filename: str
     alt_text: str
 
 
 @dataclass
 class TextChunk:
-    """A chunk of text (or image caption) ready for embedding.
-
-    Attributes:
-        chunk_source: ``"text"`` for regular wiki text, ``"image"`` for
-            chunks derived from vision-LLM image captions.
-    """
-
     page_id: int
     page_title: str
     page_ns: int
@@ -52,10 +33,6 @@ class TextChunk:
     text: str
     chunk_source: str = "text"
 
-
-# ---------------------------------------------------------------------------
-# Private helpers
-# ---------------------------------------------------------------------------
 
 _IMAGE_OPTIONS = re.compile(
     r"^(thumb|thumbnail|frame|frameless|border|left|right|center|none"
@@ -106,23 +83,8 @@ def _embed_batch(embeddings_model: DatabricksEmbeddings, batch: list[str]) -> li
     return embeddings_model.embed_documents(batch)
 
 
-# ---------------------------------------------------------------------------
-# WikiPipeline
-# ---------------------------------------------------------------------------
-
-
 class WikiPipeline:
-    """End-to-end processing pipeline for wiki content.
-
-    Provides methods for every stage of the ingestion pipeline:
-
-    1. **Cleaning** — strip wikitext markup to plain text.
-    2. **Image extraction** — pull ``[[File:...]]`` references before cleaning.
-    3. **Image captioning** — fetch images from MediaWiki and describe them
-       with a vision-capable LLM.
-    4. **Chunking** — split text (or captions) into overlapping chunks.
-    5. **Embedding** — generate vector embeddings via Foundation Model API.
-    """
+    """End-to-end processing pipeline for wiki content."""
 
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 64
@@ -132,22 +94,9 @@ class WikiPipeline:
     VISION_MODEL: str = os.environ.get("VISION_MODEL", "databricks-claude-sonnet-4-6")
     MEDIAWIKI_URL: str = "http://localhost:8080"
 
-    # --- Cleaning ---------------------------------------------------------
-
     @staticmethod
     def extract_image_refs(wikitext: str) -> list[ImageRef]:
-        """Extract ``[[File:...]]`` and ``[[Image:...]]`` references from *wikitext*.
-
-        Must be called **before** :meth:`clean_wikitext`, which strips these
-        references during markup removal.
-
-        Args:
-            wikitext: Raw MediaWiki markup.
-
-        Returns:
-            A list of :class:`ImageRef` with the filename and alt-text
-            for each image found.
-        """
+        """Extract [[File:...]] and [[Image:...]] references from wikitext."""
         if not wikitext or not wikitext.strip():
             return []
 
@@ -175,18 +124,7 @@ class WikiPipeline:
 
     @staticmethod
     def clean_wikitext(wikitext: str) -> str:
-        """Parse *wikitext* and return clean plain text for chunking.
-
-        Removes noisy templates (stubs, citations, infoboxes) and strips
-        all remaining wiki markup via ``mwparserfromhell.strip_code()``.
-        Collapses excessive blank lines in the output.
-
-        Args:
-            wikitext: Raw MediaWiki markup.
-
-        Returns:
-            Plain text suitable for chunking and embedding.
-        """
+        """Strip wikitext markup to clean plain text for chunking."""
         if not wikitext or not wikitext.strip():
             return ""
 
@@ -217,8 +155,6 @@ class WikiPipeline:
 
         return "\n".join(clean_lines).strip()
 
-    # --- Chunking ---------------------------------------------------------
-
     @staticmethod
     def chunk_page(
         page_id: int,
@@ -227,21 +163,7 @@ class WikiPipeline:
         rev_id: int,
         clean_text: str,
     ) -> list[TextChunk]:
-        """Split a cleaned wiki page into overlapping text chunks.
-
-        Uses ``RecursiveCharacterTextSplitter`` with semantic separators
-        (paragraphs → sentences → words) for natural chunk boundaries.
-
-        Args:
-            page_id: MediaWiki page ID.
-            page_title: Human-readable page title.
-            page_ns: MediaWiki namespace (``0`` = main).
-            rev_id: Revision ID of the page content.
-            clean_text: Plain text output from :meth:`clean_wikitext`.
-
-        Returns:
-            A list of :class:`TextChunk` with ``chunk_source="text"``.
-        """
+        """Split cleaned text into overlapping TextChunks."""
         if not clean_text.strip():
             return []
 
@@ -268,25 +190,7 @@ class WikiPipeline:
         caption: str,
         chunk_index_offset: int = 0,
     ) -> list[TextChunk]:
-        """Create chunks from an image caption, tagged as image-sourced.
-
-        The caption is prefixed with provenance metadata
-        (``[Image from "Page": file.png]``) so the retriever can
-        attribute the chunk to its source image.
-
-        Args:
-            page_id: MediaWiki page ID where the image appears.
-            page_title: Human-readable page title.
-            page_ns: MediaWiki namespace.
-            rev_id: Revision ID.
-            filename: Image filename in MediaWiki.
-            caption: Vision-LLM-generated text description.
-            chunk_index_offset: Starting index to avoid collisions
-                with text chunks from the same page.
-
-        Returns:
-            A list of :class:`TextChunk` with ``chunk_source="image"``.
-        """
+        """Create image-sourced chunks from a vision LLM caption."""
         text = f'[Image from "{page_title}": {filename}]\n{caption}'
         if not text.strip():
             return []
@@ -305,23 +209,9 @@ class WikiPipeline:
             for i, chunk in enumerate(raw_chunks)
         ]
 
-    # --- Embedding --------------------------------------------------------
-
     @classmethod
     def embed_texts(cls, texts: list[str], model: str | None = None) -> list[list[float]]:
-        """Embed a list of texts via the Databricks Foundation Model API.
-
-        Processes texts in batches of :attr:`EMBEDDING_BATCH_SIZE` with
-        automatic retry on transient failures.
-
-        Args:
-            texts: Plain-text strings to embed.
-            model: Embedding model endpoint name.  Defaults to
-                :attr:`EMBEDDING_MODEL` (``databricks-gte-large-en``).
-
-        Returns:
-            A list of 1024-dim float vectors, one per input text.
-        """
+        """Embed texts in batches via Foundation Model API."""
         model = model or cls.EMBEDDING_MODEL
         embeddings_model = DatabricksEmbeddings(endpoint=model)
         all_embeddings: list[list[float]] = []
@@ -334,8 +224,6 @@ class WikiPipeline:
 
         return all_embeddings
 
-    # --- Image captioning -------------------------------------------------
-
     @classmethod
     def fetch_image_from_mediawiki(
         cls,
@@ -343,21 +231,7 @@ class WikiPipeline:
         base_url: str | None = None,
         timeout: int = 30,
     ) -> bytes | None:
-        """Fetch image bytes from MediaWiki via its API.
-
-        Queries the ``imageinfo`` API to resolve the actual file URL,
-        then downloads the binary content.
-
-        Args:
-            filename: Image filename as referenced in wikitext
-                (e.g. ``"Example.png"``).
-            base_url: MediaWiki base URL.  Defaults to
-                :attr:`MEDIAWIKI_URL`.
-            timeout: HTTP request timeout in seconds.
-
-        Returns:
-            Raw image bytes, or ``None`` if the fetch fails.
-        """
+        """Fetch image bytes from MediaWiki's imageinfo API. Returns None on failure."""
         base_url = base_url or cls.MEDIAWIKI_URL
         try:
             resp = requests.get(
@@ -402,22 +276,7 @@ class WikiPipeline:
         filename: str = "",
         model: str | None = None,
     ) -> str:
-        """Generate a text description of an image using a vision-capable LLM.
-
-        The image is resized to max 1024 px, base64-encoded, and sent to the
-        vision model with a system prompt tuned for factual, information-dense
-        descriptions suitable for embedding and retrieval.
-
-        Args:
-            image_bytes: Raw image binary data.
-            alt_text: Optional alt-text from the wikitext reference.
-            page_title: Wiki page where the image appears (for context).
-            model: Vision model endpoint.  Defaults to :attr:`VISION_MODEL`.
-
-        Returns:
-            A 2–4 sentence text description.  Falls back to
-            ``"[Image: {alt_text}]"`` if the vision call fails.
-        """
+        """Generate a text description of an image using a vision LLM."""
         model = model or cls.VISION_MODEL
         resized = _resize_image(image_bytes)
         b64_data = base64.b64encode(resized).decode("utf-8")

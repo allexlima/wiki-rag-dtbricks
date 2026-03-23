@@ -1,12 +1,4 @@
-"""
-Wiki RAG Agent — ResponsesAgent wrapping a LangGraph agentic RAG flow.
-
-Single source of truth: used by both notebook testing and model serving.
-Deployment: ``mlflow.pyfunc.log_model(python_model="src/rag.py")``
-
-Flow: retrieve → grade_documents → (rewrite_query loop) → generate
-Memory: conversation history persisted in Lakebase ``wiki_rag.messages``.
-"""
+"""Wiki RAG Agent — ResponsesAgent with LangGraph agentic RAG flow."""
 from __future__ import annotations
 
 import json
@@ -35,39 +27,20 @@ log = logging.getLogger(__name__)
 
 mlflow.langchain.autolog()
 
-# ---------------------------------------------------------------------------
-# Configuration (overridable via env vars in serving context)
-# ---------------------------------------------------------------------------
 LLM_MODEL = os.environ.get("LLM_MODEL", "databricks-claude-sonnet-4-6")
 MAX_REWRITES = 2
-LLM_TIMEOUT = 60  # seconds
-MAX_HISTORY_TURNS = 5  # previous exchanges to include as context
-
-
-# ---------------------------------------------------------------------------
-# Dataclass
-# ---------------------------------------------------------------------------
+LLM_TIMEOUT = 60
+MAX_HISTORY_TURNS = 5
 
 
 @dataclass
 class RetrievedDoc:
-    """A document chunk retrieved from pgvector similarity search.
-
-    Attributes:
-        chunk_source: ``"text"`` for regular wiki content,
-            ``"image"`` for vision-LLM-generated captions.
-    """
 
     chunk_id: int
     page_title: str
     chunk_text: str
     similarity: float
     chunk_source: str = "text"
-
-
-# ---------------------------------------------------------------------------
-# Internal LangGraph state
-# ---------------------------------------------------------------------------
 
 
 class _RAGState(TypedDict):
@@ -78,23 +51,9 @@ class _RAGState(TypedDict):
     conversation_history: str
 
 
-# ---------------------------------------------------------------------------
-# LLM call wrapper with retry + timeout
-# ---------------------------------------------------------------------------
-
-
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=30))
 def _llm_call(llm: ChatDatabricks, messages: list[dict], **kwargs) -> str:
-    """Make an LLM call with retry.
-
-    Args:
-        llm: ChatDatabricks model instance.
-        messages: List of message dicts with "role" and "content" keys.
-        **kwargs: Forwarded to ``llm.invoke()``.
-
-    Returns:
-        The stripped content string from the response.
-    """
+    """Make an LLM call with retry, returning stripped content."""
     from langchain_core.messages import HumanMessage, SystemMessage
 
     lc_messages = []
@@ -107,27 +66,8 @@ def _llm_call(llm: ChatDatabricks, messages: list[dict], **kwargs) -> str:
     return (response.content or "").strip()
 
 
-# ---------------------------------------------------------------------------
-# WikiRAGAgent
-# ---------------------------------------------------------------------------
-
-
 class WikiRAGAgent(ResponsesAgent):
-    """Agentic RAG over a MediaWiki knowledge base stored in Lakebase/pgvector.
-
-    Implements the MLflow 3 ``ResponsesAgent`` interface so it can be deployed
-    directly as a Model Serving endpoint via *models from code*.
-
-    The agent runs a LangGraph ``StateGraph`` with four nodes:
-
-    1. **retrieve** — embed query and search pgvector for top-k chunks.
-    2. **grade_documents** — LLM relevance judgment on each chunk.
-    3. **rewrite_query** — LLM rewrites the query if no relevant docs found.
-    4. **generate** — LLM produces the answer citing source pages.
-
-    Multi-turn conversation history is persisted in Lakebase
-    (``wiki_rag.conversations`` / ``wiki_rag.messages``).
-    """
+    """Agentic RAG over a MediaWiki knowledge base (MLflow ResponsesAgent)."""
 
     def __init__(self) -> None:
         """Initialise with lazy clients (created on first use)."""
@@ -143,18 +83,12 @@ class WikiRAGAgent(ResponsesAgent):
         return self._llm
 
     def _get_conn(self) -> psycopg2.extensions.connection:
-        """Return a live psycopg2 connection, reconnecting if needed.
-
-        Uses :func:`src.config.get_lakebase_conn` which supports both
-        password auth (serving) and OAuth (notebooks).
-        """
+        """Return a live psycopg2 connection, reconnecting if needed."""
         if self._conn is None or self._conn.closed:
             from src.config import get_lakebase_conn
 
             self._conn = get_lakebase_conn()
         return self._conn
-
-    # --- Retriever --------------------------------------------------------
 
     def retrieve(
         self,
@@ -162,17 +96,7 @@ class WikiRAGAgent(ResponsesAgent):
         query: str,
         top_k: int = 5,
     ) -> list[RetrievedDoc]:
-        """Embed *query* and search pgvector for the *top_k* most similar chunks.
-
-        Args:
-            conn: A psycopg2 connection to Lakebase.
-            query: The user's natural-language question.
-            top_k: Number of results to return.
-
-        Returns:
-            A list of :class:`RetrievedDoc` ordered by descending similarity.
-            Returns an empty list on any failure.
-        """
+        """Embed query and search pgvector for top_k most similar chunks."""
         try:
             register_vector(conn)
             query_embedding = WikiPipeline.embed_texts([query])[0]
@@ -209,18 +133,8 @@ class WikiRAGAgent(ResponsesAgent):
             log.exception("Retrieval failed for query: %s", query[:100])
             return []
 
-    # --- Conversation memory (Lakebase) -----------------------------------
-
     def _load_history(self, conversation_id: str) -> str:
-        """Load recent conversation history from Lakebase.
-
-        Args:
-            conversation_id: UUID identifying the conversation thread.
-
-        Returns:
-            Formatted previous turns as ``"role: content"`` lines,
-            or an empty string if unavailable.
-        """
+        """Load recent conversation history from Lakebase."""
         try:
             conn = self._get_conn()
             with conn.cursor() as cur:
@@ -254,18 +168,7 @@ class WikiRAGAgent(ResponsesAgent):
         answer: str,
         sources: list[dict],
     ) -> None:
-        """Persist the user question and assistant answer to Lakebase.
-
-        Creates the conversation record on first exchange (upsert),
-        then appends both messages atomically.
-
-        Args:
-            conversation_id: UUID for the conversation thread.
-            user_id: Identifier of the user (email or ``"anonymous"``).
-            question: The user's original question.
-            answer: The generated answer text.
-            sources: List of source dicts (``title``, ``similarity``).
-        """
+        """Persist user question and assistant answer to Lakebase."""
         try:
             conn = self._get_conn()
             with conn.cursor() as cur:
@@ -295,14 +198,8 @@ class WikiRAGAgent(ResponsesAgent):
         except Exception:
             log.warning("Failed to save conversation exchange", exc_info=True)
 
-    # --- LangGraph RAG pipeline -------------------------------------------
-
     def _build_graph(self):
-        """Build and compile the LangGraph RAG agent.
-
-        Returns:
-            A compiled ``StateGraph`` ready for ``.invoke()`` or ``.stream()``.
-        """
+        """Build and compile the LangGraph RAG state graph."""
         llm = self.llm
 
         def retrieve_node(state: _RAGState) -> dict:
@@ -435,23 +332,8 @@ class WikiRAGAgent(ResponsesAgent):
 
         return graph.compile()
 
-    # --- ResponsesAgent interface -----------------------------------------
-
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
-        """Run the full RAG pipeline and return a structured response.
-
-        Delegates to :meth:`predict_stream` and collects all output items,
-        following the Agent Bricks pattern where ``predict_stream`` is the
-        primary implementation.
-
-        Args:
-            request: An MLflow ``ResponsesAgentRequest`` with at least
-                one user message in ``request.input``.
-
-        Returns:
-            A ``ResponsesAgentResponse`` containing the answer text
-            and appended source citations.
-        """
+        """Run the full RAG pipeline and return a ResponsesAgentResponse."""
         outputs = [
             event.item
             for event in self.predict_stream(request)
@@ -462,18 +344,7 @@ class WikiRAGAgent(ResponsesAgent):
     def predict_stream(
         self, request: ResponsesAgentRequest,
     ) -> Generator[ResponsesAgentStreamEvent, None, None]:
-        """Stream the RAG pipeline using LangGraph node-level streaming.
-
-        Runs the graph with ``stream_mode="updates"`` so each node
-        (retrieve, grade, rewrite, generate) streams its output as it
-        completes. The final answer is yielded as a stream event.
-
-        Args:
-            request: An MLflow ``ResponsesAgentRequest``.
-
-        Yields:
-            ``ResponsesAgentStreamEvent`` objects for each output item.
-        """
+        """Stream the RAG pipeline, yielding events as each node completes."""
         if not request.input:
             yield ResponsesAgentStreamEvent(
                 type="response.output_item.done",
@@ -567,21 +438,8 @@ class WikiRAGAgent(ResponsesAgent):
         )
 
 
-# ---------------------------------------------------------------------------
-# Convenience function for notebook testing
-# ---------------------------------------------------------------------------
-
-
 def run_agent(question: str, thread_id: str | None = None) -> dict:
-    """Run the RAG agent directly (for notebook testing).
-
-    Args:
-        question: The user's question.
-        thread_id: Optional conversation ID for multi-turn memory.
-
-    Returns:
-        A dict with ``"answer"`` and ``"conversation_id"`` keys.
-    """
+    """Run the RAG agent directly (for notebook testing)."""
     from mlflow.types.responses import ChatContext
 
     agent = WikiRAGAgent()
@@ -602,8 +460,5 @@ def run_agent(question: str, thread_id: str | None = None) -> dict:
     return {"answer": answer, "conversation_id": conv_id}
 
 
-# ---------------------------------------------------------------------------
-# MLflow model declaration (for "models from code" pattern)
-# ---------------------------------------------------------------------------
 AGENT = WikiRAGAgent()
 mlflow.models.set_model(AGENT)
