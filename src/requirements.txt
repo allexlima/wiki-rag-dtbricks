@@ -1,5 +1,5 @@
 # Runtime dependencies for the WikiRAG agent (Model Serving environment).
-# Referenced by notebooks/03_deploy_serving.py via pip_requirements.
+# Referenced by notebooks/01_deploy_serving.py via pip_requirements.
 #
 # Pinned to versions matching DBR 16.x cluster to avoid mismatch warnings.
 # Update by running the deploy notebook and capturing cluster versions.

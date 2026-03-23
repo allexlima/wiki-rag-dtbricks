@@ -60,14 +60,22 @@ make setup-wiki         # Auto-generates .env from secrets, starts MediaWiki
 > make demo-load       # Pick a new dataset
 > ```
 
-### 2. Deploy (~20 min)
+### 2. Deploy
 
 ```bash
-make deploy-agent       # Logs model to MLflow, deploys serving endpoint
-make ingest             # Runs ingestion pipeline (clean, caption images, chunk, embed)
+make deploy-agent       # Logs model to MLflow, initiates serving endpoint deployment
 ```
 
-Or run everything at once: `make deploy`
+> [!IMPORTANT]
+> The serving endpoint provisions in the background (~10-15 min). **Wait for it to be READY** before running ingestion:
+> ```bash
+> databricks serving-endpoints get wiki-rag-endpoint   # Check status
+> ```
+> Look for `"ready": "READY"` in the output.
+
+```bash
+make ingest             # Runs ingestion pipeline (clean, caption images, chunk, embed)
+```
 
 ### 3. Verify
 
@@ -181,9 +189,9 @@ wiki-rag-dtbricks/
 │
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL (DAB job: setup_lakebase)
-│   ├── 01_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
-│   ├── 02_rag_agent.py           # Interactive RAG testing + multi-turn memory demo
-│   └── 03_deploy_serving.py      # Log model + deploy endpoint (DAB job: deploy_agent)
+│   ├── 01_deploy_serving.py      # Log model + deploy endpoint (DAB job: deploy_agent)
+│   ├── 02_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
+│   └── 03_rag_agent.py           # Interactive RAG testing + multi-turn memory demo
 │
 ├── app/
 │   ├── app.py                    # Streamlit chat UI (chat completions format)

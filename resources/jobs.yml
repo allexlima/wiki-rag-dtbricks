@@ -26,7 +26,7 @@ resources:
       tasks:
         - task_key: deploy
           notebook_task:
-            notebook_path: ../notebooks/03_deploy_serving.py
+            notebook_path: ../notebooks/01_deploy_serving.py
             base_parameters:
               model_name: ${var.model_name}
               endpoint_name: ${var.endpoint_name}
@@ -51,7 +51,7 @@ resources:
       tasks:
         - task_key: ingest_and_embed
           notebook_task:
-            notebook_path: ../notebooks/01_ingest_mediawiki.py
+            notebook_path: ../notebooks/02_ingest_mediawiki.py
             base_parameters:
               secret_scope: ${var.secret_scope}
               embedding_model: ${var.embedding_model}

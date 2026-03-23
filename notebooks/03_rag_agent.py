@@ -19,7 +19,7 @@
 # MAGIC
 # MAGIC **Prerequisites:**
 # MAGIC - Run `00_setup_lakebase` to provision the database and schema
-# MAGIC - Run `01_ingestion` to populate embeddings
+# MAGIC - Run `02_ingest_mediawiki` to populate embeddings
 # MAGIC - Secrets stored via `make setup-secrets`
 # MAGIC
 # MAGIC | Step | What it does |
@@ -111,7 +111,7 @@ try:
     print(f"Agent initialised — {embedding_count:,} embeddings in wiki_rag.wiki_embeddings")
 except Exception as e:
     print(f"Failed to connect to Lakebase: {e}")
-    print("Ensure 00_setup_lakebase and 01_ingestion have been run.")
+    print("Ensure 00_setup_lakebase and 02_ingest_mediawiki have been run.")
     raise
 
 # COMMAND ----------
@@ -129,7 +129,7 @@ try:
     docs = agent.retrieve(conn, QUESTION, top_k=TOP_K)
 
     if not docs:
-        print("No documents retrieved. Check that embeddings have been ingested (01_ingestion).")
+        print("No documents retrieved. Check that embeddings have been ingested (02_ingest_mediawiki).")
     else:
         rows_html = ""
         for i, doc in enumerate(docs, 1):

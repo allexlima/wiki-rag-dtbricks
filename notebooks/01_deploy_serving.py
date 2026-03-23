@@ -202,7 +202,7 @@ print(f"Model logged  run_id={run_id}")
 
 # MAGIC %md
 # MAGIC ## 2. Register in Unity Catalog
-# MAGIC 
+# MAGIC
 # MAGIC Registers a new model version in Unity Catalog under the three-level namespace
 # MAGIC (e.g., `main.wiki_rag.wiki_rag_agent`). Each re-run creates a new version —
 # MAGIC `agents.deploy()` in step 4 automatically points to this latest version.
@@ -294,67 +294,6 @@ deployment = agents.deploy(
 
 print(f"Endpoint:   {deployment.endpoint_name}")
 print(f"Version:    {registered.version}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 5. Wait for Endpoint Ready + Smoke Test
-# MAGIC 
-# MAGIC `agents.deploy()` returns quickly — the endpoint may still be provisioning.
-# MAGIC This cell polls until the endpoint is `READY`, then sends a test query
-# MAGIC using the **Responses API** format (`input`, not `messages`).
-
-# COMMAND ----------
-
-import json
-import time
-
-from databricks.sdk.service.serving import EndpointStateReady
-
-MAX_WAIT = 900  # 15 min
-POLL_INTERVAL = 30
-
-elapsed = 0
-print(f"Waiting for '{ENDPOINT_NAME}' to become ready ...")
-
-while elapsed < MAX_WAIT:
-    ep = w.serving_endpoints.get(ENDPOINT_NAME)
-    state = ep.state.ready if ep.state else None
-
-    if state == EndpointStateReady.READY:
-        break
-
-    mins, secs = divmod(elapsed, 60)
-    state_str = state.value if state else "UNKNOWN"
-    print(f"  {state_str}  ({mins}m{secs:02d}s elapsed)")
-    time.sleep(POLL_INTERVAL)
-    elapsed += POLL_INTERVAL
-else:
-    raise TimeoutError(
-        f"Endpoint '{ENDPOINT_NAME}' not ready after {MAX_WAIT}s. "
-        f"Check the Serving UI for details."
-    )
-
-mins, secs = divmod(elapsed, 60)
-print(f"Endpoint READY ({mins}m{secs:02d}s)")
-
-# COMMAND ----------
-
-# ResponsesAgent uses the Responses API format: `input` (not `messages`)
-response = w.serving_endpoints.query(
-    name=ENDPOINT_NAME,
-    input=[{"role": "user", "content": "What is the main topic of the wiki?"}],
-)
-
-# Parse response — structure depends on ResponsesAgent output format
-resp_dict = response.as_dict()
-try:
-    answer = resp_dict["output"][0]["content"][0]["text"]
-except (KeyError, IndexError, TypeError):
-    answer = json.dumps(resp_dict, indent=2, ensure_ascii=False)[:2000]
-
-print(f"Smoke test passed\n\n{answer}")
-
-# COMMAND ----------
-
-
+print(f"\n🚀 Deployment initiated. The endpoint is provisioning in the background.")
+print(f"   Check status:  databricks serving-endpoints get {ENDPOINT_NAME}")
+print(f"   Once READY, proceed with:  make ingest")
