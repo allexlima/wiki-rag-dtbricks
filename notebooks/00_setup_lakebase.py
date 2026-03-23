@@ -4,12 +4,12 @@
 
 # MAGIC %md
 # MAGIC # 00 — Lakebase Setup
-# MAGIC
+# MAGIC 
 # MAGIC Provisions a **Lakebase Autoscaling PG 16** instance hosting both MediaWiki
 # MAGIC native tables (`public` schema) and RAG pipeline tables (`wiki_rag` schema).
-# MAGIC
+# MAGIC 
 # MAGIC **Prerequisites:** Run `make setup-secrets` first.
-# MAGIC
+# MAGIC 
 # MAGIC > **Idempotent** — safe to re-run. All DDL uses `IF NOT EXISTS` / `ON CONFLICT DO NOTHING`.
 
 # COMMAND ----------
@@ -21,7 +21,7 @@
 
 # MAGIC %md
 # MAGIC ## Configuration
-# MAGIC
+# MAGIC 
 # MAGIC Auto-populated by the DAB job, or set manually via widgets.
 
 # COMMAND ----------
@@ -86,7 +86,7 @@ print(f"🔧 User: {CURRENT_USER}  Project: {PROJECT_ID}  DB: {DB_NAME}")
 
 # MAGIC %md
 # MAGIC ## 1. Create Lakebase Autoscaling project
-# MAGIC
+# MAGIC 
 # MAGIC Creates the PG 16 project with auto-scaling + scale-to-zero. `.wait()` blocks until ready (~2-3 min).
 
 # COMMAND ----------
@@ -126,7 +126,7 @@ print(f"✅ Endpoint {endpoint.status.current_state} → {HOST}")
 
 # MAGIC %md
 # MAGIC ## 2. Create database
-# MAGIC
+# MAGIC 
 # MAGIC Creates the `wikidb` database using a short-lived OAuth token.
 
 # COMMAND ----------
@@ -161,7 +161,7 @@ with closing(_oauth_conn("databricks_postgres")) as conn:
 
 # MAGIC %md
 # MAGIC ## 3. Create role + grants
-# MAGIC
+# MAGIC 
 # MAGIC Creates the `mediawiki` role (used by MW container + serving endpoint) with full access to `public` schema.
 
 # COMMAND ----------
@@ -195,7 +195,7 @@ with closing(_oauth_conn(DB_NAME)) as conn:
 
 # MAGIC %md
 # MAGIC ## 4. Schema, tables & pgvector index
-# MAGIC
+# MAGIC 
 # MAGIC Creates `wiki_rag` schema: chunks, embeddings (HNSW), images, sync_state, conversations, messages. Grants `mediawiki` role access.
 
 # COMMAND ----------
@@ -305,7 +305,7 @@ print("\n✅ DDL complete")
 
 # MAGIC %md
 # MAGIC ## 5. Store credentials in secret scope
-# MAGIC
+# MAGIC 
 # MAGIC Persists connection details into the secret scope (`mw_password` is already stored by `make setup-secrets`).
 
 # COMMAND ----------
@@ -338,7 +338,7 @@ for k, v in secrets.items():
 
 # MAGIC %md
 # MAGIC ## 6. Verify setup (password auth)
-# MAGIC
+# MAGIC 
 # MAGIC Smoke test: connects as `mediawiki` role with password auth to confirm everything works.
 
 # COMMAND ----------

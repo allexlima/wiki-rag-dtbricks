@@ -3,7 +3,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # 01 — Ingest MediaWiki
+# MAGIC # 02 — Ingest MediaWiki
 # MAGIC
 # MAGIC Incremental, multimodal ingestion: reads wikitext from MediaWiki's Lakebase tables,
 # MAGIC cleans/chunks text, captions images via vision LLM, embeds everything, and writes

@@ -3,7 +3,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # 02 — RAG Agent Testing
+# MAGIC # 03 — RAG Agent Testing
 # MAGIC
 # MAGIC Interactive notebook to test the LangGraph RAG agent (retrieval, grading,
 # MAGIC generation, and multi-turn memory) without deploying to a serving endpoint.

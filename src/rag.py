@@ -1,4 +1,4 @@
-"""Wiki RAG Agent — ResponsesAgent with LangGraph agentic RAG flow."""
+"""Wiki RAG Agent — ResponsesAgent + LangGraph on Databricks Lakebase (pgvector + memory)."""
 from __future__ import annotations
 
 import json
@@ -83,7 +83,7 @@ class WikiRAGAgent(ResponsesAgent):
         return self._llm
 
     def _get_conn(self) -> psycopg2.extensions.connection:
-        """Return a live psycopg2 connection, reconnecting if needed."""
+        """Return a live Lakebase connection (password auth via secrets)."""
         if self._conn is None or self._conn.closed:
             from src.config import get_lakebase_conn
 

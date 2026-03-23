@@ -3,7 +3,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # 03 — Register Model + Deploy Serving Endpoint
+# MAGIC # 01 — Register Model + Deploy Serving Endpoint
 # MAGIC
 # MAGIC Logs the WikiRAG ResponsesAgent to MLflow (Models from Code), registers in Unity Catalog,
 # MAGIC and deploys a serving endpoint via `agents.deploy()`.
@@ -45,7 +45,7 @@ os.chdir(BUNDLE_ROOT)
 
 import mlflow
 from databricks.sdk import WorkspaceClient
-from mlflow.models.resources import DatabricksLakebase, DatabricksServingEndpoint
+from mlflow.models.resources import DatabricksServingEndpoint
 from src.config import load_bundle_defaults
 
 # ─── Widget parameters (defaults from databricks.yml) ────────────────
@@ -119,7 +119,9 @@ print(f"Lakebase: {LAKEBASE_INSTANCE}  |  Scope: {SECRET_SCOPE}")
 
 # COMMAND ----------
 
-# External resources the model needs at inference time
+# External resources the model needs at inference time.
+# Note: DatabricksLakebase is not used — it only supports Lakebase Provisioned,
+# not Autoscaling. Our agent connects via secrets-injected password auth instead.
 resources = [
     DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
     DatabricksServingEndpoint(endpoint_name=EMBEDDING_ENDPOINT),
@@ -151,17 +153,19 @@ print(f"Model logged  run_id={run_id}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Register in Unity Catalog
+# MAGIC ## 2. Register in Unity Catalog (Serverless Optimized)
 # MAGIC
-# MAGIC Creates a new model version; `agents.deploy()` will pick it up automatically.
+# MAGIC `env_pack` pre-packages the serving container at registration time (not deploy time),
+# MAGIC cutting endpoint updates from ~15 min to ~2-3 min. Requires serverless compute.
 
 # COMMAND ----------
 
 registered = mlflow.register_model(
     model_uri=f"runs:/{run_id}/wiki_rag_agent",
     name=MODEL_NAME,
+    env_pack="databricks_model_serving",
 )
-print(f"Registered {MODEL_NAME} v{registered.version}")
+print(f"Registered {MODEL_NAME} v{registered.version} (serverless optimized)")
 
 # COMMAND ----------
 

@@ -21,10 +21,11 @@ resources:
     deploy_agent:
       name: "wiki-rag-deploy-agent-${bundle.target}"
       description: >
-        Log WikiRAGAgent to MLflow, register in Unity Catalog,
-        create or update the model serving endpoint.
+        Log WikiRAGAgent to MLflow, register in Unity Catalog
+        (serverless optimized), create or update the model serving endpoint.
       tasks:
         - task_key: deploy
+          environment_key: serverless
           notebook_task:
             notebook_path: ../notebooks/01_deploy_serving.py
             base_parameters:
@@ -35,6 +36,10 @@ resources:
               secret_scope: ${var.secret_scope}
               lakebase_instance_name: ${var.lakebase_instance_name}
             source: WORKSPACE
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
       max_concurrent_runs: 1
 
     # --- Recurring ingestion pipeline ---
