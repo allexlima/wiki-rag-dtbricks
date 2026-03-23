@@ -334,3 +334,40 @@ All credentials in the `wiki-rag` Databricks secret scope:
 | Serving endpoint stuck deploying      | Check logs: `databricks serving-endpoints get wiki-rag-endpoint`        |
 | Ingestion finds no pages              | Ensure MediaWiki has content: visit `http://localhost:8080`             |
 | Coverage below 80%                    | Run `pytest --cov=src --cov-report=term-missing` to see uncovered lines |
+| MediaWiki shows "Cannot access the database" / "External authorization failed" | Stale `.env` — see below |
+
+### MediaWiki "Cannot access the database"
+
+If MediaWiki shows a **"Cannot access the database"** error with a backtrace mentioning `External authorization failed`, the most likely cause is a **stale `mediawiki/.env`** pointing to a Lakebase endpoint hostname that no longer exists (e.g., after `make destroy` + re-provisioning).
+
+Each time you re-create the Lakebase project (`make setup-lakebase`), the endpoint gets a **new hostname** (e.g., `ep-snowy-firefly-d2m3obw1...`). The old hostname in `.env` still resolves (shared load balancer) but the project behind it is gone — hence the misleading "authorization failed" error.
+
+**Fix:**
+
+```bash
+# 1. Delete the stale .env (forces regeneration from Databricks secrets)
+rm mediawiki/.env
+
+# 2. Re-bootstrap MediaWiki (regenerates .env with fresh hostname, rebuilds LocalSettings.php)
+make setup-wiki
+```
+
+**Verify the fix:**
+
+```bash
+# Check the new hostname matches the current Lakebase endpoint
+grep LAKEBASE_HOST mediawiki/.env
+databricks postgres get-endpoint \
+  projects/wiki-rag-lakebase/branches/production/endpoints/primary \
+  --profile <your-profile> | grep host
+```
+
+> [!TIP]
+> If you only need to update the hostname without a full re-bootstrap, you can edit `mediawiki/.env` directly, regenerate LocalSettings.php, and copy it into the container:
+> ```bash
+> cd mediawiki
+> source .env && export MW_SERVER_URL="${MW_SERVER_URL:-http://localhost:8080}"
+> envsubst '${LAKEBASE_HOST} ${LAKEBASE_PORT} ${LAKEBASE_DB} ${LAKEBASE_USER} ${LAKEBASE_PASSWORD} ${MW_SECRET_KEY} ${MW_UPGRADE_KEY} ${MW_SERVER_URL}' \
+>   < LocalSettings.php.template > LocalSettings.php
+> docker cp LocalSettings.php wiki-rag-mediawiki:/var/www/html/LocalSettings.php
+> ```

@@ -14,6 +14,9 @@ SECRET_SCOPE  := wiki-rag
 INSTANCE_NAME := wiki-rag-lakebase
 ENDPOINT_NAME := wiki-rag-endpoint
 APP_NAME      := wiki-rag-app
+CATALOG       := allex_workspace_catalog
+SCHEMA        := wiki_rag
+MODEL_NAME    := $(CATALOG).$(SCHEMA).wiki_rag_agent
 
 # ─── CLI flags ────────────────────────────────────────────────
 CLI_FLAGS := -t $(TARGET)
@@ -105,9 +108,11 @@ setup-wiki: _require-secrets  ## 📖 Start MediaWiki container (auto-generates 
 	@$(if $(PROFILE),export DATABRICKS_CONFIG_PROFILE=$(PROFILE) && ,)cd mediawiki && $(MAKE) --no-print-directory up
 
 .PHONY: wiki-destroy
-wiki-destroy:  ## 📖 Stop and remove MediaWiki container + volumes
+wiki-destroy:  ## 📖 Stop and remove MediaWiki container + volumes + generated files
 	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
-	@cd mediawiki && $(MAKE) --no-print-directory down
+	@cd mediawiki && docker compose down -v --rmi local 2>/dev/null || true
+	@rm -f mediawiki/.env mediawiki/LocalSettings.php
+	@echo "✅ MediaWiki destroyed (containers, volumes, image, .env, LocalSettings.php)"
 
 .PHONY: demo-load
 demo-load:  ## 📖 Ingest demo dataset into MediaWiki (interactive selector)
@@ -154,22 +159,50 @@ deploy: setup-lakebase setup-wiki deploy-agent ingest  ## 🚀 Full deployment (
 # ─────────────────────────────────────────────────────────────
 
 .PHONY: destroy
-destroy: _check-auth  ## 💥 Destroy everything: bundle + Docker + Lakebase + secrets
+destroy: _check-auth  ## 💥 Destroy everything: endpoint + model + bundle + Docker + Lakebase + secrets
 	@echo ""
 	@echo "💥 Tearing down Wiki RAG..."
 	@echo ""
-	@echo "  📦 Bundle resources..."
+	@echo "  🤖 Serving endpoint ($(ENDPOINT_NAME))..."
+	@if databricks serving-endpoints delete $(ENDPOINT_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
+		echo "     ✅ Deleted"; \
+	else \
+		echo "     ⏭️  Not found (already deleted or never created)"; \
+	fi
+	@echo ""
+	@echo "  🧠 UC registered model ($(MODEL_NAME))..."
+	@if databricks registered-models delete $(MODEL_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
+		echo "     ✅ Deleted"; \
+	else \
+		echo "     ⏭️  Not found (already deleted or never created)"; \
+	fi
+	@echo ""
+	@echo "  📦 Bundle resources (jobs, app, workspace files)..."
 	@databricks bundle destroy $(CLI_FLAGS) $(BUNDLE_VARS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
-	@echo "  📖 MediaWiki containers..."
+	@echo "  📖 MediaWiki (containers + generated files)..."
 	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
-	@cd mediawiki && docker compose down -v 2>&1 | sed 's/^/     /' || true
+	@cd mediawiki && docker compose down -v --rmi local 2>&1 | sed 's/^/     /' || true
+	@rm -f mediawiki/.env mediawiki/LocalSettings.php
+	@echo "     ✅ Removed .env, LocalSettings.php, containers, volumes, and image"
 	@echo ""
 	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."
 	@if databricks postgres delete-project projects/$(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
 		echo "     ✅ Deleted"; \
 	else \
 		echo "     ⏭️  Not found (already deleted or never created)"; \
+	fi
+	@echo ""
+	@printf "  📂 Also delete UC schema '$(CATALOG).$(SCHEMA)' (all tables + data)? [y/N] " && \
+	read CONFIRM && \
+	if [ "$$CONFIRM" = "y" ] || [ "$$CONFIRM" = "Y" ]; then \
+		if databricks schemas delete $(CATALOG).$(SCHEMA) --force $(PROFILE_FLAG) 2>/dev/null; then \
+			echo "     ✅ Schema deleted"; \
+		else \
+			echo "     ⏭️  Schema not found or could not be deleted"; \
+		fi; \
+	else \
+		echo "     ⏭️  Skipped (schema preserved)"; \
 	fi
 	@echo ""
 	@printf "  🔑 Also delete secret scope '$(SECRET_SCOPE)' (passwords, credentials)? [y/N] " && \
