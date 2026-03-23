@@ -9,7 +9,9 @@ Architecture:
     Secrets:   AWS Secrets Manager (synced from Databricks by deploy.sh)
     Compute:   ARM64 Graviton (cheaper than x86)
     Network:   Public subnets (ALB) + private subnets (Fargate) + 1 NAT gateway
-               NAT gives Fargate a stable Elastic IP for Lakebase IP ACL allowlisting
+               deploy.sh pre-allocates the NAT Elastic IP and adds it to the
+               Databricks workspace IP ACL *before* CDK deploy, so the ECS
+               health check can reach Lakebase from the first boot.
 """
 
 from pathlib import Path
@@ -34,8 +36,9 @@ DEFAULTS = {
     "lakebase_user": "mediawiki",
     "mw_admin_user": "Admin",
     "secret_name": "wiki-rag/mediawiki",
+    "allowed_cidr": "0.0.0.0/0",
+    "nat_eip_alloc_id": "",
 }
-
 
 
 class MediaWikiStack(Stack):
@@ -59,31 +62,81 @@ class MediaWikiStack(Stack):
 
         # -- Context parameters (passed via deploy.sh -c flags) --
         ctx = {k: self.node.try_get_context(k) or v for k, v in DEFAULTS.items()}
+        nat_eip_alloc_id = ctx["nat_eip_alloc_id"]
 
         # -- Secrets: synced from Databricks scope to AWS by deploy.sh --
         mw_secret = sm.Secret.from_secret_name_v2(
             self, "MwSecret", ctx["secret_name"],
         )
 
-        # -- Network: public subnets (ALB) + private subnets (Fargate).
-        #    Single NAT gateway gives Fargate a stable Elastic IP so we can
-        #    allowlist it in Databricks workspace IP ACLs for Lakebase access. --
-        vpc = ec2.Vpc(
-            self,
-            "Vpc",
-            max_azs=2,  # ALB requires at least 2 AZs
-            nat_gateways=1,  # 1 NAT = 1 stable Elastic IP (~$30/mo)
-            subnet_configuration=[
-                ec2.SubnetConfiguration(
-                    name="Public",
-                    subnet_type=ec2.SubnetType.PUBLIC,
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private",
-                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                ),
-            ],
-        )
+        # -- Network --
+        # When deploy.sh pre-allocates a NAT EIP (the default path),
+        # we create the VPC without built-in NAT and wire it manually.
+        # This lets deploy.sh add the IP to Databricks IP ACL *before*
+        # CDK deploy, so the health check passes on first boot.
+        if nat_eip_alloc_id:
+            vpc = ec2.Vpc(
+                self,
+                "Vpc",
+                max_azs=2,
+                nat_gateways=0,
+                subnet_configuration=[
+                    ec2.SubnetConfiguration(
+                        name="Public",
+                        subnet_type=ec2.SubnetType.PUBLIC,
+                    ),
+                    ec2.SubnetConfiguration(
+                        name="Private",
+                        subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+                    ),
+                ],
+            )
+
+            # NAT gateway using pre-allocated EIP
+            nat_gw = ec2.CfnNatGateway(
+                self,
+                "NatGateway",
+                subnet_id=vpc.public_subnets[0].subnet_id,
+                allocation_id=nat_eip_alloc_id,
+                tags=[{"key": "Name", "value": "wiki-rag-nat"}],
+            )
+
+            # Route isolated subnets through NAT
+            for i, subnet in enumerate(vpc.isolated_subnets):
+                ec2.CfnRoute(
+                    self,
+                    f"NatRoute{i}",
+                    route_table_id=subnet.route_table.route_table_id,
+                    destination_cidr_block="0.0.0.0/0",
+                    nat_gateway_id=nat_gw.ref,
+                )
+
+            private_subnets = ec2.SubnetSelection(
+                subnets=vpc.isolated_subnets,
+            )
+        else:
+            # Fallback: let CDK manage NAT (for manual cdk deploy
+            # without deploy.sh). EIP won't be pre-registered in
+            # Databricks IP ACL — user must add it manually.
+            vpc = ec2.Vpc(
+                self,
+                "Vpc",
+                max_azs=2,
+                nat_gateways=1,
+                subnet_configuration=[
+                    ec2.SubnetConfiguration(
+                        name="Public",
+                        subnet_type=ec2.SubnetType.PUBLIC,
+                    ),
+                    ec2.SubnetConfiguration(
+                        name="Private",
+                        subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+                    ),
+                ],
+            )
+            private_subnets = ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+            )
 
         # -- ECS cluster --
         cluster = ecs.Cluster(self, "Cluster", vpc=vpc)
@@ -108,7 +161,7 @@ class MediaWikiStack(Stack):
             # Zero-downtime deploy: new task starts before old one stops
             min_healthy_percent=100,
             # Fargate in private subnets — outbound via NAT (stable IP)
-            task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            task_subnets=private_subnets,
             assign_public_ip=False,
             # ALB: internet-facing; ingress rule added separately via
             # CfnSecurityGroupIngress (inline rules get silently dropped)
@@ -152,21 +205,27 @@ class MediaWikiStack(Stack):
             ),
         )
 
-        # -- ALB security group: allow inbound HTTP from the internet.
-        #    Both open_listener=True and add_ingress_rule() produce inline
-        #    SecurityGroupIngress which CloudFormation silently drops when
-        #    the same SG also has standalone Egress resources.  Using a
-        #    standalone CfnSecurityGroupIngress resource guarantees the rule
-        #    is created as its own CloudFormation resource. --
+        # -- ALB security group: allow inbound HTTP.
+        #    By default allows all IPs (0.0.0.0/0). Pass
+        #    -c allowed_cidr="<ip>/32" to restrict to a single IP.
+        #    deploy.sh auto-detects the deployer's public IP.
+        #
+        #    Uses CfnSecurityGroupIngress (not open_listener or
+        #    add_ingress_rule) because inline rules get silently
+        #    dropped when the SG also has standalone Egress resources.
         ec2.CfnSecurityGroupIngress(
             self,
             "AlbPublicIngress",
-            group_id=service.load_balancer.connections.security_groups[0].security_group_id,
+            group_id=(
+                service.load_balancer
+                .connections.security_groups[0]
+                .security_group_id
+            ),
             ip_protocol="tcp",
             from_port=80,
             to_port=80,
-            cidr_ip="0.0.0.0/0",
-            description="HTTP public access",
+            cidr_ip=ctx["allowed_cidr"],
+            description="HTTP access",
         )
 
         # -- MW_SERVER_URL: MediaWiki needs to know its own public URL
@@ -207,11 +266,22 @@ class MediaWikiStack(Stack):
             description="MediaWiki public URL — export as MEDIAWIKI_URL",
         )
 
-        # -- Output: NAT gateway Elastic IP (add to Databricks IP ACL) --
-        nat_eip = vpc.public_subnets[0].node.find_child("EIP")
-        CfnOutput(
-            self,
-            "NatElasticIp",
-            value=nat_eip.ref,
-            description="NAT Elastic IP — add to Databricks workspace IP ACL",
-        )
+        # -- Output: NAT Elastic IP --
+        if nat_eip_alloc_id:
+            # Pre-allocated by deploy.sh — output the alloc ID
+            # (deploy.sh already knows the IP and added it to IP ACL)
+            CfnOutput(
+                self,
+                "NatEipAllocId",
+                value=nat_eip_alloc_id,
+                description="Pre-allocated NAT EIP allocation ID",
+            )
+        else:
+            # Auto-created by CDK — output the IP for manual ACL setup
+            nat_eip = vpc.public_subnets[0].node.find_child("EIP")
+            CfnOutput(
+                self,
+                "NatElasticIp",
+                value=nat_eip.ref,
+                description="NAT Elastic IP — add to Databricks workspace IP ACL",
+            )

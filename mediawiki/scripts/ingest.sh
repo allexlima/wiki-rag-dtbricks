@@ -34,9 +34,30 @@ fi
 DATASET_DIR="$DATASET_BASE/$1"
 DATASET_NAME="$1"
 IMAGES_DIR="$DATASET_DIR/images"
-API_URL="${MEDIAWIKI_URL:-http://localhost:8080}/api.php"
+MW_TARGET="${MEDIAWIKI_URL:-http://localhost:8080}"
+LOCAL_URL="http://localhost:8080"
+ALSO_LOCAL=0
+API_URL="${MW_TARGET}/api.php"
 COOKIE_JAR=$(mktemp)
-trap 'rm -f "$COOKIE_JAR"' EXIT
+COOKIE_JAR_LOCAL=$(mktemp)
+trap 'rm -f "$COOKIE_JAR" "$COOKIE_JAR_LOCAL"' EXIT
+
+echo "🎯 Target: ${MW_TARGET}"
+if [ "$MW_TARGET" != "$LOCAL_URL" ]; then
+    echo "   (using MEDIAWIKI_URL from environment)"
+    printf "📦 Also upload to local Docker (%s)? [Y/n] " "$LOCAL_URL"
+    read -r BOTH
+    if [ "$BOTH" != "n" ] && [ "$BOTH" != "N" ]; then
+        if curl -s --max-time 3 "${LOCAL_URL}/api.php?action=query&meta=siteinfo&format=json" >/dev/null 2>&1; then
+            ALSO_LOCAL=1
+            echo "   → Uploading to both remote and local"
+        else
+            echo "   ⚠️  Local Docker not reachable — uploading to remote only"
+        fi
+    else
+        echo "   → Uploading to remote only"
+    fi
+fi
 
 for cmd in curl jq sed; do
     if ! command -v "$cmd" &>/dev/null; then
@@ -67,32 +88,68 @@ set +a
 : "${MW_ADMIN_PASSWORD:?MW_ADMIN_PASSWORD not set in .env}"
 
 # -------------------------------------------------------
-# 2. Login to MediaWiki API
+# 2. Login to MediaWiki API (with retry — ECS sessions can be flaky after scale-up)
 # -------------------------------------------------------
 echo "🔑 Logging into MediaWiki as '${MW_ADMIN_USER}'..."
 
-LOGIN_TOKEN=$(curl -s -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
-    "${API_URL}?action=query&meta=tokens&type=login&format=json" \
-    | jq -r '.query.tokens.logintoken')
+LOGIN_STATUS=""
+for attempt in 1 2 3; do
+    : > "$COOKIE_JAR"
 
-LOGIN_RESULT=$(curl -s -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
-    -X POST "$API_URL" \
-    --data-urlencode "action=login" \
-    --data-urlencode "lgname=${MW_ADMIN_USER}" \
-    --data-urlencode "lgpassword=${MW_ADMIN_PASSWORD}" \
-    --data-urlencode "lgtoken=${LOGIN_TOKEN}" \
-    --data-urlencode "format=json")
+    LOGIN_TOKEN=$(curl -s -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+        "${API_URL}?action=query&meta=tokens&type=login&format=json" \
+        | jq -r '.query.tokens.logintoken')
 
-LOGIN_STATUS=$(echo "$LOGIN_RESULT" | jq -r '.login.result')
+    LOGIN_RESULT=$(curl -s -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+        -X POST "$API_URL" \
+        --data-urlencode "action=login" \
+        --data-urlencode "lgname=${MW_ADMIN_USER}" \
+        --data-urlencode "lgpassword=${MW_ADMIN_PASSWORD}" \
+        --data-urlencode "lgtoken=${LOGIN_TOKEN}" \
+        --data-urlencode "format=json")
+
+    LOGIN_STATUS=$(echo "$LOGIN_RESULT" | jq -r '.login.result')
+    [ "$LOGIN_STATUS" = "Success" ] && break
+    [ "$attempt" -lt 3 ] && echo "  ⚠️  Login attempt ${attempt} failed, retrying..." && sleep 2
+done
+
 if [ "$LOGIN_STATUS" != "Success" ]; then
-    echo "❌ Login failed: $LOGIN_RESULT"
+    echo "❌ Login failed after 3 attempts: $LOGIN_RESULT"
     exit 1
 fi
-echo "  ✅ Logged in"
+echo "  ✅ Logged in (remote)"
 
 CSRF_TOKEN=$(curl -s -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
     "${API_URL}?action=query&meta=tokens&format=json" \
     | jq -r '.query.tokens.csrftoken')
+
+# Login to local instance too (if uploading to both)
+LOCAL_API_URL="${LOCAL_URL}/api.php"
+LOCAL_CSRF_TOKEN=""
+if [ "$ALSO_LOCAL" -eq 1 ]; then
+    LOCAL_LOGIN_TOKEN=$(curl -s -b "$COOKIE_JAR_LOCAL" -c "$COOKIE_JAR_LOCAL" \
+        "${LOCAL_API_URL}?action=query&meta=tokens&type=login&format=json" \
+        | jq -r '.query.tokens.logintoken')
+
+    LOCAL_LOGIN_RESULT=$(curl -s -b "$COOKIE_JAR_LOCAL" -c "$COOKIE_JAR_LOCAL" \
+        -X POST "$LOCAL_API_URL" \
+        --data-urlencode "action=login" \
+        --data-urlencode "lgname=${MW_ADMIN_USER}" \
+        --data-urlencode "lgpassword=${MW_ADMIN_PASSWORD}" \
+        --data-urlencode "lgtoken=${LOCAL_LOGIN_TOKEN}" \
+        --data-urlencode "format=json")
+
+    LOCAL_LOGIN_STATUS=$(echo "$LOCAL_LOGIN_RESULT" | jq -r '.login.result')
+    if [ "$LOCAL_LOGIN_STATUS" != "Success" ]; then
+        echo "  ⚠️  Local login failed — continuing with remote only"
+        ALSO_LOCAL=0
+    else
+        LOCAL_CSRF_TOKEN=$(curl -s -b "$COOKIE_JAR_LOCAL" -c "$COOKIE_JAR_LOCAL" \
+            "${LOCAL_API_URL}?action=query&meta=tokens&format=json" \
+            | jq -r '.query.tokens.csrftoken')
+        echo "  ✅ Logged in (local)"
+    fi
+fi
 
 # -------------------------------------------------------
 # 3. Convert markdown to wikitext
@@ -127,30 +184,49 @@ cat > "$PAGE_SCRIPT" << 'PAGE_EOF'
 #!/usr/bin/env bash
 md_file="$1"; cookie_jar="$2"; api_url="$3"; dataset_name="$4"
 csrf_token="$5"; progress_dir="$6"; md_to_wikitext_awk="$7"; md_to_wikitext_sed="$8"
+# Optional: local instance params (args 9-11)
+local_cookie_jar="${9:-}"; local_api_url="${10:-}"; local_csrf_token="${11:-}"
 
 title=$(head -1 "$md_file" | sed 's/^# //')
 [ -z "$title" ] && title=$(basename "$md_file" .md | tr '_' ' ')
 
-# Skip if page already exists
-exists=$(curl -s -b "$cookie_jar" \
-    "${api_url}?action=query&titles=$(printf '%s' "$title" | jq -sRr @uri)&format=json" \
-    | jq -r '.query.pages | to_entries[0].value.missing // "exists"')
-if [ "$exists" = "exists" ]; then
-    touch "${progress_dir}/$(basename "$md_file").skip"
-    exit 0
+# Main_Page: always overwrite (MediaWiki creates a default one on install)
+base=$(basename "$md_file" .md)
+is_main_page=0
+[ "$base" = "Main_Page" ] && is_main_page=1
+
+# Skip non-Main_Page pages that already exist
+if [ "$is_main_page" -eq 0 ]; then
+    exists=$(curl -s -b "$cookie_jar" \
+        "${api_url}?action=query&titles=$(printf '%s' "$title" | jq -sRr @uri)&format=json" \
+        | jq -r '.query.pages | to_entries[0].value.missing // "exists"')
+    if [ "$exists" = "exists" ]; then
+        touch "${progress_dir}/$(basename "$md_file").skip"
+        exit 0
+    fi
 fi
 
 content=$(awk "$md_to_wikitext_awk" "$md_file" | sed "$md_to_wikitext_sed")
 
-result=$(curl -s -b "$cookie_jar" \
-    -X POST "$api_url" \
-    --data-urlencode "action=edit" \
-    --data-urlencode "title=${title}" \
-    --data-urlencode "text=${content}" \
-    --data-urlencode "summary=Import from dataset/${dataset_name}" \
-    --data-urlencode "token=${csrf_token}" \
-    --data-urlencode "format=json")
+_upload_page() {
+    local cj="$1" url="$2" tok="$3"
+    curl -s -b "$cj" \
+        -X POST "$url" \
+        --data-urlencode "action=edit" \
+        --data-urlencode "title=${title}" \
+        --data-urlencode "text=${content}" \
+        --data-urlencode "summary=Import from dataset/${dataset_name}" \
+        --data-urlencode "token=${tok}" \
+        --data-urlencode "format=json"
+}
+
+result=$(_upload_page "$cookie_jar" "$api_url" "$csrf_token")
 status=$(echo "$result" | jq -r '.edit.result // .error.code // "unknown"')
+
+# Also upload to local instance if requested
+if [ -n "$local_api_url" ]; then
+    _upload_page "$local_cookie_jar" "$local_api_url" "$local_csrf_token" >/dev/null 2>&1
+fi
 
 touch "${progress_dir}/$(basename "$md_file").done"
 if [ "$status" != "Success" ]; then
@@ -165,37 +241,53 @@ cat > "$UPLOAD_SCRIPT" << 'UPLOAD_EOF'
 #!/usr/bin/env bash
 img_file="$1"; cookie_jar="$2"; api_url="$3"; dataset_name="$4"
 csrf_token="$5"; progress_dir="$6"
+# Optional: local instance params (args 7-9)
+local_cookie_jar="${7:-}"; local_api_url="${8:-}"; local_csrf_token="${9:-}"
 
 filename=$(basename "$img_file")
 
-# Skip if file already exists in MediaWiki
+_upload_image() {
+    local cj="$1" url="$2" tok="$3"
+    local max_retries=3
+    for attempt in $(seq 1 $max_retries); do
+        result=$(curl -s -b "$cj" \
+            -X POST "$url" \
+            -F "action=upload" \
+            -F "filename=${filename}" \
+            -F "file=@${img_file}" \
+            -F "comment=Import from dataset/${dataset_name}" \
+            -F "token=${tok}" \
+            -F "ignorewarnings=true" \
+            -F "format=json")
+        st=$(echo "$result" | perl -pe 's/[^\x20-\x7E\x0A\x0D]//g' | jq -r '.upload.result // .error.code // "unknown"')
+        if [ "$st" = "Success" ] || [ "$st" = "Warning" ]; then
+            echo "$st"; return
+        fi
+        [ "$attempt" -lt "$max_retries" ] && sleep 1
+    done
+    echo "$st"
+}
+
+# Skip if file already exists on remote
 exists=$(curl -s -b "$cookie_jar" \
     "${api_url}?action=query&titles=File:${filename}&format=json" \
     | jq -r '.query.pages | to_entries[0].value.missing // "exists"')
 if [ "$exists" = "exists" ]; then
+    # Still upload to local if needed (may not exist there)
+    if [ -n "$local_api_url" ]; then
+        _upload_image "$local_cookie_jar" "$local_api_url" "$local_csrf_token" >/dev/null 2>&1
+    fi
     touch "${progress_dir}/${filename}.done"
     exit 0
 fi
 
-max_retries=3
-for attempt in $(seq 1 $max_retries); do
-    result=$(curl -s -b "$cookie_jar" \
-        -X POST "$api_url" \
-        -F "action=upload" \
-        -F "filename=${filename}" \
-        -F "file=@${img_file}" \
-        -F "comment=Import from dataset/${dataset_name}" \
-        -F "token=${csrf_token}" \
-        -F "ignorewarnings=true" \
-        -F "format=json")
-    status=$(echo "$result" | perl -pe 's/[^\x20-\x7E\x0A\x0D]//g' | jq -r '.upload.result // .error.code // "unknown"')
-    if [ "$status" = "Success" ] || [ "$status" = "Warning" ]; then
-        break
-    fi
-    if [ "$attempt" -lt "$max_retries" ]; then
-        sleep 1
-    fi
-done
+status=$(_upload_image "$cookie_jar" "$api_url" "$csrf_token")
+
+# Also upload to local instance if requested
+if [ -n "$local_api_url" ]; then
+    _upload_image "$local_cookie_jar" "$local_api_url" "$local_csrf_token" >/dev/null 2>&1
+fi
+
 touch "${progress_dir}/${filename}.done"
 if [ "$status" != "Success" ] && [ "$status" != "Warning" ]; then
     echo "$filename: $status" >> "${progress_dir}/img_errors.log"
@@ -251,9 +343,15 @@ if [ "$TOTAL_PAGES" -gt 0 ]; then
     rm -f "$PROGRESS_DIR"/*.done 2>/dev/null
     draw_progress 0 "$TOTAL_PAGES" "📄 Pages "
 
+    # Build local args (empty array if not uploading to both)
+    LOCAL_ARGS=()
+    if [ "$ALSO_LOCAL" -eq 1 ]; then
+        LOCAL_ARGS=("$COOKIE_JAR_LOCAL" "$LOCAL_API_URL" "$LOCAL_CSRF_TOKEN")
+    fi
+
     printf '%s\n' "${MD_FILES[@]}" \
         | xargs -P "$PARALLEL_JOBS" -I{} \
-            bash "$PAGE_SCRIPT" {} "$COOKIE_JAR" "$API_URL" "$DATASET_NAME" "$CSRF_TOKEN" "$PROGRESS_DIR" "$AWK_PROG" "$SED_PROG" &
+            bash "$PAGE_SCRIPT" {} "$COOKIE_JAR" "$API_URL" "$DATASET_NAME" "$CSRF_TOKEN" "$PROGRESS_DIR" "$AWK_PROG" "$SED_PROG" ${LOCAL_ARGS[@]+"${LOCAL_ARGS[@]}"} &
     PID=$!
 
     while kill -0 "$PID" 2>/dev/null; do
@@ -293,9 +391,15 @@ if [ -d "$IMAGES_DIR" ]; then
         rm -f "$PROGRESS_DIR"/*.done 2>/dev/null
         draw_progress 0 "$TOTAL_IMAGES" "🖼️ Images"
 
+        # Build local args for images
+        LOCAL_IMG_ARGS=()
+        if [ "$ALSO_LOCAL" -eq 1 ]; then
+            LOCAL_IMG_ARGS=("$COOKIE_JAR_LOCAL" "$LOCAL_API_URL" "$LOCAL_CSRF_TOKEN")
+        fi
+
         printf '%s\n' "${IMAGE_FILES[@]}" \
             | xargs -P "$IMG_JOBS" -I{} \
-                bash "$UPLOAD_SCRIPT" {} "$COOKIE_JAR" "$API_URL" "$DATASET_NAME" "$CSRF_TOKEN" "$PROGRESS_DIR" &
+                bash "$UPLOAD_SCRIPT" {} "$COOKIE_JAR" "$API_URL" "$DATASET_NAME" "$CSRF_TOKEN" "$PROGRESS_DIR" ${LOCAL_IMG_ARGS[@]+"${LOCAL_IMG_ARGS[@]}"} &
         PID=$!
 
         while kill -0 "$PID" 2>/dev/null; do
@@ -323,5 +427,8 @@ echo ""
 echo "========================================="
 echo "  ✅ Ingested ${TOTAL_PAGES} pages + ${IMAGE_COUNT} images"
 echo "  📂 Dataset: ${DATASET_NAME}"
-echo "  🌐 View at ${MEDIAWIKI_URL:-http://localhost:8080}"
+echo "  🌐 View at ${MW_TARGET}"
+if [ "$ALSO_LOCAL" -eq 1 ]; then
+echo "  🐳 Also synced to ${LOCAL_URL}"
+fi
 echo "========================================="

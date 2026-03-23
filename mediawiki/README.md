@@ -1,6 +1,6 @@
 # MediaWiki — Local Docker & AWS ECS Fargate
 
-This directory contains everything needed to run a **MediaWiki 1.42** instance backed by **Lakebase PostgreSQL**. Two deployment modes are supported:
+Two deployment modes for the **MediaWiki 1.42** instance backed by **Lakebase PostgreSQL**:
 
 | Mode | Use case | Endpoint |
 |------|----------|----------|
@@ -11,7 +11,7 @@ This directory contains everything needed to run a **MediaWiki 1.42** instance b
 
 ## Local Docker (Default)
 
-From the **project root**, run:
+From the **project root**:
 
 ```bash
 make setup-wiki         # Auto-generates .env from Databricks secrets, starts container
@@ -26,57 +26,33 @@ To tear down: `make wiki-destroy`
 
 ## AWS ECS Fargate (Optional)
 
-Deploy MediaWiki as a Fargate service behind an Application Load Balancer, giving you a public URL that Databricks notebooks and apps can reach.
+Deploys MediaWiki as a Fargate service behind an ALB, giving you a public URL that Databricks notebooks and apps can reach.
+
+> [!NOTE]
+> This assumes you've already completed **Setup (one-time)** from the [root README](../README.md) (`make setup-secrets` + `make setup-lakebase`). The deploy script reads credentials directly from the Databricks secret scope — no `.env` needed.
 
 ### Prerequisites
 
 | Tool | Install |
 |------|---------|
-| Databricks CLI | `>= 0.236.0` — secrets must be populated (`make setup-secrets` + `make setup-lakebase`) |
 | AWS CLI | `brew install awscli` or [docs](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) |
 | AWS CDK | `npm install -g aws-cdk` |
-| Python 3.11+ | Required for CDK app |
 | Docker | Required for building the container image |
 
-### Multiple AWS Profiles
-
-If you have more than one AWS profile in `~/.aws/credentials`:
+### Profiles & Region
 
 ```bash
-# List profiles
-aws configure list-profiles
-
-# Set the profile for the current session
+# AWS profile (if non-default)
 export AWS_PROFILE=my-profile
-```
 
-All commands below (`deploy.sh`, `cdk deploy`, `cdk destroy`) will use the exported profile.
+# Databricks profile (if non-default)
+export PROFILE=my-workspace
 
-### Region
-
-The default region is **us-east-1**. Override it with:
-
-```bash
-# Option 1: Environment variable
+# Region defaults to us-east-1; override with:
 export AWS_DEFAULT_REGION=eu-west-1
-
-# Option 2: CDK context parameter (at deploy time)
-cdk deploy -c region=eu-west-1
-
-# Option 3: The region from your AWS_PROFILE is used automatically
 ```
 
-### Step 1: Ensure Databricks Secrets Exist
-
-The deploy script reads Lakebase credentials **directly from the Databricks secret scope** (`wiki-rag`) — the same secrets populated by `make setup-secrets` + `make setup-lakebase`. No `.env` file needed.
-
-```bash
-# If you haven't already:
-make setup-secrets      # One-time: prompts for password
-make setup-lakebase     # Provisions Lakebase + stores host/port/db secrets
-```
-
-### Step 2: Deploy
+### Deploy
 
 ```bash
 cd mediawiki/cdk
@@ -84,49 +60,61 @@ cd mediawiki/cdk
 ```
 
 The script will:
-1. Read Lakebase credentials from **Databricks Secrets** (`wiki-rag` scope)
-2. Sync them to **AWS Secrets Manager** (`wiki-rag/mediawiki`)
-3. Set up a Python venv and install CDK dependencies
-4. Bootstrap CDK (idempotent — only provisions if needed)
-5. Run `cdk deploy` to create the ECS Fargate service + ALB
+1. Read Lakebase credentials from the Databricks secret scope
+2. Sync them to AWS Secrets Manager
+3. Pre-allocate a **NAT Elastic IP** and add it to the **Databricks workspace IP access list** (so Fargate can reach Lakebase from the first boot)
+4. Ask whether to **restrict ALB access** to your current IP (`[Y/n]`)
+5. Run `cdk deploy` (VPC, ECS Fargate, ALB)
+6. Export `MEDIAWIKI_URL` for the current session
 
-> [!IMPORTANT]
-> **After deployment, the CDK output will display `MediaWikiUrl`.**
->
-> Copy this URL and either:
->
-> 1. **Export it** for the current session:
->    ```bash
->    export MEDIAWIKI_URL=http://<your-alb-dns-name>
->    ```
->
-> 2. **Or add it to `databricks.yml`** (for Databricks jobs):
->    ```yaml
->    variables:
->      mediawiki_url:
->        default: "http://<your-alb-dns-name>"
->    ```
->
-> This is how the ingestion pipeline (`src/pipeline.py`) and shell scripts know where to find MediaWiki.
-
-### Step 3: Load Content into ECS MediaWiki
-
-`make demo-load` uploads pages and images to MediaWiki via its API. Since the ECS instance isn't on `localhost`, you need to point it at the ALB URL exported in Step 2:
+After deployment, load content:
 
 ```bash
-# From project root — uses the MEDIAWIKI_URL exported in Step 2
+# From project root — uses MEDIAWIKI_URL exported by deploy.sh
 make demo-load
 ```
+
+> [!IMPORTANT]
+> To persist `MEDIAWIKI_URL` across terminals, add to your shell profile or `databricks.yml`:
+> ```yaml
+> variables:
+>   mediawiki_url:
+>     default: "http://<your-alb-dns-name>"
+> ```
+
+### Network & Security
+
+| Resource | Purpose |
+|----------|---------|
+| **NAT Elastic IP** | Tagged `wiki-rag-nat` — reused across deploys. Stable outbound IP for Lakebase access. |
+| **Databricks IP access list** | Entry `wiki-rag-ecs-nat` — auto-created with the NAT EIP. Allows Fargate → Lakebase. |
+| **ALB security group** | Inbound HTTP (:80). Restricted to your IP by default. |
+
+> [!TIP]
+> **IP changed?** (VPN, travel, ISP) Re-run `./deploy.sh` — it detects your new IP and updates the security group.
+
+> [!NOTE]
+> **Manual `cdk deploy`** (without `deploy.sh`): the stack falls back to auto-creating the NAT EIP. You must manually add the NAT IP (from the `NatElasticIp` output) to the Databricks workspace IP access list.
 
 ### Destroy
 
 ```bash
+cd mediawiki/cdk
 cdk destroy
 ```
 
-To also remove the AWS Secrets Manager secret:
+Clean up resources created outside CloudFormation:
 
 ```bash
+# Release the pre-allocated NAT Elastic IP
+EIP_ALLOC=$(aws ec2 describe-addresses --filters "Name=tag:Name,Values=wiki-rag-nat" \
+    --query 'Addresses[0].AllocationId' --output text)
+[ "$EIP_ALLOC" != "None" ] && aws ec2 release-address --allocation-id "$EIP_ALLOC"
+
+# Remove Databricks workspace IP access list entry
+# (Settings → Security → IP Access Lists → delete "wiki-rag-ecs-nat")
+
+# Delete AWS Secrets Manager secret
 aws secretsmanager delete-secret --secret-id wiki-rag/mediawiki --force-delete-without-recovery
 ```
 
@@ -134,7 +122,7 @@ aws secretsmanager delete-secret --secret-id wiki-rag/mediawiki --force-delete-w
 
 ## Adding Your Own Dataset
 
-Create a folder under `mediawiki/dataset/` with:
+Create a folder under `mediawiki/dataset/`:
 
 ```
 mediawiki/dataset/my-wiki/

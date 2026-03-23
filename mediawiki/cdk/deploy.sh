@@ -122,7 +122,8 @@ fi
 source .venv/bin/activate
 pip install -q --upgrade pip
 pip install -q -r requirements.txt
-npm install -g aws-cdk@latest --silent 2>/dev/null
+# Update CDK CLI if possible (non-fatal — may already be installed)
+npm install -g aws-cdk@latest --silent 2>/dev/null || true
 
 # -------------------------------------------------------
 # 4. Bootstrap CDK (skip if already bootstrapped)
@@ -136,9 +137,93 @@ else
 fi
 
 # -------------------------------------------------------
-# 5. Deploy CDK stack
+# 5. Pre-allocate NAT Elastic IP + add to Databricks IP ACL
+# -------------------------------------------------------
+# Chicken-and-egg: ECS health check needs Lakebase access via NAT,
+# but the NAT IP must be in the Databricks IP ACL *before* CDK deploy.
+# Solution: allocate the EIP first, add it to the ACL, then pass the
+# allocation ID to CDK so it uses this exact EIP for the NAT gateway.
+echo ""
+echo "🔒 Preparing NAT Elastic IP for Lakebase access..."
+
+IP_ACL_LABEL="wiki-rag-ecs-nat"
+
+# Reuse existing EIP tagged "wiki-rag-nat", or allocate a new one
+EIP_ALLOC_ID=$(aws ec2 describe-addresses \
+    --filters "Name=tag:Name,Values=wiki-rag-nat" \
+    --query 'Addresses[0].AllocationId' --output text 2>/dev/null)
+
+if [ "$EIP_ALLOC_ID" = "None" ] || [ -z "$EIP_ALLOC_ID" ]; then
+    EIP_ALLOC_ID=$(aws ec2 allocate-address --domain vpc \
+        --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=Name,Value=wiki-rag-nat},{Key=Project,Value=wiki-rag}]' \
+        --query 'AllocationId' --output text)
+    echo "  ✅ Allocated new EIP: ${EIP_ALLOC_ID}"
+else
+    echo "  ✅ Reusing existing EIP: ${EIP_ALLOC_ID}"
+fi
+
+NAT_IP=$(aws ec2 describe-addresses --allocation-ids "$EIP_ALLOC_ID" \
+    --query 'Addresses[0].PublicIp' --output text)
+echo "  📍 NAT IP: ${NAT_IP}"
+
+# Add to Databricks workspace IP access list BEFORE CDK deploy
+echo "  Adding ${NAT_IP}/32 to Databricks workspace IP access list..."
+
+EXISTING_ID=$(databricks ip-access-lists list $DB_PROFILE_FLAG -o json 2>/dev/null \
+    | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for acl in data.get('ip_access_lists', []):
+    if acl.get('label') == '${IP_ACL_LABEL}':
+        print(acl['list_id'])
+        break
+" 2>/dev/null || echo "")
+
+if [ -n "$EXISTING_ID" ]; then
+    databricks ip-access-lists update "$EXISTING_ID" $DB_PROFILE_FLAG \
+        --json "{
+            \"label\": \"${IP_ACL_LABEL}\",
+            \"list_type\": \"ALLOW\",
+            \"ip_addresses\": [\"${NAT_IP}/32\"],
+            \"enabled\": true
+        }" > /dev/null 2>&1 \
+        && echo "  ✅ Updated IP access list '${IP_ACL_LABEL}'" \
+        || echo "  ⚠️  Failed to update — add ${NAT_IP}/32 to workspace IP ACL manually"
+else
+    databricks ip-access-lists create $DB_PROFILE_FLAG \
+        --json "{
+            \"label\": \"${IP_ACL_LABEL}\",
+            \"list_type\": \"ALLOW\",
+            \"ip_addresses\": [\"${NAT_IP}/32\"]
+        }" > /dev/null 2>&1 \
+        && echo "  ✅ Created IP access list '${IP_ACL_LABEL}'" \
+        || echo "  ⚠️  Failed to create — add ${NAT_IP}/32 to workspace IP ACL manually"
+fi
+
+# -------------------------------------------------------
+# 6. Deploy CDK stack
 # -------------------------------------------------------
 echo ""
+
+# ALB access: restrict to deployer's IP or open to all?
+MY_IP=$(curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null \
+    || curl -s --max-time 5 https://ifconfig.me 2>/dev/null \
+    || echo "")
+if [ -n "$MY_IP" ]; then
+    printf "🔒 Restrict ALB access to your IP only (%s)? [Y/n] " "$MY_IP"
+    read -r RESTRICT
+    if [ "$RESTRICT" = "n" ] || [ "$RESTRICT" = "N" ]; then
+        ALLOWED_CIDR="0.0.0.0/0"
+        echo "   → ALB open to all (0.0.0.0/0)"
+    else
+        ALLOWED_CIDR="${MY_IP}/32"
+        echo "   → ALB restricted to ${ALLOWED_CIDR}"
+    fi
+else
+    ALLOWED_CIDR="0.0.0.0/0"
+    echo "⚠️  Could not detect public IP — ALB open to all"
+fi
+
 echo "🚀 Deploying CDK stack..."
 cdk deploy \
     -c lakebase_host="$LAKEBASE_HOST" \
@@ -147,15 +232,19 @@ cdk deploy \
     -c lakebase_user="$LAKEBASE_USER" \
     -c mw_admin_user="Admin" \
     -c secret_name="$AWS_SECRET_NAME" \
+    -c allowed_cidr="$ALLOWED_CIDR" \
+    -c nat_eip_alloc_id="$EIP_ALLOC_ID" \
     --require-approval never
 
 # -------------------------------------------------------
-# 6. Read ALB URL from CDK outputs
+# 7. Summary
 # -------------------------------------------------------
 MW_URL=$(aws cloudformation describe-stacks --stack-name WikiRagMediaWiki \
     --query "Stacks[0].Outputs[?OutputKey=='MediaWikiUrl'].OutputValue" --output text 2>/dev/null)
-NAT_IP=$(aws cloudformation describe-stacks --stack-name WikiRagMediaWiki \
-    --query "Stacks[0].Outputs[?OutputKey=='NatElasticIp'].OutputValue" --output text 2>/dev/null)
+
+# Export MEDIAWIKI_URL for the current session so subsequent
+# commands (make demo-load, make ingest) pick it up automatically.
+export MEDIAWIKI_URL="$MW_URL"
 
 echo ""
 echo "========================================="
@@ -163,15 +252,13 @@ echo "  ✅ MediaWiki deployed to ECS Fargate!"
 echo ""
 echo "  🌐 ${MW_URL}"
 echo ""
-echo "  Export for this session:"
+echo "  MEDIAWIKI_URL exported for this session."
+echo "  To persist across terminals, add to your shell profile:"
 echo "     export MEDIAWIKI_URL=${MW_URL}"
 echo ""
 echo "  Then ingest data:"
 echo "     make demo-load"
-if [ -n "$NAT_IP" ]; then
 echo ""
-echo "  🔒 NAT Elastic IP: ${NAT_IP}"
-echo "     Add ${NAT_IP}/32 to Databricks workspace IP ACL"
-echo "     for Lakebase connectivity."
-fi
+echo "  🔒 NAT Elastic IP: ${NAT_IP}/32"
+echo "     (already added to Databricks workspace IP access list)"
 echo "========================================="

@@ -86,7 +86,7 @@ make destroy                       # Removes everything: bundle + Docker + Lakeb
 Run `make help` to see all available targets.
 
 > [!TIP]
-> **Need a public MediaWiki endpoint?** If your Databricks jobs or apps need to reach MediaWiki over the internet (instead of `localhost`), you can deploy it to **AWS ECS Fargate** with a single command. See [`mediawiki/README.md`](mediawiki/README.md) for the full guide.
+> **Need a public MediaWiki endpoint?** If your Databricks jobs or apps need to reach MediaWiki over the internet (instead of `localhost`), you can deploy it to **AWS ECS Fargate** with a single command. The deploy script automatically pre-allocates a NAT Elastic IP and adds it to the Databricks workspace IP access list so the ECS health check can reach Lakebase from the first boot. See [`mediawiki/README.md`](mediawiki/README.md) for the full guide.
 
 ---
 
