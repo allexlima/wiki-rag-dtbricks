@@ -13,7 +13,6 @@ PROFILE ?=
 SECRET_SCOPE  := wiki-rag
 INSTANCE_NAME := wiki-rag-lakebase
 ENDPOINT_NAME := wiki-rag-endpoint
-APP_NAME      := wiki-rag-app
 CATALOG       := allex_workspace_catalog
 SCHEMA        := wiki_rag
 MODEL_NAME    := $(CATALOG).$(SCHEMA).wiki_rag_agent
@@ -151,8 +150,8 @@ ingest: _require-secrets  ## 📊 Run ingestion pipeline (reads MW → chunks �
 deploy: setup-lakebase setup-wiki deploy-agent ingest  ## 🚀 Full deployment (all steps)
 	@echo ""
 	@echo "🎉 Deployment complete!"
-	@echo "   📱 App:      databricks apps get $(APP_NAME)"
 	@echo "   🔌 Endpoint: databricks serving-endpoints get $(ENDPOINT_NAME)"
+	@echo "   🧪 Test via Databricks AI Playground"
 
 # ─────────────────────────────────────────────────────────────
 # 💥 Teardown

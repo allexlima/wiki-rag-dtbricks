@@ -79,11 +79,12 @@ make ingest             # Runs ingestion pipeline (clean, caption images, chunk,
 
 ### 3. Verify
 
-```bash
-databricks apps get wiki-rag-app    # Get the Streamlit app URL
-```
+Once the endpoint is READY, test it via the **Databricks Playground** (AI Playground → select `wiki-rag-endpoint`) or via CLI:
 
-Open the URL and ask a question about your wiki content.
+```bash
+databricks serving-endpoints query wiki-rag-endpoint \
+  --input '[{"role": "user", "content": "What is the main topic of the wiki?"}]'
+```
 
 ### Teardown
 
@@ -110,8 +111,8 @@ Run `make help` to see all available targets.
 | **RAG agent**        | LangGraph + ResponsesAgent (MLflow 3)    | retrieve &rarr; grade &rarr; rewrite &rarr; generate         |
 | **Conversation**     | Lakebase PostgreSQL                      | Multi-turn history in `wiki_rag.conversations` / `.messages` |
 | **LLM**              | `databricks-claude-sonnet-4-6`           | Answer generation with source citations                      |
-| **Serving**          | MLflow Model Serving                     | Real-time endpoint, scale-to-zero                            |
-| **Chat UI**          | Streamlit (Databricks App)               | Web interface with streaming responses                       |
+| **Serving**          | MLflow Model Serving                     | Real-time endpoint, scale-to-zero, serverless optimized      |
+| **Chat UI**          | Databricks AI Playground                 | Built-in testing UI (no custom app needed)                   |
 
 ### Data Flow
 
@@ -143,7 +144,7 @@ flowchart TB
 
     subgraph Serving["Serving"]
         ENDPOINT["MLflow Model Serving\n(ResponsesAgent)"]
-        APP["Streamlit Chat UI\n(Databricks App)"]
+        PLAYGROUND["Databricks AI Playground"]
     end
 
     MW -->|writes to| MW_SCHEMA
@@ -155,7 +156,7 @@ flowchart TB
     CHUNK --> EMBED
     EMBED -->|vector + metadata| RAG_SCHEMA
 
-    APP -->|user question| ENDPOINT
+    PLAYGROUND -->|user question| ENDPOINT
     ENDPOINT --> RETRIEVE
     RETRIEVE -->|similarity search| RAG_SCHEMA
     RETRIEVE --> GRADE
@@ -164,7 +165,7 @@ flowchart TB
     REWRITE -->|refined query| RETRIEVE
     GENERATE -->|save exchange| RAG_SCHEMA
     GENERATE --> ENDPOINT
-    ENDPOINT -->|answer + sources| APP
+    ENDPOINT -->|answer + sources| PLAYGROUND
 ```
 
 ---
@@ -175,11 +176,9 @@ flowchart TB
 wiki-rag-dtbricks/
 ├── databricks.yml                # DAB config — single source of truth for all variables
 ├── Makefile                      # Deployment automation (make deploy / make destroy)
-├── pyproject.toml                # Pytest + coverage configuration
 │
 ├── resources/
-│   ├── jobs.yml                  # DAB jobs: setup_lakebase, deploy_agent, ingestion
-│   └── apps.yml                  # Databricks App (Streamlit) resource
+│   └── jobs.yml                  # DAB jobs: setup_lakebase, deploy_agent, ingestion
 │
 ├── src/
 │   ├── config.py                 # Lakebase connection helper (password + OAuth dual-auth)
@@ -190,13 +189,7 @@ wiki-rag-dtbricks/
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL (DAB job: setup_lakebase)
 │   ├── 01_deploy_serving.py      # Log model + deploy endpoint (DAB job: deploy_agent)
-│   ├── 02_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
-│   └── 03_rag_agent.py           # Interactive RAG testing + multi-turn memory demo
-│
-├── app/
-│   ├── app.py                    # Streamlit chat UI (chat completions format)
-│   ├── app.yaml                  # Databricks App runtime config
-│   └── requirements.txt          # App-only dependencies
+│   └── 02_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
 │
 ├── mediawiki/
 │   ├── Makefile                  # Docker targets: make up/down/ingest/clean
@@ -218,17 +211,6 @@ wiki-rag-dtbricks/
 │       ├── astromotores/         # 15 PT-BR space car repair manual pages + 75 SVG diagrams
 │       ├── documentos-br/        # PT-BR document collection
 │       └── customer/             # Your own dataset (gitignored)
-│
-├── tests/                        # 59 tests, 82% coverage
-│   ├── conftest.py               # Shared fixtures
-│   ├── test_pipeline_cleaning.py
-│   ├── test_pipeline_chunking.py
-│   ├── test_pipeline_api.py
-│   ├── test_config.py
-│   ├── test_ingestion.py
-│   └── test_rag.py
-│
-└── .github/workflows/test.yml    # CI: pytest + coverage gate (80%)
 ```
 
 ---
@@ -241,7 +223,6 @@ All deployment configuration is centralized in `databricks.yml`:
 | ------------------------ | ---------------------------------------- | ---------------------------- |
 | `lakebase_instance_name` | `wiki-rag-lakebase`                      | Lakebase PostgreSQL instance |
 | `endpoint_name`          | `wiki-rag-endpoint`                      | Model serving endpoint       |
-| `app_name`               | `wiki-rag-app`                           | Databricks App name          |
 | `model_name`             | `main.wiki_rag.wiki_rag_agent`           | Unity Catalog model path     |
 | `secret_scope`           | `wiki-rag`                               | Databricks secret scope      |
 | `catalog`                | `main`                                   | Unity Catalog name           |
@@ -300,27 +281,6 @@ wiki_rag.messages        (message_id BIGSERIAL, conversation_id FK, role, conten
 
 ---
 
-## Testing
-
-```bash
-# Run full test suite with coverage
-pytest --cov=src --cov-report=term-missing -v
-
-# Quick run
-pytest -q
-```
-
-**59 tests** across 6 files, **82% coverage** (threshold: 80%). CI enforced via GitHub Actions on every push/PR to `main`.
-
-| Module             | Coverage | Key tests                                                            |
-| ------------------ | -------- | -------------------------------------------------------------------- |
-| `src/ingestion.py` | 100%     | WikiPage dataclass, fetch_pages generator, bytea handling            |
-| `src/pipeline.py`  | 92%      | Wikitext cleaning, image extraction, chunking, embedding, captioning |
-| `src/rag.py`       | 76%      | Retrieve, memory load/save, predict, stream, LLM init, reconnection |
-| `src/config.py`    | 69%      | URI formatting, dual-auth, dbutils fallback, secret_or exception     |
-
----
-
 ## SQL Client Connection
 
 Connect with **pgAdmin**, **DBeaver**, or **VS Code SQLTools**:
@@ -370,7 +330,6 @@ All credentials in the `wiki-rag` Databricks secret scope:
 | Docker can't connect to Lakebase      | Verify `LAKEBASE_HOST` is reachable: `nc -zv <host> 5432`               |
 | Serving endpoint stuck deploying      | Check logs: `databricks serving-endpoints get wiki-rag-endpoint`        |
 | Ingestion finds no pages              | Ensure MediaWiki has content: visit `http://localhost:8080`             |
-| Coverage below 80%                    | Run `pytest --cov=src --cov-report=term-missing` to see uncovered lines |
 | MediaWiki shows "Cannot access the database" / "External authorization failed" | Stale `.env` — see below |
 
 ### MediaWiki "Cannot access the database"

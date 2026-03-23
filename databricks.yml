@@ -9,9 +9,6 @@ variables:
   endpoint_name:
     description: "Model serving endpoint name"
     default: wiki-rag-endpoint
-  app_name:
-    description: "Databricks App name"
-    default: wiki-rag-app
   model_name:
     description: "Unity Catalog model name (catalog.schema.name)"
     default: ${var.catalog}.${var.schema}.wiki_rag_agent
