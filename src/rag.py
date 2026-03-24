@@ -22,7 +22,12 @@ from pgvector.psycopg2 import register_vector
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.pipeline import WikiPipeline
-from src.prompts import GENERATOR_SYSTEM, GRADER_SYSTEM, REWRITER_SYSTEM
+from src.prompts import (
+    GENERATOR_SYSTEM,
+    GENERATOR_USER_TEMPLATE,
+    GRADER_SYSTEM,
+    REWRITER_SYSTEM,
+)
 
 log = logging.getLogger(__name__)
 
@@ -231,7 +236,7 @@ class WikiRAGAgent(ResponsesAgent):
                     llm,
                     messages=[
                         {"role": "system", "content": GRADER_SYSTEM},
-                        {"role": "user", "content": f"Question: {question}\n\nDocument: {doc['text']}"},
+                        {"role": "user", "content": f"<pergunta>\n{question}\n</pergunta>\n\n<documento>\n{doc['text']}\n</documento>"},
                     ],
                     max_tokens=3,
                     temperature=0,
@@ -263,7 +268,7 @@ class WikiRAGAgent(ResponsesAgent):
 
             def _format_doc(d: dict) -> str:
                 label = (
-                    f"[{d['title']}] (image description)"
+                    f"[{d['title']}] (descrição de imagem)"
                     if d.get("source") == "image"
                     else f"[{d['title']}]"
                 )
@@ -272,13 +277,22 @@ class WikiRAGAgent(ResponsesAgent):
             context = "\n\n".join(_format_doc(d) for d in docs)
 
             history = state.get("conversation_history", "")
-            history_block = f"\n\nPrevious conversation:\n{history}" if history else ""
+            history_block = (
+                f"\n\n<historico_conversa>\n{history}\n</historico_conversa>"
+                if history else ""
+            )
+
+            user_content = GENERATOR_USER_TEMPLATE.format(
+                context=context,
+                history_block=history_block,
+                question=state["question"],
+            )
 
             answer = _llm_call(
                 llm,
                 messages=[
                     {"role": "system", "content": GENERATOR_SYSTEM},
-                    {"role": "user", "content": f"Context:\n{context}{history_block}\n\nQuestion: {state['question']}"},
+                    {"role": "user", "content": user_content},
                 ],
                 max_tokens=1024,
                 temperature=0.1,
