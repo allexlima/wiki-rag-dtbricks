@@ -416,7 +416,7 @@ class WikiRAGAgent(ResponsesAgent):
             source_list = ", ".join(
                 s["title"] for s in sources
             )
-            response_text += f"\n\n**Sources:** {source_list}"
+            response_text += f"\n\n**Fontes:** {source_list}"
 
         yield ResponsesAgentStreamEvent(
             type="response.output_item.done",
