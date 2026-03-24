@@ -210,17 +210,27 @@ destroy: _check-auth  ## 💥 Destroy everything: endpoint + model + bundle + Do
 	@echo "  📦 Bundle resources (jobs, app, workspace files)..."
 	@databricks bundle destroy $(CLI_FLAGS) $(BUNDLE_VARS) --auto-approve 2>&1 | sed 's/^/     /' || true
 	@echo ""
-	@echo "  📖 MediaWiki (containers + generated files)..."
-	@docker rm -f wiki-rag-mediawiki 2>/dev/null || true
-	@cd mediawiki && docker compose down -v --rmi local 2>&1 | sed 's/^/     /' || true
-	@rm -f mediawiki/.env mediawiki/LocalSettings.php
-	@echo "     ✅ Removed .env, LocalSettings.php, containers, volumes, and image"
-	@echo ""
-	@echo "  🗄️  Lakebase project ($(INSTANCE_NAME))..."
-	@if databricks postgres delete-project projects/$(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
-		echo "     ✅ Deleted"; \
+	@printf "  📖 Also destroy MediaWiki (containers, volumes, image, .env)? [y/N] " && \
+	read CONFIRM && \
+	if [ "$$CONFIRM" = "y" ] || [ "$$CONFIRM" = "Y" ]; then \
+		docker rm -f wiki-rag-mediawiki 2>/dev/null || true; \
+		cd mediawiki && docker compose down -v --rmi local 2>&1 | sed 's/^/     /' || true; \
+		rm -f mediawiki/.env mediawiki/LocalSettings.php; \
+		echo "     ✅ Removed .env, LocalSettings.php, containers, volumes, and image"; \
 	else \
-		echo "     ⏭️  Not found (already deleted or never created)"; \
+		echo "     ⏭️  Skipped (MediaWiki preserved)"; \
+	fi
+	@echo ""
+	@printf "  🗄️  Also destroy Lakebase project ($(INSTANCE_NAME))? [y/N] " && \
+	read CONFIRM && \
+	if [ "$$CONFIRM" = "y" ] || [ "$$CONFIRM" = "Y" ]; then \
+		if databricks postgres delete-project projects/$(INSTANCE_NAME) $(PROFILE_FLAG) 2>/dev/null; then \
+			echo "     ✅ Deleted"; \
+		else \
+			echo "     ⏭️  Not found (already deleted or never created)"; \
+		fi; \
+	else \
+		echo "     ⏭️  Skipped (Lakebase preserved)"; \
 	fi
 	@echo ""
 	@printf "  📂 Also delete UC schema '$(CATALOG).$(SCHEMA)' (all tables + data)? [y/N] " && \
