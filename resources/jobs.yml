@@ -81,7 +81,7 @@ resources:
             base_parameters:
               endpoint_name: ${var.endpoint_name}
               dataset: ${var.dataset}
-              llm_judge: ${var.llm_model}
+              llm_judge: ${var.judge_model}
               experiment_name: ${var.experiment_name}
             source: WORKSPACE
       environments:

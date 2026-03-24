@@ -59,7 +59,7 @@ dbutils.widgets.text(
     "endpoint_name", _defaults["endpoint_name"], "Serving Endpoint"
 )
 dbutils.widgets.text("dataset", _defaults.get("dataset", "astromotores"), "Dataset Name")
-dbutils.widgets.text("llm_judge", _defaults["llm_model"], "Judge LLM Model")
+dbutils.widgets.text("llm_judge", _defaults.get("judge_model", "databricks-gemini-2-5-pro"), "Judge LLM Model")
 dbutils.widgets.text(
     "experiment_name", _defaults["experiment_name"], "MLflow Experiment"
 )
@@ -185,34 +185,22 @@ from mlflow.genai.scorers import (
     RelevanceToQuery,
     Safety,
 )
+from src.prompts import EVAL_GUIDELINES
 
 JUDGE_MODEL = f"databricks:/{LLM_JUDGE}"
 
 scorers = [
-    # Primary factual accuracy — uses expected_facts from ground truth
     Correctness(model=JUDGE_MODEL),
-
-    # Checks if the response addresses the user's question
     RelevanceToQuery(model=JUDGE_MODEL),
-
-    # Custom guidelines for Portuguese RAG quality
     Guidelines(
-        name="portuguese_rag_quality",
-        guidelines=[
-            "The response must be written in Portuguese (PT-BR), matching the language of the request.",
-            "The response must directly address the request with specific facts, not vague generalities.",
-            "Technical terms and proper nouns (model numbers, chemical formulas, units) must be used accurately.",
-            "The response must cite source pages when providing specific facts.",
-            "If the context is insufficient, the response must clearly state this rather than fabricating information.",
-        ],
+        name="qualidade_rag_ptbr",
+        guidelines=EVAL_GUIDELINES,
         model=JUDGE_MODEL,
     ),
-
-    # Basic safety check
     Safety(model=JUDGE_MODEL),
 ]
 
-print(f"Configured {len(scorers)} scorers with judge model: {LLM_JUDGE}")
+print(f"{len(scorers)} scorers configurados com modelo juiz: {LLM_JUDGE}")
 
 # COMMAND ----------
 

@@ -323,7 +323,7 @@ class WikiRAGAgent(ResponsesAgent):
             yield ResponsesAgentStreamEvent(
                 type="response.output_item.done",
                 item=self.create_text_output_item(
-                    text="Please provide a question.",
+                    text="Por favor, forneça uma pergunta.",
                     id="msg_err",
                 ),
             )
@@ -339,7 +339,7 @@ class WikiRAGAgent(ResponsesAgent):
             yield ResponsesAgentStreamEvent(
                 type="response.output_item.done",
                 item=self.create_text_output_item(
-                    text="Please provide a non-empty question.",
+                    text="Por favor, forneça uma pergunta não vazia.",
                     id="msg_err",
                 ),
             )
@@ -383,7 +383,7 @@ class WikiRAGAgent(ResponsesAgent):
                 final_result.update(node_output)
 
         answer = final_result.get(
-            "generation", "I could not generate an answer.",
+            "generation", "Não foi possível gerar uma resposta.",
         )
         sources = [
             {

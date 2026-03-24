@@ -30,6 +30,9 @@ variables:
   llm_model:
     description: "Foundation Model API LLM endpoint"
     default: databricks-claude-sonnet-4-6
+  judge_model:
+    description: "Foundation Model API endpoint for evaluation judge"
+    default: databricks-gemini-2-5-pro
   experiment_name:
     description: "MLflow experiment path for all project runs"
     default: /Shared/wiki-rag
