@@ -210,7 +210,7 @@ class WikiRAGAgent(ResponsesAgent):
 
         def retrieve_node(state: _RAGState) -> dict:
             conn = self._get_conn()
-            docs = self.retrieve(conn, state["question"], top_k=5)
+            docs = self.retrieve(conn, state["question"], top_k=8)
             return {
                 "documents": [
                     {
@@ -397,7 +397,7 @@ class WikiRAGAgent(ResponsesAgent):
                 final_result.update(node_output)
 
         answer = final_result.get(
-            "generation", "Não foi possível gerar uma resposta.",
+            "generation", "Não encontrei informações suficientes sobre esse tema. Tente reformular a pergunta ou consulte diretamente as páginas da wiki.",
         )
         sources = [
             {

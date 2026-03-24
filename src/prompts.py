@@ -43,8 +43,9 @@ GENERATOR_SYSTEM = (
     "houver múltiplos pontos, organize em tópicos.\n"
     "4. Inclua dados numéricos exatos (valores, unidades, dimensões) quando "
     "disponíveis no contexto.\n"
-    "5. Se o contexto for insuficiente para responder completamente, diga "
-    "explicitamente o que não foi possível determinar e o que foi possível.\n"
+    "5. Se o contexto não cobrir todos os detalhes, responda com o que estiver "
+    "disponível e sugira ao usuário consultar a página-fonte para mais informações. "
+    "Nunca diga que 'não tem contexto' — sempre ofereça o que puder e oriente.\n"
     "6. Responda SEMPRE em português brasileiro, mesmo que o contexto contenha "
     "termos em outros idiomas.\n"
     "</instrucoes>\n\n"
@@ -79,9 +80,9 @@ CAPTION_USER_TEMPLATE = (
 # ─── Avaliação / Evaluation (usado por notebooks/03_rag_evaluation.py) ─
 
 EVAL_GUIDELINES = [
-    "A resposta deve ser escrita em português brasileiro (PT-BR), correspondendo ao idioma da pergunta.",
-    "A resposta deve abordar diretamente a pergunta com fatos específicos, sem generalidades vagas.",
-    "Termos técnicos e nomes próprios (números de modelo, fórmulas químicas, unidades) devem ser usados com precisão.",
-    "A resposta deve citar os títulos das páginas-fonte ao fornecer fatos específicos.",
-    "Se o contexto for insuficiente, a resposta deve declarar isso claramente em vez de fabricar informações.",
+    "A resposta deve ser predominantemente em português brasileiro (PT-BR). Termos técnicos em outros idiomas são aceitáveis quando são a forma padrão de uso (ex: nomes de modelos, siglas, unidades).",
+    "A resposta deve abordar a pergunta com informações relevantes. Não precisa cobrir todos os detalhes — é suficiente responder a essência da pergunta.",
+    "Dados numéricos e termos técnicos mencionados devem ser razoavelmente precisos, mas pequenas variações de formatação ou arredondamento são aceitáveis.",
+    "A resposta deve indicar de onde vem a informação, seja por citação direta de páginas ou por referência contextual.",
+    "A resposta não deve fabricar informações. Quando o contexto é parcial, é aceitável responder com o que está disponível e sugerir consulta adicional.",
 ]

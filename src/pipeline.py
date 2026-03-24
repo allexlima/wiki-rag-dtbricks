@@ -88,8 +88,8 @@ def _embed_batch(embeddings_model: DatabricksEmbeddings, batch: list[str]) -> li
 class WikiPipeline:
     """End-to-end processing pipeline for wiki content."""
 
-    CHUNK_SIZE: int = 512
-    CHUNK_OVERLAP: int = 64
+    CHUNK_SIZE: int = 1024
+    CHUNK_OVERLAP: int = 128
     EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "databricks-qwen3-embedding-0-6b")
     EMBEDDING_DIMS: int = 1024
     EMBEDDING_BATCH_SIZE: int = 64
@@ -193,7 +193,12 @@ class WikiPipeline:
         chunk_index_offset: int = 0,
     ) -> list[TextChunk]:
         """Create image-sourced chunks from a vision LLM caption."""
-        text = f'Image(source="{filename}", caption="{caption}")'
+        # Format for good semantic retrieval: natural language with filename for exact match
+        human_name = filename.rsplit(".", 1)[0].replace("_", " ")
+        text = (
+            f"[Figura: {filename}] {human_name}\n\n"
+            f"Descrição da imagem: {caption}"
+        )
         if not text.strip():
             return []
 
