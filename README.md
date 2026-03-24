@@ -86,6 +86,32 @@ databricks serving-endpoints query wiki-rag-endpoint \
   --input '[{"role": "user", "content": "What is the main topic of the wiki?"}]'
 ```
 
+### 4. Evaluate (optional)
+
+Run MLflow GenAI evaluation against a ground truth dataset:
+
+```bash
+make rag-evaluation    # Interactive dataset selector → runs scorers on the deployed endpoint
+```
+
+Each question from the ground truth JSONL is sent to the deployed endpoint. Four MLflow GenAI scorers judge every response:
+
+| Scorer | What it measures | Result | Goal |
+| ------ | ---------------- | ------ | ---- |
+| **Correctness** | Whether the response contains the expected facts from the ground truth (`expected_facts`). An LLM judge compares each expected fact against the actual response. | `yes` / `no` per question; aggregate **% yes** across the dataset | **Higher is better** — 100% means every expected fact was present in every answer |
+| **RelevanceToQuery** | Whether the response directly addresses the user's question (regardless of factual accuracy). Catches off-topic or generic answers. | `yes` / `no` per question; aggregate **% yes** | **Higher is better** — 100% means no off-topic answers |
+| **Portuguese RAG Quality** | Custom guideline scorer that checks: (1) response is in PT-BR, (2) addresses the question with specific facts, (3) technical terms are accurate, (4) source pages are cited, (5) no hallucination when context is insufficient. | `yes` / `no` per question; aggregate **% yes** | **Higher is better** — 100% means all quality criteria met on every answer |
+| **Safety** | Whether the response contains harmful, offensive, or inappropriate content. | `yes` (safe) / `no` (unsafe) per question; aggregate **% yes** | **Higher is better** — 100% means all responses are safe |
+
+Results are logged to the shared MLflow experiment (configurable via `experiment_name` in `databricks.yml`). Each evaluation run is tagged with `task=evaluation` and `dataset=<name>` for easy filtering.
+
+#### Viewing results in the Databricks UI
+
+1. **Experiments sidebar** → open the experiment path (default: `/Shared/wiki-rag`).
+2. Click on the evaluation run (tagged `task=evaluation`) to see aggregate metrics in the **Metrics** tab.
+3. Switch to the **Evaluation results** tab to see the per-question breakdown: input query, model response, each scorer's verdict (`yes`/`no`), and the judge's rationale explaining why it scored that way.
+4. To compare runs across datasets or over time, select multiple runs in the experiment table and click **Compare** — this shows metric trends side by side.
+
 ### Teardown
 
 ```bash
@@ -178,7 +204,7 @@ wiki-rag-dtbricks/
 ├── Makefile                      # Deployment automation (make deploy / make destroy)
 │
 ├── resources/
-│   └── jobs.yml                  # DAB jobs: setup_lakebase, deploy_agent, ingestion
+│   └── jobs.yml                  # DAB jobs: setup_lakebase, deploy_agent, ingestion, evaluation
 │
 ├── src/
 │   ├── config.py                 # Lakebase connection helper (password + OAuth dual-auth)
@@ -189,7 +215,8 @@ wiki-rag-dtbricks/
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL (DAB job: setup_lakebase)
 │   ├── 01_deploy_serving.py      # Log model + deploy endpoint (DAB job: deploy_agent)
-│   └── 02_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
+│   ├── 02_ingest_mediawiki.py    # Multimodal ETL pipeline (DAB job: wiki_rag_ingestion)
+│   └── 03_rag_evaluation.py      # MLflow GenAI evaluation (DAB job: rag_evaluation)
 │
 ├── mediawiki/
 │   ├── Makefile                  # Docker targets: make up/down/ingest/clean
@@ -230,6 +257,8 @@ All deployment configuration is centralized in `databricks.yml`:
 | `db_name`                | `wikidb`                                 | Lakebase database name       |
 | `embedding_model`        | `databricks-qwen3-embedding-0-6b`        | Embedding model endpoint     |
 | `llm_model`              | `databricks-claude-sonnet-4-6`           | LLM endpoint                 |
+| `experiment_name`        | `/Shared/wiki-rag`                       | MLflow experiment path       |
+| `dataset`                | `astromotores`                           | Evaluation dataset name      |
 
 Runtime environment variables (read by `src/pipeline.py`):
 

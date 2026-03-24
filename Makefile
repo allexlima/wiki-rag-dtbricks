@@ -143,6 +143,37 @@ ingest: _require-secrets  ## 📊 Run ingestion pipeline (reads MW → chunks �
 	@databricks bundle run wiki_rag_ingestion $(CLI_FLAGS) $(BUNDLE_VARS)
 
 # ─────────────────────────────────────────────────────────────
+# 🧪 Evaluation
+# ─────────────────────────────────────────────────────────────
+
+.PHONY: rag-evaluation
+rag-evaluation: _require-secrets  ## 🧪 Evaluate RAG endpoint against ground truth dataset
+	@echo "" && \
+	echo "🧪 RAG Evaluation" && \
+	echo "" && \
+	echo "  Available datasets:" && \
+	DATASETS=() && \
+	for dir in mediawiki/dataset/*/questions; do \
+		ds=$$(basename $$(dirname "$$dir")) && \
+		count=$$(wc -l < "$$dir/ground_truth_test.jsonl" 2>/dev/null | tr -d ' ' || echo 0) && \
+		DATASETS+=("$$ds") && \
+		echo "    $${#DATASETS[@]}) $$ds ($$count questions)"; \
+	done && \
+	echo "" && \
+	read -p "  Select dataset [1]: " CHOICE && \
+	CHOICE=$${CHOICE:-1} && \
+	IDX=$$((CHOICE - 1)) && \
+	if [ $$IDX -lt 0 ] || [ $$IDX -ge $${#DATASETS[@]} ]; then \
+		echo "  ❌ Invalid selection"; exit 1; \
+	fi && \
+	DATASET=$${DATASETS[$$IDX]} && \
+	echo "" && \
+	echo "  ▶ Running evaluation for $$DATASET..." && \
+	databricks bundle deploy $(CLI_FLAGS) $(BUNDLE_VARS) && \
+	databricks bundle run rag_evaluation $(CLI_FLAGS) $(BUNDLE_VARS) \
+		--var dataset=$$DATASET
+
+# ─────────────────────────────────────────────────────────────
 # 🚀 Full Stack
 # ─────────────────────────────────────────────────────────────
 

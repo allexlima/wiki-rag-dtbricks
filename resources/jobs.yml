@@ -35,6 +35,7 @@ resources:
               llm_model: ${var.llm_model}
               secret_scope: ${var.secret_scope}
               lakebase_instance_name: ${var.lakebase_instance_name}
+              experiment_name: ${var.experiment_name}
             source: WORKSPACE
       environments:
         - environment_key: serverless
@@ -52,7 +53,7 @@ resources:
       schedule:
         quartz_cron_expression: "0 0 * * * ?"
         timezone_id: America/Sao_Paulo
-        pause_status: PAUSED
+        pause_status: UNPAUSED
       tasks:
         - task_key: ingest_and_embed
           notebook_task:
@@ -63,4 +64,28 @@ resources:
               llm_model: ${var.llm_model}
               mediawiki_url: ${var.mediawiki_url}
             source: WORKSPACE
+      max_concurrent_runs: 1
+
+    # --- RAG Evaluation ---
+    rag_evaluation:
+      name: "wiki-rag-evaluation-${bundle.target}"
+      description: >
+        Evaluate the deployed RAG endpoint against a ground truth dataset.
+        Runs MLflow GenAI scorers (Correctness, RelevanceToQuery, Portuguese
+        quality guidelines, Safety) and logs results to an MLflow experiment.
+      tasks:
+        - task_key: evaluate
+          environment_key: serverless
+          notebook_task:
+            notebook_path: ../notebooks/03_rag_evaluation.py
+            base_parameters:
+              endpoint_name: ${var.endpoint_name}
+              dataset: ${var.dataset}
+              llm_judge: ${var.llm_model}
+              experiment_name: ${var.experiment_name}
+            source: WORKSPACE
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
       max_concurrent_runs: 1

@@ -30,9 +30,15 @@ variables:
   llm_model:
     description: "Foundation Model API LLM endpoint"
     default: databricks-claude-sonnet-4-6
+  experiment_name:
+    description: "MLflow experiment path for all project runs"
+    default: /Shared/wiki-rag
   mediawiki_url:
     description: "MediaWiki base URL for image fetching during ingestion"
     default: http://localhost:8080
+  dataset:
+    description: "Evaluation dataset name (subdir of mediawiki/dataset/)"
+    default: astromotores
 
 include:
   - resources/*.yml

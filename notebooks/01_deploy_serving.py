@@ -62,6 +62,9 @@ dbutils.widgets.text("secret_scope", _defaults["secret_scope"], "Secret Scope")
 dbutils.widgets.text(
     "lakebase_instance_name", _defaults["lakebase_instance_name"], "Lakebase Instance"
 )
+dbutils.widgets.text(
+    "experiment_name", _defaults["experiment_name"], "MLflow Experiment"
+)
 
 # COMMAND ----------
 
@@ -130,6 +133,8 @@ resources = [
 input_example = {
     "input": [{"role": "user", "content": "What is the main topic of the wiki?"}]
 }
+
+mlflow.set_experiment(dbutils.widgets.get("experiment_name"))
 
 with mlflow.start_run(run_name="wiki-rag-agent") as run:
     model_info = mlflow.pyfunc.log_model(
