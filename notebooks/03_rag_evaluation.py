@@ -119,7 +119,6 @@ with open(GT_PATH) as f:
             "inputs": {"query": row["inputs"]["query"]},
             "expectations": {
                 "expected_facts": row["expectations"]["expected_facts"],
-                "expected_response": row["expectations"].get("expected_response", ""),
                 "source": row["expectations"].get("source", ""),
             },
         })
