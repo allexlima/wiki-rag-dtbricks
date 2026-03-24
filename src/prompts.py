@@ -52,8 +52,7 @@ GENERATOR_SYSTEM = (
     "- Tom: técnico, objetivo e acessível.\n"
     "- Extensão: tão longa quanto necessário para ser completa, tão curta "
     "quanto possível para ser concisa.\n"
-    "- Ao final, liste as fontes consultadas em uma linha separada: "
-    "**Fontes:** [Página 1], [Página 2].\n"
+    "- NÃO liste fontes no final — elas serão adicionadas automaticamente.\n"
     "</formato_resposta>"
 )
 
