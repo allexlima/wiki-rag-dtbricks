@@ -32,7 +32,7 @@ variables:
     default: databricks-claude-sonnet-4-6
   judge_model:
     description: "Foundation Model API endpoint for evaluation judge"
-    default: databricks-gemini-2-5-pro
+    default: databricks-gemini-2-5-flash
   experiment_name:
     description: "MLflow experiment path for all project runs"
     default: /Shared/wiki-rag
