@@ -52,7 +52,7 @@ make setup-wiki         # Auto-generates .env from secrets, starts MediaWiki
 > ```bash
 > make demo-load   # Interactive dataset selector → loads pages + images into MediaWiki
 > ```
-> This presents an arrow-key menu listing all datasets under `mediawiki/dataset/`. The project ships with **astromotores** — a 15-page PT-BR space car repair manual with 75 SVG technical diagrams. You can also add your own: create a folder in `mediawiki/dataset/` with `*.md` files and an `images/` subdirectory, and it will appear automatically.
+> This presents an arrow-key menu listing all datasets under `mediawiki/dataset/`. The project ships with **astromotores** — a 15-page PT-BR space car repair manual with 77 SVG technical diagrams. You can also add your own: create a folder in `mediawiki/dataset/` with `*.md` files, an `images/` subdirectory, and optionally a `questions/ground_truth_test.jsonl` for evaluation, and it will appear automatically.
 >
 > To wipe all wiki content and re-ingest a different dataset:
 > ```bash
@@ -132,12 +132,13 @@ Run `make help` to see all available targets.
 | **Knowledge source** | MediaWiki 1.42 (Docker / ECS Fargate)    | Self-hosted wiki writing to Lakebase PostgreSQL              |
 | **Database**         | Lakebase Autoscaling (PG 16)             | Hosts MediaWiki tables, RAG tables, and conversation memory  |
 | **Embeddings**       | `databricks-qwen3-embedding-0-6b`        | Foundation Model API, 1024-dim vectors (PT-BR optimized)     |
-| **Vector search**    | pgvector + HNSW index                    | Cosine similarity retrieval (m=16, ef=64)                    |
+| **Vector search**    | pgvector + HNSW index                    | Cosine similarity retrieval (m=16, ef_construction=64)       |
 | **Multimodal**       | `databricks-claude-sonnet-4-6`           | Vision LLM captions images at pipeline time                  |
-| **RAG agent**        | LangGraph + ResponsesAgent (MLflow 3)    | retrieve &rarr; grade &rarr; rewrite &rarr; generate         |
+| **RAG agent**        | Agent Bricks (LangGraph + ResponsesAgent)| retrieve &rarr; grade &rarr; rewrite &rarr; generate         |
 | **Conversation**     | Lakebase PostgreSQL                      | Multi-turn history in `wiki_rag.conversations` / `.messages` |
 | **LLM**              | `databricks-claude-sonnet-4-6`           | Answer generation with source citations                      |
 | **Serving**          | MLflow Model Serving                     | Real-time endpoint, scale-to-zero, serverless optimized      |
+| **Evaluation**       | MLflow GenAI Evaluation                  | Scorers: Correctness, Relevance, PT-BR Quality, Safety       |
 | **Chat UI**          | Databricks AI Playground                 | Built-in testing UI (no custom app needed)                   |
 
 ### Data Flow
@@ -153,45 +154,42 @@ flowchart TB
         RAG_SCHEMA[("wiki_rag schema\n(chunks, embeddings,\nconversation memory)")]
     end
 
-    subgraph Pipeline["Ingestion Pipeline (Notebook)"]
-        CLEAN["Clean wikitext"]
-        IMAGES["Extract images"]
-        CAPTION["Vision LLM\n(Claude Sonnet 4.6)"]
-        CHUNK["Chunk"]
-        EMBED["Embed\n(Qwen3 1024-dim)"]
+    subgraph Pipeline["Ingestion Pipeline (Scheduled Notebooks)"]
+        CLEAN["WikiText Processing"]
+        CAPTION["Image Captioning\n(Claude Sonnet 4.6)"]
+        CHUNK["Recursive Splitter"]
+        EMBED["Embed Generation\n(Qwen3 1024-dim)"]
     end
 
-    subgraph Agent["RAG Agent (LangGraph)"]
+    subgraph AgentBricks["Agent Bricks (LangGraph)"]
         RETRIEVE["Retrieve\n(pgvector HNSW)"]
-        GRADE["Grade documents"]
+        GRADE["Grade docs /\nRelevance?"]
         REWRITE["Rewrite query"]
         GENERATE["Generate answer\n(Claude Sonnet 4.6)"]
     end
 
-    subgraph Serving["Serving"]
-        ENDPOINT["MLflow Model Serving\n(ResponsesAgent)"]
-        PLAYGROUND["Databricks AI Playground"]
+    subgraph Serving["Serving & Evaluation"]
+        ENDPOINT["Model Serving\n(Serverless agent endpoint)"]
+        MLFLOW["MLflow Registry\n(Agent tracking & evaluation)"]
     end
 
     MW -->|writes to| MW_SCHEMA
     MW_SCHEMA -->|read by pipeline| CLEAN
-    MW_SCHEMA --> IMAGES
-    IMAGES --> CAPTION
+    MW_SCHEMA --> CAPTION
     CLEAN --> CHUNK
     CAPTION --> CHUNK
     CHUNK --> EMBED
-    EMBED -->|vector + metadata| RAG_SCHEMA
+    EMBED -->|save vectors| RAG_SCHEMA
 
-    PLAYGROUND -->|user question| ENDPOINT
-    ENDPOINT --> RETRIEVE
+    ENDPOINT -->|user question| RETRIEVE
     RETRIEVE -->|similarity search| RAG_SCHEMA
     RETRIEVE --> GRADE
     GRADE -->|relevant docs| GENERATE
     GRADE -->|no relevant docs| REWRITE
     REWRITE -->|refined query| RETRIEVE
-    GENERATE -->|save exchange| RAG_SCHEMA
-    GENERATE --> ENDPOINT
-    ENDPOINT -->|answer + sources| PLAYGROUND
+    GENERATE -->|save history| RAG_SCHEMA
+    GENERATE -->|answer + sources| ENDPOINT
+    ENDPOINT -.->|traces| MLFLOW
 ```
 
 ---
@@ -210,7 +208,9 @@ wiki-rag-dtbricks/
 │   ├── config.py                 # Lakebase connection helper (password + OAuth dual-auth)
 │   ├── ingestion.py              # MediaWikiIngestion — reads MW native PG tables
 │   ├── pipeline.py               # WikiPipeline — clean, chunk, embed, caption images
-│   └── rag.py                    # WikiRAGAgent (ResponsesAgent + LangGraph + memory)
+│   ├── prompts.py                # All LLM prompts (grader, rewriter, generator, caption, eval)
+│   ├── rag.py                    # WikiRAGAgent (ResponsesAgent + LangGraph + memory)
+│   └── requirements.txt          # Runtime dependencies (mlflow, langgraph, pgvector, etc.)
 │
 ├── notebooks/
 │   ├── 00_setup_lakebase.py      # Provision Lakebase + DDL (DAB job: setup_lakebase)
@@ -222,6 +222,7 @@ wiki-rag-dtbricks/
 │   ├── Makefile                  # Docker targets: make up/down/ingest/clean
 │   ├── Dockerfile                # MediaWiki 1.42 + PostgreSQL + ECS entrypoint
 │   ├── docker-compose.yml        # Local container definition
+│   ├── docker-entrypoint.sh      # Container startup script
 │   ├── LocalSettings.php.template
 │   ├── .env.example              # Credential template
 │   ├── README.md                 # Local Docker + AWS ECS Fargate deployment guide
@@ -235,8 +236,11 @@ wiki-rag-dtbricks/
 │   │   ├── mediawiki_stack.py    # ECS Fargate + ALB stack
 │   │   └── deploy.sh             # One-command deploy (reads .env, syncs secrets, runs CDK)
 │   └── dataset/
-│       ├── astromotores/         # 15 PT-BR space car repair manual pages + 75 SVG diagrams
-│       ├── documentos-br/        # PT-BR document collection
+│       ├── astromotores/         # 15 PT-BR space car repair manual pages + 77 SVG diagrams
+│       │   ├── *.md              # Wiki pages in markdown format
+│       │   ├── images/           # Technical diagrams
+│       │   └── questions/        # ground_truth_test.jsonl for evaluation
+│       ├── documentos-br/        # 11 PT-BR document pages (CPF, CNH, etc.)
 │       └── customer/             # Your own dataset (gitignored)
 ```
 
@@ -246,19 +250,21 @@ wiki-rag-dtbricks/
 
 All deployment configuration is centralized in `databricks.yml`:
 
-| Variable                 | Default                                  | Description                  |
-| ------------------------ | ---------------------------------------- | ---------------------------- |
-| `lakebase_instance_name` | `wiki-rag-lakebase`                      | Lakebase PostgreSQL instance |
-| `endpoint_name`          | `wiki-rag-endpoint`                      | Model serving endpoint       |
-| `model_name`             | `main.wiki_rag.wiki_rag_agent`           | Unity Catalog model path     |
-| `secret_scope`           | `wiki-rag`                               | Databricks secret scope      |
-| `catalog`                | `main`                                   | Unity Catalog name           |
-| `schema`                 | `wiki_rag`                               | Schema for RAG tables        |
-| `db_name`                | `wikidb`                                 | Lakebase database name       |
-| `embedding_model`        | `databricks-qwen3-embedding-0-6b`        | Embedding model endpoint     |
-| `llm_model`              | `databricks-claude-sonnet-4-6`           | LLM endpoint                 |
-| `experiment_name`        | `/Shared/wiki-rag`                       | MLflow experiment path       |
-| `dataset`                | `astromotores`                           | Evaluation dataset name      |
+| Variable                 | Default                                          | Description                         |
+| ------------------------ | ------------------------------------------------ | ----------------------------------- |
+| `lakebase_instance_name` | `wiki-rag-lakebase`                              | Lakebase PostgreSQL instance        |
+| `endpoint_name`          | `wiki-rag-endpoint`                              | Model serving endpoint              |
+| `model_name`             | `${var.catalog}.${var.schema}.wiki_rag_agent`    | Unity Catalog model path            |
+| `secret_scope`           | `wiki-rag`                                       | Databricks secret scope             |
+| `catalog`                | `allex_workspace_catalog`                        | Unity Catalog name                  |
+| `schema`                 | `wiki_rag`                                       | Schema for RAG tables               |
+| `db_name`                | `wikidb`                                         | Lakebase database name              |
+| `embedding_model`        | `databricks-qwen3-embedding-0-6b`                | Embedding model endpoint            |
+| `llm_model`              | `databricks-claude-sonnet-4-6`                   | LLM endpoint                        |
+| `judge_model`            | `databricks-gemini-2-5-flash`                    | Evaluation judge model              |
+| `experiment_name`        | `/Shared/wiki-rag`                               | MLflow experiment path              |
+| `mediawiki_url`          | `http://localhost:8080`                           | MediaWiki base URL (image fetching) |
+| `dataset`                | `astromotores`                                   | Evaluation dataset name             |
 
 Runtime environment variables (read by `src/pipeline.py`):
 
@@ -327,11 +333,11 @@ Connect with **pgAdmin**, **DBeaver**, or **VS Code SQLTools**:
 
 **OAuth token** (expires ~1h):
 
-| Field    | Value                                                                                 |
-| -------- | ------------------------------------------------------------------------------------- |
-| Host     | *(same)*                                                                              |
-| Username | *(your Databricks email)*                                                             |
-| Password | `databricks database generate-database-credential --instance-names wiki-rag-lakebase` |
+| Field    | Value                                                                                                                            |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Host     | *(same)*                                                                                                                         |
+| Username | *(your Databricks email)*                                                                                                        |
+| Password | `databricks postgres generate-database-credential projects/wiki-rag-lakebase/branches/production/endpoints/primary` |
 
 ---
 
