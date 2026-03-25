@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 105 113'%3E%3Cpath d='M98.9 46.6L52.3 72.9 2.4 44.8 0 46.1v20.4l52.3 29.4 46.6-26.2v10.8L52.3 106.8 2.4 78.7 0 80v3.5L52.3 112.9 104.5 83.5V63.1l-2.4-1.3L52.3 89.8 5.6 63.6V52.8l46.7 26.2L104.5 49.6V29.5l-2.6-1.5L52.3 55.9 8 31.1 52.3 6.2l36.4 20.5 3.2-1.8v-2.5L52.3.1 0 29.5v3.2l52.3 29.4 46.6-26.3v10.8z' fill='%23FF3621'/%3E%3C/svg%3E">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wiki RAG on Databricks — Architecture Deep Dive</title>
+  <title>RAG Multimodal on Databricks — Architecture Deep Dive</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -329,8 +329,8 @@
         </g>
         <defs><clipPath id="clip0_dark"><rect width="712.8" height="113" fill="white"/></clipPath></defs>
       </svg>
-      <h1 style="margin-bottom:1rem;">Wiki RAG on Databricks</h1>
-      <p class="subtitle" style="max-width:700px;margin:0 auto;">RAG completo sobre uma base de conhecimento MediaWiki<br>usando componentes nativos da plataforma Databricks</p>
+      <h1 style="margin-bottom:1rem;">RAG Multimodal on Databricks</h1>
+      <p class="subtitle" style="max-width:700px;margin:0 auto;">RAG com interpretação de imagens sobre uma base de conhecimento MediaWiki<br>usando componentes nativos da plataforma Databricks</p>
       <div class="accent-line" style="margin:1.5rem auto;"></div>
       <p style="font-family:var(--font-mono);font-size:0.85rem;color:rgba(255,255,255,0.45);margin-top:1rem;">Allex Lima &middot; AI/ML Specialist Solutions Architect, Databricks Brasil</p>
     </div>
@@ -346,7 +346,7 @@
       <p class="subtitle" style="margin-bottom:1.5rem;">Cada componente roda dentro da plataforma Databricks</p>
 
       <div style="text-align:center;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
-        <img class="img-zoomable" onclick="openLightbox(this)" src="../docs/assets/architecture.svg" alt="Diagrama de arquitetura do Wiki RAG on Databricks" style="width:100%;max-width:1150px;max-height:calc(100dvh - 11rem);object-fit:contain;margin:0 auto;border-radius:12px;" />
+        <img class="img-zoomable" onclick="openLightbox(this)" src="assets/architecture.svg" alt="Diagrama de arquitetura do Wiki RAG on Databricks" style="width:100%;max-width:1150px;max-height:calc(100dvh - 11rem);object-fit:contain;margin:0 auto;border-radius:12px;" />
       </div>
 
       <p style="text-align:center;font-size:0.8rem;color:var(--text-secondary);margin-top:1rem;">Orquestrado por <strong>Declarative Automation Bundles</strong> &middot; Avaliado com <strong>MLflow GenAI Evaluation</strong></p>
@@ -478,6 +478,12 @@
       <span class="label">Pipeline de Dados</span>
       <h2>Pipeline de Ingestão</h2>
       <p class="subtitle" style="margin-bottom:1.5rem;">Incremental — processa apenas páginas novas (watermark por <code>rev_id</code>)</p>
+
+      <div style="max-width:860px;margin:0 auto 1.5rem;background:var(--bg-secondary);border-left:4px solid var(--db-green);border-radius:8px;padding:1rem 1.25rem;text-align:left;">
+        <p style="font-size:0.9rem;line-height:1.6;color:var(--text-secondary);">
+          <strong style="color:var(--text-primary);">Watermark incremental:</strong> a tabela <code>sync_state</code> armazena o último <code>rev_id</code> processado. A cada execução, o pipeline consulta apenas revisões com <code>rev_id</code> maior que o watermark, evitando reprocessamento e garantindo ingestão eficiente mesmo com a base crescendo.
+        </p>
+      </div>
 
       <!-- Flow diagram -->
       <div class="flow-row" style="margin-bottom:2rem;">
@@ -998,7 +1004,7 @@
         <div>
           <h3 style="margin-bottom:0.75rem;">Exemplo de diagrama</h3>
           <div style="border-radius:10px;overflow:hidden;border:1px solid var(--db-oat-dark);">
-            <img src="../mediawiki/dataset/astromotores/images/02_conversor_antimateria_section3.png" alt="Fluxograma de diagnóstico do Conversor de Antimatéria" style="width:100%;display:block;" />
+            <img src="assets/images/02_conversor_antimateria_section3.png" alt="Fluxograma de diagnóstico do Conversor de Antimatéria" style="width:100%;display:block;" />
           </div>
           <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-secondary);margin-top:0.5rem;text-align:center;">Fluxograma de diagnóstico do Conversor de Antimatéria</p>
         </div>
@@ -1063,7 +1069,7 @@
         <div class="card" style="border-left:3px solid var(--db-indigo);padding:1rem;">
           <div style="display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:center;">
             <div style="border-radius:8px;overflow:hidden;border:1px solid var(--db-oat-medium);">
-              <img class="img-zoomable" src="../mediawiki/dataset/astromotores/images/02_conversor_antimateria_section3.png" alt="Fluxograma de diagnóstico" style="width:100%;display:block;" onclick="openLightbox(this)" />
+              <img class="img-zoomable" src="assets/images/02_conversor_antimateria_section3.png" alt="Fluxograma de diagnóstico" style="width:100%;display:block;" onclick="openLightbox(this)" />
             </div>
             <div>
               <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
@@ -1080,7 +1086,7 @@
         <div class="card" style="border-left:3px solid var(--db-indigo);padding:1rem;">
           <div style="display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:center;">
             <div style="border-radius:8px;overflow:hidden;border:1px solid var(--db-oat-medium);">
-              <img class="img-zoomable" src="../mediawiki/dataset/astromotores/images/04_escudo_deflector_section2.png" alt="Desenho dimensional do emissor" style="width:100%;display:block;" onclick="openLightbox(this)" />
+              <img class="img-zoomable" src="assets/images/04_escudo_deflector_section2.png" alt="Desenho dimensional do emissor" style="width:100%;display:block;" onclick="openLightbox(this)" />
             </div>
             <div>
               <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
@@ -1097,7 +1103,7 @@
         <div class="card" style="border-left:3px solid var(--db-indigo);padding:1rem;">
           <div style="display:grid;grid-template-columns:200px 1fr;gap:1rem;align-items:center;">
             <div style="border-radius:8px;overflow:hidden;border:1px solid var(--db-oat-medium);">
-              <img class="img-zoomable" src="../mediawiki/dataset/astromotores/images/01_motor_propulsao_ionica_section5.png" alt="Cronograma de manutenção preventiva" style="width:100%;display:block;" onclick="openLightbox(this)" />
+              <img class="img-zoomable" src="assets/images/01_motor_propulsao_ionica_section5.png" alt="Cronograma de manutenção preventiva" style="width:100%;display:block;" onclick="openLightbox(this)" />
             </div>
             <div>
               <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
