@@ -62,13 +62,11 @@
 
     /* Progress bar + nav */
     .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 100; transition: width 0.3s ease; }
-    .nav-dots { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: row; gap: 8px; z-index: 100; }
+    .slide-nav { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; z-index: 100; }
+    .nav-dots { display: flex; flex-direction: row; gap: 8px; align-items: center; }
     .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--db-oat-medium); border: none; cursor: pointer; transition: all 0.3s ease; padding: 0; }
     .nav-dot.active { background: var(--accent); transform: scale(1.4); }
-
-    /* Slide nav buttons */
-    .slide-nav-btns { position: fixed; top: 1rem; right: 1.25rem; display: flex; gap: 0.4rem; z-index: 100; }
-    .slide-nav-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(150,150,150,0.3); background: rgba(255,255,255,0.08); backdrop-filter: blur(6px); color: rgba(150,150,150,0.7); font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; padding: 0; }
+    .slide-nav-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(150,150,150,0.25); background: rgba(255,255,255,0.06); backdrop-filter: blur(6px); color: rgba(150,150,150,0.6); font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; padding: 0; flex-shrink: 0; }
     .slide-nav-btn:hover { background: rgba(255,255,255,0.15); color: var(--accent); border-color: var(--accent); }
 
     /* Typography */
@@ -297,9 +295,9 @@
 
     /* Responsive — mobile */
     @media (max-width: 768px) {
-      .nav-dots { bottom: 0.75rem; }
-      .slide-nav-btns { top: 0.5rem; right: 0.75rem; }
-      .slide-nav-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+      .slide-nav { bottom: 0.75rem; gap: 8px; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+      .nav-dots { gap: 6px; }
+      .slide-nav-btn { width: 24px; height: 24px; font-size: 0.8rem; }
       .slide { padding: 1.5rem; }
       .card-grid.cols-2, .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr; }
       .two-col, .two-col-wide { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -312,9 +310,9 @@
 </head>
 <body>
   <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-  <nav class="nav-dots" aria-label="Slide navigation"></nav>
-  <div class="slide-nav-btns">
+  <div class="slide-nav">
     <button class="slide-nav-btn" id="btnPrev" aria-label="Slide anterior">&#8249;</button>
+    <nav class="nav-dots" aria-label="Slide navigation"></nav>
     <button class="slide-nav-btn" id="btnNext" aria-label="Próximo slide">&#8250;</button>
   </div>
 
