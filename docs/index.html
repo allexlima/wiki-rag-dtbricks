@@ -1327,7 +1327,7 @@
       animateCounters(slide) { slide.querySelectorAll('.counter-value[data-target]:not(.counted)').forEach(el => { el.classList.add('counted'); const target = parseInt(el.dataset.target); const suffix = el.dataset.suffix || ''; const prefix = el.dataset.prefix || ''; const duration = 1500; const start = performance.now(); const animate = (now) => { const progress = Math.min((now - start) / duration, 1); const eased = 1 - Math.pow(1 - progress, 3); el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix; if (progress < 1) requestAnimationFrame(animate); }; requestAnimationFrame(animate); }); }
       setupKeyboardNav() { document.addEventListener('keydown', (e) => { if (document.getElementById('lightbox').classList.contains('active')) return; if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.goToSlide(this.currentSlide + 1); } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); this.goToSlide(this.currentSlide - 1); } }); }
       setupTouchNav() { let startX = 0; document.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true }); document.addEventListener('touchend', (e) => { const diff = startX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { this.goToSlide(this.currentSlide + (diff > 0 ? 1 : -1)); } }, { passive: true }); }
-      setupNavButtons() { document.getElementById('btnPrev').addEventListener('click', () => this.goToSlide(this.currentSlide - 1)); document.getElementById('btnNext').addEventListener('click', () => this.goToSlide(this.currentSlide + 1)); }
+      setupNavButtons() { document.getElementById('btnPrev').addEventListener('click', () => this.goToSlide(this.currentSlide - 1, true)); document.getElementById('btnNext').addEventListener('click', () => this.goToSlide(this.currentSlide + 1, true)); }
       setupWheelNav() {
         this._wheelIdle = null;
         document.addEventListener('wheel', (e) => {
@@ -1342,10 +1342,10 @@
           this.goToSlide(this.currentSlide + (delta > 0 ? 1 : -1));
         }, { passive: false });
       }
-      goToSlide(index) {
+      goToSlide(index, force = false) {
         const target = Math.max(0, Math.min(index, this.slides.length - 1));
         if (target === this.currentSlide) return;
-        if (this._transitioning) return;
+        if (!force && this._transitioning) return;
         this._transitioning = true;
         this.slides[this.currentSlide].classList.remove('active');
         this.slides[target].classList.add('active');
