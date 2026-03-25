@@ -4,7 +4,7 @@ End-to-end **Retrieval-Augmented Generation** system that turns a self-hosted [M
 
 Supports **multimodal content** (text + images), **multi-turn conversations** with persistent memory, and fully automated deployment via **Databricks Asset Bundles** + **Make**.
 
-![Architecture](docs/assets/architecture.png)
+![Architecture](docs/assets/architecture.svg)
 
 ---
 
