@@ -65,6 +65,7 @@
     .slide-nav { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; z-index: 100; }
     .nav-dots { display: flex; flex-direction: row; gap: 8px; align-items: center; }
     .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--db-oat-medium); border: none; cursor: pointer; transition: all 0.3s ease; padding: 0; }
+    .nav-dot:hover { background: var(--db-oat-dark); transform: scale(1.2); }
     .nav-dot.active { background: var(--accent); transform: scale(1.4); }
     .slide-nav-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(150,150,150,0.25); background: rgba(255,255,255,0.06); backdrop-filter: blur(6px); color: rgba(150,150,150,0.6); font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; padding: 0; flex-shrink: 0; }
     .slide-nav-btn:hover { background: rgba(255,255,255,0.15); color: var(--accent); border-color: var(--accent); }
@@ -129,7 +130,8 @@
 
     /* Counter */
     .counter-group { display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap; margin: 2rem 0; }
-    .counter-item { text-align: center; }
+    .counter-item { text-align: center; transition: transform 0.2s ease; }
+    .counter-item:hover { transform: scale(1.05); }
     .counter-value { font-family: var(--font-display); font-weight: 700; font-size: clamp(3rem, 8vw, 5rem); line-height: 1; color: var(--db-lava); }
     .counter-label { font-family: var(--font-body); font-size: 1rem; color: var(--text-secondary); margin-top: 0.5rem; }
     .slide-dark .counter-label, .slide-ink .counter-label { color: rgba(255,255,255,0.6); }
@@ -168,6 +170,7 @@
     .comparison-card.before { background: rgba(151,15,41,0.08); border: 1px solid rgba(151,15,41,0.2); }
     .comparison-card.after { background: rgba(0,169,114,0.08); border: 1px solid rgba(0,169,114,0.2); }
     .comparison-card h3 { font-size: 1.05rem; margin-bottom: 0.75rem; }
+    .comparison-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
     .comparison-card.before h3 { color: var(--db-burgundy); }
     .comparison-card.after h3 { color: var(--db-green); }
     .comparison-card li { font-size: 0.9rem; margin-bottom: 0.35rem; }
@@ -177,12 +180,20 @@
     .slide-dark .subtitle, .slide-ink .subtitle, .slide-teal .subtitle { color: rgba(255,255,255,0.65); }
 
     /* Hover highlight for info boxes on dark slides */
+    .slide-dark [style*="rgba(255,255,255,0.04)"],
     .slide-dark [style*="rgba(255,255,255,0.06)"],
     .slide-dark [style*="rgba(255,255,255,0.08)"],
-    .slide-teal [style*="rgba(255,255,255,0.08)"] { transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; border: 1px solid transparent; border-radius: 10px; }
+    .slide-ink [style*="rgba(255,255,255,0.06)"],
+    .slide-ink [style*="rgba(255,255,255,0.08)"],
+    .slide-teal [style*="rgba(255,255,255,0.06)"],
+    .slide-teal [style*="rgba(255,255,255,0.08)"] { transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; border: 1px solid transparent; border-radius: 10px; }
+    .slide-dark [style*="rgba(255,255,255,0.04)"]:hover,
     .slide-dark [style*="rgba(255,255,255,0.06)"]:hover,
     .slide-dark [style*="rgba(255,255,255,0.08)"]:hover,
-    .slide-teal [style*="rgba(255,255,255,0.08)"]:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+    .slide-ink [style*="rgba(255,255,255,0.06)"]:hover,
+    .slide-ink [style*="rgba(255,255,255,0.08)"]:hover,
+    .slide-teal [style*="rgba(255,255,255,0.06)"]:hover,
+    .slide-teal [style*="rgba(255,255,255,0.08)"]:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.15); transform: translateY(-1px); }
 
     /* Divider line */
     .accent-line { width: 60px; height: 3px; background: var(--db-lava); border-radius: 2px; margin: 1rem 0; }
@@ -216,6 +227,7 @@
     /* Metric row */
     .metric-row { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0; }
     .metric-card { text-align: center; padding: 1.5rem 2rem; border-radius: 12px; background: var(--db-white); border: 1px solid var(--db-oat-medium); min-width: 160px; }
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
     .metric-card .value { font-family: var(--font-display); font-weight: 700; font-size: 2rem; color: var(--db-lava); }
     .metric-card .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; margin-bottom: 0; text-transform: none; letter-spacing: normal; }
     .slide-dark .metric-card { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
@@ -1274,6 +1286,223 @@
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- APPENDIX A: Estimativa de Custos (Summary) -->
+  <!-- ============================================================ -->
+  <section class="slide slide-dark" aria-label="Appendix A: Estimativa de Custos">
+    <div class="slide-content">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div>
+          <span class="label">Appendix &middot; Pricing</span>
+          <h2 style="color:white;margin-bottom:0.15rem;">Estimativa de Custos</h2>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);padding:0.25rem 0.6rem;border-radius:4px;">Valores em USD</span>
+      </div>
+      <p class="subtitle" style="margin-bottom:0.5rem;">Cenários baseados no uso real dos serviços Databricks deste projeto RAG</p>
+
+      <div class="card-grid cols-3" style="margin-top:1rem;">
+        <!-- LOW -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-green);padding-bottom:1rem;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.5rem;">🌱</span>
+            <span class="tag tag-green">Low</span>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:0.15rem;">Baixa Utilização</h3>
+          <p style="font-size:0.75rem;">5 usuários &middot; 10 queries/dia &middot; ~100 páginas</p>
+          <div style="margin:0.75rem 0;padding:0.75rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div style="font-family:var(--font-display);font-weight:700;font-size:2.4rem;color:var(--db-green);line-height:1;">~$30</div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:0.2rem;">por mês</div>
+            <div style="font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:rgba(255,255,255,0.75);margin-top:0.4rem;">~$360 <span style="font-size:0.75rem;font-weight:400;">/ano</span></div>
+          </div>
+          <div style="text-align:left;font-size:0.7rem;color:rgba(255,255,255,0.5);line-height:1.7;">
+            <div>🗄️ Lakebase 0.5 CU &middot; 6h/dia</div>
+            <div>🧠 ~300 queries LLM/mês</div>
+            <div>⚙️ Jobs 1x/dia &middot; 5 min</div>
+            <div>🤖 Endpoint ~2h ativo/dia</div>
+          </div>
+        </div>
+        <!-- MEDIUM -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-amber);transform:scale(1.04);box-shadow:0 8px 32px rgba(0,0,0,0.3);padding-bottom:1rem;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.5rem;">⚡</span>
+            <span class="tag tag-amber">Medium</span>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:0.15rem;">Utilização Padrão</h3>
+          <p style="font-size:0.75rem;">25 usuários &middot; 100 queries/dia &middot; ~500 páginas</p>
+          <div style="margin:0.75rem 0;padding:0.75rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div style="font-family:var(--font-display);font-weight:700;font-size:2.4rem;color:var(--db-amber);line-height:1;">~$200</div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:0.2rem;">por mês</div>
+            <div style="font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:rgba(255,255,255,0.75);margin-top:0.4rem;">~$2,400 <span style="font-size:0.75rem;font-weight:400;">/ano</span></div>
+          </div>
+          <div style="text-align:left;font-size:0.7rem;color:rgba(255,255,255,0.5);line-height:1.7;">
+            <div>🗄️ Lakebase 1.0 CU &middot; 10h/dia</div>
+            <div>🧠 ~3,000 queries LLM/mês</div>
+            <div>⚙️ Jobs 1x/dia &middot; 15 min</div>
+            <div>🤖 Endpoint ~8h ativo/dia</div>
+          </div>
+        </div>
+        <!-- HIGH -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-lava);padding-bottom:1rem;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.5rem;">🔥</span>
+            <span class="tag tag-lava">High</span>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:0.15rem;">Alta Utilização</h3>
+          <p style="font-size:0.75rem;">100+ usuários &middot; 500 queries/dia &middot; ~2,000 páginas</p>
+          <div style="margin:0.75rem 0;padding:0.75rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div style="font-family:var(--font-display);font-weight:700;font-size:2.4rem;color:var(--db-lava-light);line-height:1;">~$1,065</div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:0.2rem;">por mês</div>
+            <div style="font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:rgba(255,255,255,0.75);margin-top:0.4rem;">~$12,780 <span style="font-size:0.75rem;font-weight:400;">/ano</span></div>
+          </div>
+          <div style="text-align:left;font-size:0.7rem;color:rgba(255,255,255,0.5);line-height:1.7;">
+            <div>🗄️ Lakebase 1.5 CU &middot; 16h/dia</div>
+            <div>🧠 ~15,000 queries LLM/mês</div>
+            <div>⚙️ Jobs horário &middot; 24/7</div>
+            <div>🤖 Endpoint ~14h ativo/dia</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cost driver pills -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.06);padding:0.35rem 0.75rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.08)'">
+          <span style="font-size:0.85rem;">💬</span>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.65);"><strong style="color:white;">FMAPI</strong> = maior driver de custo</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.06);padding:0.35rem 0.75rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.08)'">
+          <span style="font-size:0.85rem;">📉</span>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.65);"><strong style="color:white;">Scale-to-zero</strong> em todos os serviços</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.06);padding:0.35rem 0.75rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.08)'">
+          <span style="font-size:0.85rem;">🏷️</span>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.65);"><strong style="color:white;">Pay-per-token</strong> = sem GPU ociosa</span>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="margin-top:1rem;padding:0.45rem 0.9rem;background:rgba(255,255,255,0.03);border-left:2px solid rgba(255,95,70,0.35);border-radius:0 6px 6px 0;font-size:0.6rem;color:rgba(255,255,255,0.38);line-height:1.5;">
+        <strong style="color:rgba(255,255,255,0.5);">Nota:</strong> Estes valores são estimativas baseadas em cenários hipotéticos de uso e não refletem necessariamente a realidade exata de faturamento. Recomendamos consultar o time de contas da Databricks para uma precificação personalizada e mais acurada.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- APPENDIX B: Detalhamento de Custos -->
+  <!-- ============================================================ -->
+  <section class="slide slide-light" aria-label="Appendix B: Detalhamento de Custos">
+    <div class="slide-content">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div>
+          <span class="label">Appendix &middot; Pricing Detail</span>
+          <h2>Detalhamento por Serviço</h2>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-secondary);background:rgba(27,81,98,0.06);padding:0.25rem 0.6rem;border-radius:4px;">Valores em USD</span>
+      </div>
+
+      <!-- Token pricing reference cards -->
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.75rem 0;">
+        <div style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border-radius:8px;background:var(--db-white);border:1px solid var(--db-oat-medium);transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div style="font-size:0.65rem;color:var(--db-teal);font-weight:600;margin-bottom:0.2rem;">💬 Claude Sonnet 4.6</div>
+          <div style="font-size:0.75rem;"><strong>$3.00</strong> / 1M input &middot; <strong>$15.00</strong> / 1M output</div>
+          <div style="font-size:0.6rem;color:var(--text-secondary);">42.857 | 214.286 DBU/1M &middot; $0.07/DBU</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border-radius:8px;background:var(--db-white);border:1px solid var(--db-oat-medium);transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div style="font-size:0.65rem;color:var(--db-green);font-weight:600;margin-bottom:0.2rem;">🧩 Qwen3 Embedding 0.6B</div>
+          <div style="font-size:0.75rem;"><strong>~$0.13</strong> / 1M tokens</div>
+          <div style="font-size:0.6rem;color:var(--text-secondary);">~1.857 DBU/1M &middot; $0.07/DBU (ref: GTE)</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border-radius:8px;background:var(--db-white);border:1px solid var(--db-oat-medium);transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div style="font-size:0.65rem;color:#b07800;font-weight:600;margin-bottom:0.2rem;">⚖️ Gemini 2.5 Flash (Eval)</div>
+          <div style="font-size:0.75rem;"><strong>~$0.15</strong> / 1M input &middot; <strong>~$0.60</strong> / 1M output</div>
+          <div style="font-size:0.6rem;color:var(--text-secondary);">~2.143 | ~8.571 DBU/1M &middot; $0.07/DBU</div>
+        </div>
+      </div>
+
+      <!-- Detailed pricing table -->
+      <div style="overflow-x:auto;background:var(--db-white);border-radius:10px;border:1px solid var(--db-oat-medium);padding:0.1rem;">
+        <table class="param-table" style="font-size:0.78rem;min-width:720px;">
+          <thead>
+            <tr>
+              <th style="width:28%;">Serviço Databricks</th>
+              <th style="width:14%;">Rate ($/DBU)</th>
+              <th style="text-align:right;width:18%;color:var(--db-green);">🌱 Low /mês</th>
+              <th style="text-align:right;width:20%;color:#b07800;">⚡ Medium /mês</th>
+              <th style="text-align:right;width:20%;color:var(--db-lava);">🔥 High /mês</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>FMAPI — Claude Sonnet 4.6</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">Geração de respostas, grading de docs e reescrita de queries no agente RAG</span></td>
+              <td><code>$0.07</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">180 DBU</span><br><strong>$12.60</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">1,800 DBU</span><br><strong>$126.00</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">9,000 DBU</span><br><strong>$630.00</strong></td>
+            </tr>
+            <tr>
+              <td><strong>FMAPI — Gemini 2.5 Flash</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">LLM Judge para avaliação de qualidade (MLflow GenAI Evaluation)</span></td>
+              <td><code>$0.07</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">~1 DBU</span><br><strong>$0.07</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">~11 DBU</span><br><strong>$0.75</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">~26 DBU</span><br><strong>$1.80</strong></td>
+            </tr>
+            <tr>
+              <td><strong>FMAPI — Qwen3 Embedding</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">Vetorização de chunks na ingestão e queries do usuário para busca semântica</span></td>
+              <td><code>$0.07</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">1 DBU</span><br><strong>$0.07</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">9 DBU</span><br><strong>$0.65</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">37 DBU</span><br><strong>$2.60</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Lakebase Compute</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">PostgreSQL gerenciado: armazena wiki, embeddings (pgvector) e histórico de conversas</span></td>
+              <td><code>$0.40</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">19 DBU</span><br><strong>$7.67</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">64 DBU</span><br><strong>$25.56</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">153 DBU</span><br><strong>$61.34</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Model Serving (Agent CPU)</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">Endpoint serverless que hospeda o agente RAG (ResponsesAgent + LangGraph)</span></td>
+              <td><code>$0.07</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">60 DBU</span><br><strong>$4.20</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">480 DBU</span><br><strong>$33.60</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">1,680 DBU</span><br><strong>$117.60</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Serverless Jobs</strong><br><span style="font-size:0.6rem;color:var(--text-secondary);">Executa o pipeline de ingestão: leitura da wiki, chunking, embedding e captioning</span></td>
+              <td><code>$0.35</code></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">15 DBU</span><br><strong>$5.25</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">45 DBU</span><br><strong>$15.75</strong></td>
+              <td style="text-align:right;"><span style="font-size:0.65rem;color:var(--text-secondary);">720 DBU</span><br><strong>$252.00</strong></td>
+            </tr>
+            <tr style="background:rgba(27,81,98,0.05);border-top:2px solid var(--db-oat-dark);">
+              <td style="font-weight:700;font-size:0.85rem;">TOTAL MENSAL</td>
+              <td></td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:var(--db-green);">$29.86</td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:#b07800;">$202.31</td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:var(--db-lava);">$1,065.34</td>
+            </tr>
+            <tr style="background:rgba(27,81,98,0.05);">
+              <td style="font-weight:700;font-size:0.85rem;">TOTAL ANUAL</td>
+              <td></td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:var(--db-green);">~$358</td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:#b07800;">~$2,428</td>
+              <td style="text-align:right;font-weight:700;font-size:0.95rem;color:var(--db-lava);">~$12,784</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Assumptions + Disclaimer -->
+      <div style="display:flex;gap:0.75rem;margin-top:0.6rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:260px;padding:0.4rem 0.65rem;background:var(--db-white);border:1px solid var(--db-oat-medium);border-radius:8px;font-size:0.65rem;color:var(--text-secondary);line-height:1.5;">
+          <strong style="color:var(--db-teal);">Premissas:</strong> ~7.5K input + ~1.3K output tokens por query (grading + rewrite + geração). Embedding: ~50 tokens/query. Scale-to-zero ativo em todos os serviços.
+        </div>
+        <div style="flex:1;min-width:260px;padding:0.4rem 0.65rem;background:rgba(255,54,33,0.03);border-left:2px solid rgba(255,54,33,0.25);border-radius:0 8px 8px 0;font-size:0.6rem;color:var(--text-secondary);line-height:1.5;">
+          <strong style="color:var(--db-lava);">Nota:</strong> Estes valores são estimativas baseadas em cenários hipotéticos de uso e não refletem necessariamente a realidade exata de faturamento. Recomendamos consultar o time de contas da Databricks para uma precificação personalizada e mais acurada.
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Lightbox overlay -->
   <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()" aria-label="Fechar">&times;</button>
@@ -1342,6 +1571,8 @@
         this.init();
       }
       init() {
+        /* Find Encerramento slide so appendix wraps back to it */
+        this._encerramentoIdx = Array.from(this.slides).findIndex(s => (s.getAttribute('aria-label') || '').includes('Encerramento'));
         /* Activate first slide */
         this.slides[0].classList.add('active');
         this.createNavDots();
@@ -1353,7 +1584,7 @@
       }
       createNavDots() { this.slides.forEach((_, i) => { const dot = document.createElement('button'); dot.className = 'nav-dot' + (i === 0 ? ' active' : ''); dot.setAttribute('aria-label', `Slide ${i + 1}`); dot.addEventListener('click', () => this.goToSlide(i)); this.navDots.appendChild(dot); }); }
       animateCounters(slide) { slide.querySelectorAll('.counter-value[data-target]:not(.counted)').forEach(el => { el.classList.add('counted'); const target = parseInt(el.dataset.target); const suffix = el.dataset.suffix || ''; const prefix = el.dataset.prefix || ''; const duration = 1500; const start = performance.now(); const animate = (now) => { const progress = Math.min((now - start) / duration, 1); const eased = 1 - Math.pow(1 - progress, 3); el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix; if (progress < 1) requestAnimationFrame(animate); }; requestAnimationFrame(animate); }); }
-      setupKeyboardNav() { document.addEventListener('keydown', (e) => { if (document.getElementById('lightbox').classList.contains('active')) return; if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.goToSlide(this.currentSlide + 1); } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); this.goToSlide(this.currentSlide - 1); } }); }
+      setupKeyboardNav() { document.addEventListener('keydown', (e) => { if (document.getElementById('lightbox').classList.contains('active')) return; if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.goToSlide(this.currentSlide + 1, true); } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); this.goToSlide(this.currentSlide - 1, true); } }); }
       setupTouchNav() { let startX = 0; document.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true }); document.addEventListener('touchend', (e) => { const diff = startX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { this.goToSlide(this.currentSlide + (diff > 0 ? 1 : -1)); } }, { passive: true }); }
       setupNavButtons() { document.getElementById('btnPrev').addEventListener('click', () => this.goToSlide(this.currentSlide - 1, true)); document.getElementById('btnNext').addEventListener('click', () => this.goToSlide(this.currentSlide + 1, true)); }
       setupWheelNav() {
@@ -1371,6 +1602,10 @@
         }, { passive: false });
       }
       goToSlide(index, force = false) {
+        /* Wrap: advancing past last appendix slide → back to Encerramento */
+        if (index >= this.slides.length) {
+          index = this._encerramentoIdx != null ? this._encerramentoIdx : this.slides.length - 1;
+        }
         const target = Math.max(0, Math.min(index, this.slides.length - 1));
         if (target === this.currentSlide) return;
         if (!force && this._transitioning) return;
