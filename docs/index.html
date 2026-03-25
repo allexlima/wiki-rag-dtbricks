@@ -66,6 +66,11 @@
     .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--db-oat-medium); border: none; cursor: pointer; transition: all 0.3s ease; padding: 0; }
     .nav-dot.active { background: var(--accent); transform: scale(1.4); }
 
+    /* Slide nav buttons */
+    .slide-nav-btns { position: fixed; bottom: 1rem; right: 1.25rem; display: flex; gap: 0.4rem; z-index: 100; }
+    .slide-nav-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(150,150,150,0.3); background: rgba(255,255,255,0.08); backdrop-filter: blur(6px); color: rgba(150,150,150,0.7); font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; padding: 0; }
+    .slide-nav-btn:hover { background: rgba(255,255,255,0.15); color: var(--accent); border-color: var(--accent); }
+
     /* Typography */
     h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spacing: -0.02em; line-height: 1.1; }
     h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 3.5vw, 3rem); letter-spacing: -0.01em; line-height: 1.2; }
@@ -293,6 +298,8 @@
     /* Responsive — mobile */
     @media (max-width: 768px) {
       .nav-dots { bottom: 0.75rem; }
+      .slide-nav-btns { bottom: 0.5rem; right: 0.75rem; }
+      .slide-nav-btn { width: 32px; height: 32px; font-size: 0.9rem; }
       .slide { padding: 1.5rem; }
       .card-grid.cols-2, .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr; }
       .two-col, .two-col-wide { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -306,6 +313,10 @@
 <body>
   <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
   <nav class="nav-dots" aria-label="Slide navigation"></nav>
+  <div class="slide-nav-btns">
+    <button class="slide-nav-btn" id="btnPrev" aria-label="Slide anterior">&#8249;</button>
+    <button class="slide-nav-btn" id="btnNext" aria-label="Próximo slide">&#8250;</button>
+  </div>
 
   <!-- ============================================================ -->
   <!-- SLIDE 1: Title -->
@@ -1309,12 +1320,14 @@
         this.setupKeyboardNav();
         this.setupTouchNav();
         this.setupWheelNav();
+        this.setupNavButtons();
         this.updateProgress();
       }
       createNavDots() { this.slides.forEach((_, i) => { const dot = document.createElement('button'); dot.className = 'nav-dot' + (i === 0 ? ' active' : ''); dot.setAttribute('aria-label', `Slide ${i + 1}`); dot.addEventListener('click', () => this.goToSlide(i)); this.navDots.appendChild(dot); }); }
       animateCounters(slide) { slide.querySelectorAll('.counter-value[data-target]:not(.counted)').forEach(el => { el.classList.add('counted'); const target = parseInt(el.dataset.target); const suffix = el.dataset.suffix || ''; const prefix = el.dataset.prefix || ''; const duration = 1500; const start = performance.now(); const animate = (now) => { const progress = Math.min((now - start) / duration, 1); const eased = 1 - Math.pow(1 - progress, 3); el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix; if (progress < 1) requestAnimationFrame(animate); }; requestAnimationFrame(animate); }); }
       setupKeyboardNav() { document.addEventListener('keydown', (e) => { if (document.getElementById('lightbox').classList.contains('active')) return; if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.goToSlide(this.currentSlide + 1); } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); this.goToSlide(this.currentSlide - 1); } }); }
       setupTouchNav() { let startX = 0; document.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true }); document.addEventListener('touchend', (e) => { const diff = startX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { this.goToSlide(this.currentSlide + (diff > 0 ? 1 : -1)); } }, { passive: true }); }
+      setupNavButtons() { document.getElementById('btnPrev').addEventListener('click', () => this.goToSlide(this.currentSlide - 1)); document.getElementById('btnNext').addEventListener('click', () => this.goToSlide(this.currentSlide + 1)); }
       setupWheelNav() {
         this._wheelIdle = null;
         document.addEventListener('wheel', (e) => {
