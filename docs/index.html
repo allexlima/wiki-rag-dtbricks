@@ -67,7 +67,7 @@
     .nav-dot.active { background: var(--accent); transform: scale(1.4); }
 
     /* Slide nav buttons */
-    .slide-nav-btns { position: fixed; bottom: 1rem; right: 1.25rem; display: flex; gap: 0.4rem; z-index: 100; }
+    .slide-nav-btns { position: fixed; top: 1rem; left: 1.25rem; display: flex; gap: 0.4rem; z-index: 100; }
     .slide-nav-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(150,150,150,0.3); background: rgba(255,255,255,0.08); backdrop-filter: blur(6px); color: rgba(150,150,150,0.7); font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; padding: 0; }
     .slide-nav-btn:hover { background: rgba(255,255,255,0.15); color: var(--accent); border-color: var(--accent); }
 
@@ -298,7 +298,7 @@
     /* Responsive — mobile */
     @media (max-width: 768px) {
       .nav-dots { bottom: 0.75rem; }
-      .slide-nav-btns { bottom: 0.5rem; right: 0.75rem; }
+      .slide-nav-btns { top: 0.5rem; left: 0.75rem; }
       .slide-nav-btn { width: 32px; height: 32px; font-size: 0.9rem; }
       .slide { padding: 1.5rem; }
       .card-grid.cols-2, .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: 1fr; }
