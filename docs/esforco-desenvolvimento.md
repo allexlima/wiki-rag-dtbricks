@@ -1,11 +1,5 @@
 # 👥 Esforço de Implantação da PoC em Produção
 
-**Projeto:** Wiki RAG Agent · **Sprint:** 2 semanas · **Data de referência:** 04/05/2026
-
-> 📌 **Cenário:** A PoC foi **construída, validada e finalizada** pelo time de Especialistas da **Databricks Brazil**. Este documento responde à pergunta do cliente: *"Quantas pessoas, em quais papéis, por quanto tempo, eu preciso para **implantar essa PoC no meu ambiente, em produção, com o meu time**?"*
-
----
-
 ## 1. O Ponto de Partida
 
 A PoC entregue **já resolve as decisões difíceis**: arquitetura, design do agente, prompts, schema, automação, metodologia de avaliação. O cliente recebe um **blueprint funcional pronto**, não um problema a resolver.
