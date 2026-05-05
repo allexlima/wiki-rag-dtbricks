@@ -1503,6 +1503,228 @@
     </div>
   </section>
 
+  <!-- ============================================================ -->
+  <!-- APPENDIX C: Esforço de Implantação da PoC em Produção -->
+  <!-- ============================================================ -->
+  <section class="slide slide-dark" aria-label="Appendix C: Esforço de Implantação da PoC em Produção">
+    <div class="slide-content">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div>
+          <span class="label">Appendix &middot; Adoption Effort</span>
+          <h2 style="color:white;margin-bottom:0.15rem;">Esforço de Implantação da PoC em Produção</h2>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:0.65rem;color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);padding:0.25rem 0.6rem;border-radius:4px;">PoC já entregue pela Databricks Brazil &middot; cliente adota com seu time</span>
+      </div>
+      <p class="subtitle" style="margin-bottom:0.5rem;"><strong>Quantas pessoas</strong>, em <strong>quais papéis</strong>, por <strong>quanto tempo</strong>, para implantar a PoC entregue em <strong>ambiente de produção do cliente</strong></p>
+
+      <!-- 3 Cenários — Pessoas + Calendário -->
+      <div class="card-grid cols-3" style="margin-top:0.5rem;">
+        <!-- LIFT & SHIFT -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-green);padding:0.6rem 0.7rem;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:0.25rem;">
+            <span style="font-size:1.2rem;">🚀</span>
+            <span class="tag tag-green" style="font-size:0.6rem;">Lift &amp; Shift</span>
+          </div>
+          <p style="font-size:0.65rem;margin:0;">replicar PoC 1:1 &middot; sem hardening</p>
+          <div style="display:flex;justify-content:space-around;align-items:baseline;margin:0.5rem 0;padding:0.45rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-green);line-height:1;">3</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">pessoas</div>
+            </div>
+            <div style="color:rgba(255,255,255,0.25);font-size:1rem;">×</div>
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-green);line-height:1;">~6</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">semanas</div>
+            </div>
+          </div>
+          <div style="text-align:left;font-size:0.6rem;color:rgba(255,255,255,0.55);line-height:1.55;">
+            <div>👥 Tech Lead + Full-stack + AI Eng</div>
+            <div>🎯 Migração + re-deploy + smoke</div>
+          </div>
+        </div>
+        <!-- ADOÇÃO MVP -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-amber);padding:0.6rem 0.7rem;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:0.25rem;">
+            <span style="font-size:1.2rem;">⚖️</span>
+            <span class="tag tag-amber" style="font-size:0.6rem;">Adoção MVP</span>
+          </div>
+          <p style="font-size:0.65rem;margin:0;">+ customização + UAT básico</p>
+          <div style="display:flex;justify-content:space-around;align-items:baseline;margin:0.5rem 0;padding:0.45rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-amber);line-height:1;">4</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">pessoas</div>
+            </div>
+            <div style="color:rgba(255,255,255,0.25);font-size:1rem;">×</div>
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-amber);line-height:1;">~8</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">semanas</div>
+            </div>
+          </div>
+          <div style="text-align:left;font-size:0.6rem;color:rgba(255,255,255,0.55);line-height:1.55;">
+            <div>👥 + ML Quality (parcial)</div>
+            <div>🎯 Beta com avaliação real</div>
+          </div>
+        </div>
+        <!-- PRODUÇÃO COMPLETA -->
+        <div class="card" style="text-align:center;border-top:3px solid var(--db-lava);transform:scale(1.04);box-shadow:0 8px 32px rgba(0,0,0,0.3);padding:0.6rem 0.7rem;position:relative;">
+          <span style="position:absolute;top:-8px;right:10px;background:var(--db-lava);color:white;font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:1px 6px;border-radius:3px;">⭐ recomendado</span>
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:0.25rem;">
+            <span style="font-size:1.2rem;">🏭</span>
+            <span class="tag tag-lava" style="font-size:0.6rem;">Produção completa</span>
+          </div>
+          <p style="font-size:0.65rem;margin:0;">+ hardening + transferência</p>
+          <div style="display:flex;justify-content:space-around;align-items:baseline;margin:0.5rem 0;padding:0.45rem 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-lava-light);line-height:1;">4–5</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">pessoas</div>
+            </div>
+            <div style="color:rgba(255,255,255,0.25);font-size:1rem;">×</div>
+            <div>
+              <div style="font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--db-lava-light);line-height:1;">~10</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">semanas</div>
+            </div>
+          </div>
+          <div style="text-align:left;font-size:0.6rem;color:rgba(255,255,255,0.55);line-height:1.55;">
+            <div>👥 + DevOps + PO + ML Quality</div>
+            <div>🎯 Sign-off + runbooks operacionais</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gantt: Time × Sprints (centerpiece) -->
+      <div style="margin-top:0.7rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.55rem 0.7rem;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:0.4rem;">
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Cenário Produção &middot; Quem trabalha quando (alocação por sprint)</span>
+          <span style="font-size:0.58rem;color:rgba(255,255,255,0.4);">█ ativo &middot; ░ inativo &middot; intensidade da cor = % alocação</span>
+        </div>
+        <!-- Header sprints -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;font-size:0.55rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;font-weight:600;">
+          <div></div>
+          <div style="text-align:center;padding:2px 0;">Sprint 1<br><span style="font-size:0.5rem;font-weight:400;opacity:0.6;">sem 1–2</span></div>
+          <div style="text-align:center;padding:2px 0;">Sprint 2<br><span style="font-size:0.5rem;font-weight:400;opacity:0.6;">sem 3–4</span></div>
+          <div style="text-align:center;padding:2px 0;">Sprint 3<br><span style="font-size:0.5rem;font-weight:400;opacity:0.6;">sem 5–6</span></div>
+          <div style="text-align:center;padding:2px 0;">Sprint 4<br><span style="font-size:0.5rem;font-weight:400;opacity:0.6;">sem 7–8</span></div>
+          <div style="text-align:center;padding:2px 0;">Sprint 5<br><span style="font-size:0.5rem;font-weight:400;opacity:0.6;">sem 9–10</span></div>
+        </div>
+
+        <!-- Tech Lead (50% sempre) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">🧠 Tech Lead / SA <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">10 sem</span></div>
+          <div style="background:rgba(139,155,255,0.5);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(139,155,255,0.5);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(139,155,255,0.5);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(139,155,255,0.5);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(139,155,255,0.5);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+        </div>
+        <!-- DBA (100% S1–S2) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">🗄️ DBA / Data Eng <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">4 sem</span></div>
+          <div style="background:rgba(124,194,214,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#0c2228;font-weight:700;">100%</div>
+          <div style="background:rgba(124,194,214,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#0c2228;font-weight:700;">100%</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+        </div>
+        <!-- ML/Data Eng (100% S2–S4) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">🛠️ ML / Data Engineer <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">7 sem</span></div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(92,214,168,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#04231a;font-weight:700;">100%</div>
+          <div style="background:rgba(92,214,168,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#04231a;font-weight:700;">100%</div>
+          <div style="background:rgba(92,214,168,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#04231a;font-weight:700;">100%</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+        </div>
+        <!-- AI/Agent Eng (50% S2 metade, 100% S3–S5) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">🤖 AI / Agent Engineer <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">6 sem</span></div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,122,106,0.55);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(255,122,106,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#330800;font-weight:700;">100%</div>
+          <div style="background:rgba(255,122,106,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#330800;font-weight:700;">100%</div>
+          <div style="background:rgba(255,122,106,0.95);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:#330800;font-weight:700;">100%</div>
+        </div>
+        <!-- DevOps (30% S1, 30% S4–S5) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">☁️ DevOps / Cloud <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">6 sem</span></div>
+          <div style="background:rgba(255,201,77,0.4);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">30%</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,201,77,0.4);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">30%</div>
+          <div style="background:rgba(255,201,77,0.4);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">30%</div>
+        </div>
+        <!-- ML Quality (50% S3–S4) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-bottom:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">📊 ML Quality <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">4 sem</span></div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+          <div style="background:rgba(193,128,255,0.6);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(193,128,255,0.6);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:white;font-weight:600;">50%</div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:3px;padding:4px 0;text-align:center;font-size:0.55rem;color:rgba(255,255,255,0.25);">—</div>
+        </div>
+        <!-- PO (20% sempre) -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;align-items:center;">
+          <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);font-weight:600;display:flex;align-items:center;gap:0.3rem;">📋 Product Owner / PM <span style="font-size:0.55rem;opacity:0.55;font-weight:400;">10 sem</span></div>
+          <div style="background:rgba(255,255,255,0.18);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.85);font-weight:600;">20%</div>
+          <div style="background:rgba(255,255,255,0.18);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.85);font-weight:600;">20%</div>
+          <div style="background:rgba(255,255,255,0.18);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.85);font-weight:600;">20%</div>
+          <div style="background:rgba(255,255,255,0.18);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.85);font-weight:600;">20%</div>
+          <div style="background:rgba(255,255,255,0.18);border-radius:3px;padding:4px 0;text-align:center;font-size:0.58rem;color:rgba(255,255,255,0.85);font-weight:600;">20%</div>
+        </div>
+
+        <!-- Footer com foco de cada sprint -->
+        <div style="display:grid;grid-template-columns:170px repeat(5,1fr);gap:3px;margin-top:6px;padding-top:5px;border-top:1px dashed rgba(255,255,255,0.1);">
+          <div style="font-size:0.55rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.04em;font-weight:700;">Foco da sprint →</div>
+          <div style="font-size:0.55rem;color:rgba(124,194,214,0.85);text-align:center;line-height:1.3;">Setup +<br>Migração</div>
+          <div style="font-size:0.55rem;color:rgba(124,194,214,0.85);text-align:center;line-height:1.3;">Cutover +<br>Re-deploy</div>
+          <div style="font-size:0.55rem;color:rgba(255,122,106,0.85);text-align:center;line-height:1.3;">Customização +<br>Avaliação</div>
+          <div style="font-size:0.55rem;color:rgba(255,201,77,0.85);text-align:center;line-height:1.3;">Hardening +<br>CI/CD</div>
+          <div style="font-size:0.55rem;color:rgba(92,214,168,0.85);text-align:center;line-height:1.3;">UAT +<br>Transferência</div>
+        </div>
+      </div>
+
+      <!-- Reutilizado vs Específico do Cliente + Maturidade -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 0.8fr;gap:0.55rem;margin-top:0.6rem;">
+        <!-- Reutilizado da PoC -->
+        <div style="background:rgba(0,169,114,0.07);border:1px solid rgba(0,169,114,0.25);border-radius:10px;padding:0.45rem 0.7rem;">
+          <div style="font-size:0.62rem;color:#5cd6a8;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin-bottom:0.3rem;">✅ Reutilizado da PoC <span style="opacity:0.7;font-weight:400;">(zero esforço)</span></div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.7);line-height:1.55;">
+            <div>🏗️ Arquitetura &amp; design do agente</div>
+            <div>💻 Código fonte (~1.100 LoC) + 4 notebooks</div>
+            <div>⚙️ DAB + Makefile + 15+ targets</div>
+            <div>🧪 Suíte pytest com &gt;80% cobertura</div>
+            <div>⚖️ Metodologia + 4 scorers MLflow</div>
+          </div>
+        </div>
+        <!-- Específico do Cliente -->
+        <div style="background:rgba(255,54,33,0.07);border:1px solid rgba(255,54,33,0.25);border-radius:10px;padding:0.45rem 0.7rem;">
+          <div style="font-size:0.62rem;color:var(--db-lava-light);text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin-bottom:0.3rem;">🆕 Específico do cliente <span style="opacity:0.7;font-weight:400;">(esforço necessário)</span></div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.7);line-height:1.55;">
+            <div>🗄️ Migração MySQL → Lakebase</div>
+            <div>☁️ Provisão no workspace cliente</div>
+            <div>🎯 Customização de prompts ao domínio</div>
+            <div>📊 Ground truth real + tuning de scorers</div>
+            <div>🛡️ Hardening + UAT + transferência</div>
+          </div>
+        </div>
+        <!-- Maturidade -->
+        <div style="background:rgba(254,171,3,0.08);border:1px solid rgba(254,171,3,0.2);border-radius:10px;padding:0.45rem 0.7rem;">
+          <div style="font-size:0.62rem;color:var(--db-amber);text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin-bottom:0.3rem;">⚙️ Multiplicador no calendário</div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.75);line-height:1.55;">
+            <div style="display:flex;justify-content:space-between;"><span>🟢 Experiente DBX</span><strong>1,0×</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span>🟡 Conhece DBX</span><strong>1,3×</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span>🔴 Iniciante</span><strong>1,8×</strong></div>
+            <div style="margin-top:0.25rem;padding-top:0.25rem;border-top:1px solid rgba(254,171,3,0.15);font-size:0.55rem;color:rgba(255,255,255,0.55);font-style:italic;">Ex: time intermediário → 10 × 1,3 = ~13 sem</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="margin-top:0.4rem;padding:0.3rem 0.85rem;background:rgba(255,255,255,0.03);border-left:2px solid rgba(255,95,70,0.35);border-radius:0 6px 6px 0;font-size:0.55rem;color:rgba(255,255,255,0.4);line-height:1.45;">
+        <strong style="color:rgba(255,255,255,0.55);">Nota:</strong> Cenário Produção assume PoC entregue/validada pela Databricks BR, wiki 2–10K páginas e MediaWiki ≥1.35. Excluído: upgrade do MediaWiki, refactor de extensions MySQL-only, front-end customizado, SSO/SAML adicional, fine-tuning de modelo. Para SOW formal, oficina de scoping com Databricks Field Engineering.
+      </div>
+    </div>
+  </section>
+
   <!-- Lightbox overlay -->
   <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()" aria-label="Fechar">&times;</button>
